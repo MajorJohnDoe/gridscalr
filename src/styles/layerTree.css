@@ -81,7 +81,7 @@
 }
 
 .layer-row.is-drop-target {
-  background: rgba(53, 194, 161, 0.16);
+  background: color-mix(in srgb, var(--jade) 16%, transparent);
   border-color: var(--jade-bright);
 }
 

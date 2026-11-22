@@ -206,6 +206,8 @@
   "theme.darkGrey": "Dark Gray",
   "theme.jade": "Dark Jade",
   "theme.navy": "Navy",
+  "theme.slate": "Slate",
+  "theme.graphite": "Graphite",
   "app.itemsCopied": "{count, plural, one {# item copied.} other {# items copied.}}",
   "menu.file": "File",
   "menu.edit": "Edit",

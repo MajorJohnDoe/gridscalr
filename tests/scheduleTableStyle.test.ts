@@ -268,7 +268,7 @@ describe("canvas and PDF share one table layout", () => {
 });
 
 describe("placed takeoff table colours", () => {
-  it("resolves every role from the theme tokens in all five palettes", () => {
+  it("resolves every role from the theme tokens in every palette", () => {
     for (const theme of THEMES) {
       const tokens = parseTokens(readCss(`src/styles/themes/${theme}.css`));
       const style = paletteStyle(theme);

@@ -782,7 +782,7 @@ the static and runtime expectation is proposed for phase 4/5.
   status-bar colour with `element.style.color` instead of an attribute string.
   Then drop `'unsafe-inline'` from `style-src` in both policies.
 - **Acceptance criteria:** the production policy has no `'unsafe-inline'`; the
-  boot fallback still paints before first paint in all five themes; the status
+  boot fallback still paints before first paint in every theme; the status
   bar shows the active layer colour; visual regression tests pass.
 
 ### F-039 — Development-only npm advisory remains open

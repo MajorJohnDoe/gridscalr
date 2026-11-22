@@ -60,6 +60,28 @@
       errorBorder: "#4d3038",
       errorText: "#ffb4c0",
     },
+    slate: {
+      bg: "#2f343b",
+      text: "#ffffff",
+      panel: "#343a43",
+      border: "#444952",
+      brand: "#9db0c9",
+      muted: "#b3b8c1",
+      errorBg: "#3a2626",
+      errorBorder: "#6b4444",
+      errorText: "#ffc4c4",
+    },
+    graphite: {
+      bg: "#26272a",
+      text: "#ffffff",
+      panel: "#2c2c2e",
+      border: "#444952",
+      brand: "#9db0c9",
+      muted: "#b0b6bf",
+      errorBg: "#332222",
+      errorBorder: "#5c3a3a",
+      errorText: "#ffc4c4",
+    },
   };
 
   try {

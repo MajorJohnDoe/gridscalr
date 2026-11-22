@@ -63,7 +63,15 @@ export async function captureDocumentation(page, { outputDir, base }) {
   await openMarkupsItem(page, "item_floor_living");
   await capture("hero.png");
 
-  for (const theme of ["medium-grey", "light-green", "dark-grey", "jade", "navy"]) {
+  for (const theme of [
+    "medium-grey",
+    "light-green",
+    "dark-grey",
+    "jade",
+    "navy",
+    "slate",
+    "graphite",
+  ]) {
     await selectTheme(theme);
     await capture(`theme-${theme}.png`);
   }

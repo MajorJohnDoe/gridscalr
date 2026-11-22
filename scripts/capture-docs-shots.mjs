@@ -38,6 +38,18 @@ export const shots = [
     description: "Blue-shifted dark chrome with the jade accent.",
   },
   {
+    file: "theme-slate.png",
+    title: "Slate theme",
+    alt: "GridScalr with the slate interface theme, a calibrated industrial floor plan and the Properties panel.",
+    description: "Blue-grey chrome with white text and a muted steel accent.",
+  },
+  {
+    file: "theme-graphite.png",
+    title: "Graphite theme",
+    alt: "GridScalr with the graphite interface theme, a calibrated industrial floor plan and the Properties panel.",
+    description: "Near-black neutral chrome with a muted steel accent.",
+  },
+  {
     file: "measure.png",
     title: "Measure and annotate",
     alt: "GridScalr with the Length tool active, the Layers panel open and a compact New measurement summary in the context bar, with Properties on the right.",

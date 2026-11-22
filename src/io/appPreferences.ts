@@ -9,7 +9,7 @@ export type CsvFormat = "locale" | "interchange";
 
 /** Stored theme choice. `system` maps dark to medium grey and light to light green. */
 export type ThemePreference =
-  "system" | "medium-grey" | "light-green" | "dark-grey" | "jade" | "navy";
+  "system" | "medium-grey" | "light-green" | "dark-grey" | "jade" | "navy" | "slate" | "graphite";
 
 /** Allowed maximum gaps between periodic recovery snapshots. */
 export type AutosaveIntervalSeconds = 15 | 30 | 60;
@@ -71,7 +71,9 @@ function isTheme(value: unknown): value is ThemePreference {
     value === "light-green" ||
     value === "dark-grey" ||
     value === "jade" ||
-    value === "navy"
+    value === "navy" ||
+    value === "slate" ||
+    value === "graphite"
   );
 }
 

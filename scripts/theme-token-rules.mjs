@@ -8,7 +8,15 @@
  */
 
 /** Every shipped palette, including the default that `:root` carries. */
-export const THEMES = ["medium-grey", "light-green", "dark-grey", "jade", "navy"];
+export const THEMES = [
+  "medium-grey",
+  "light-green",
+  "dark-grey",
+  "jade",
+  "navy",
+  "slate",
+  "graphite",
+];
 
 /** Tokens every palette must define. */
 export const REQUIRED = [
@@ -35,6 +43,8 @@ export const REQUIRED = [
   "--surface-inset-foot",
   "--chrome-topbar",
   "--chrome-rail",
+  /* The canvas and welcome glows read this token without a literal fallback. */
+  "--canvas-glow",
   /* Placed takeoff table: a printed-document contract, not chrome. */
   "--table-paper",
   "--table-band-head",

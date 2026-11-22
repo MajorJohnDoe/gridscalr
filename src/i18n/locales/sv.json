@@ -206,6 +206,8 @@
   "theme.darkGrey": "Mörkgrå",
   "theme.jade": "Mörk jade",
   "theme.navy": "Marinblå",
+  "theme.slate": "Skiffer",
+  "theme.graphite": "Grafit",
   "app.itemsCopied": "{count, plural, one {# objekt kopierat.} other {# objekt kopierade.}}",
   "menu.file": "Arkiv",
   "menu.edit": "Redigera",

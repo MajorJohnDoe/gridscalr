@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-20T14:27:26.145Z",
+  "generatedAt": "2026-11-22T14:56:05.707Z",
   "appVersion": "0.30.0",
-  "sourceFingerprint": "935833a7bb13788a5e56ae7425feb87073539b6883f14f452778c40b040884ea",
+  "sourceFingerprint": "ba0bb87fe7b766d5de985eb81837daaed821315d593717a5884b0d7f97ab988a",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -43,6 +43,18 @@
       "title": "Navy theme",
       "alt": "GridScalr with the navy interface theme, a calibrated industrial floor plan and the Properties panel.",
       "description": "Blue-shifted dark chrome with the jade accent."
+    },
+    {
+      "file": "theme-slate.png",
+      "title": "Slate theme",
+      "alt": "GridScalr with the slate interface theme, a calibrated industrial floor plan and the Properties panel.",
+      "description": "Blue-grey chrome with white text and a muted steel accent."
+    },
+    {
+      "file": "theme-graphite.png",
+      "title": "Graphite theme",
+      "alt": "GridScalr with the graphite interface theme, a calibrated industrial floor plan and the Properties panel.",
+      "description": "Near-black neutral chrome with a muted steel accent."
     },
     {
       "file": "measure.png",

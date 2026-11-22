@@ -136,7 +136,7 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 - Switch between English and Swedish in Preferences. The interface, reports,
   XLSX/CSV headings and number formatting follow the selected language, and the
   Swedish help includes a Swedish quick start.
-- Choose the default medium gray theme, Light, Dark Gray, Dark Jade or Navy, or
+- Choose the default medium gray theme, Light, Dark Gray, Dark Jade, Navy, Slate or Graphite, or
   follow the operating system light/dark preference. Themes change interface
   chrome and the canvas surround only; drawing content and PDF exports keep
   their colours.
@@ -281,14 +281,16 @@ comparison, full-text search and the in-app workflows, are captured in
 
 ## Themes
 
-GridScalr ships with five interface themes. Medium Gray is the default; the
+GridScalr ships with seven interface themes. Medium Gray is the default; the
 others are one click away in **Settings → Preferences → General**.
 
 | Default (medium gray) | Light | Dark Gray |
 | --- | --- | --- |
 | ![Medium gray theme with the industrial demo plan](docs/screenshots/theme-medium-grey.png) | ![Light theme with the industrial demo plan](docs/screenshots/theme-light-green.png) | ![Dark gray theme with the industrial demo plan](docs/screenshots/theme-dark-grey.png) |
-| **Dark Jade** | **Navy** | |
-| ![Dark jade theme with the industrial demo plan](docs/screenshots/theme-jade.png) | ![Navy theme with the industrial demo plan](docs/screenshots/theme-navy.png) | |
+| **Dark Jade** | **Slate** | **Graphite** |
+| ![Dark jade theme with the industrial demo plan](docs/screenshots/theme-jade.png) | ![Slate theme with the industrial demo plan](docs/screenshots/theme-slate.png) | ![Graphite theme with the industrial demo plan](docs/screenshots/theme-graphite.png) |
+| **Navy** | | |
+| ![Navy theme with the industrial demo plan](docs/screenshots/theme-navy.png) | | |
 
 The theme images are regenerated with `npm run docs:capture` as part of the
 release documentation pass, so they always show the current interface.

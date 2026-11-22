@@ -25,8 +25,8 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run check:dependencies` | `npm audit` and `cargo audit` against the reviewed allowlist in `security/dependency-allowlist.json`; fails on a new moderate-or-higher advisory, an expired entry or a stale entry. |
 | `npm run check:actions` | Every remote `uses:` reference in `.github/workflows` is a 40-character commit SHA with a `# <version>` comment, and one action release never carries two SHAs. |
 | `npx vitest run tests/releaseArtifactCheck.test.ts` | The release-artifact rules: universal versus thin `lipo` output, bundle identity, `Info.plist` version, checksum listings, and the release workflow wiring that runs them. |
-| `npm run check:themes` | Theme token completeness (including the Layers inset surfaces) and WCAG AA contrast checks for the five palettes. |
-| `npm run theme:preview` | Captures the light and navy design previews from `docs/theme-preview/`. |
+| `npm run check:themes` | Theme token completeness (including the Layers inset surfaces) and WCAG AA contrast checks for the seven palettes. |
+| `npm run theme:preview` | Captures a candidate palette from `docs/theme-preview/` over the demo project (`--themes=light,navy` by default). |
 | `cargo test --manifest-path src-tauri/Cargo.toml --lib` | Atomic saves, verified managed source copies, package create/inspect/extract, manifest limits, checksums, cancellation, ZIP traversal and symlinks. Runs on the Ubuntu `rust` job and on all three `desktop` matrix entries, Windows and macOS included. |
 | `npm run bench:history` / `npm run bench:large` | Synthetic undo/history timing and the large-project reference benchmark documented in `docs/limitations.md`. |
 
@@ -413,9 +413,9 @@ no allowlist, so a new serious rule fails immediately. The script also asserts
 that each dialog receives focus when it opens, that every palette/surface pair
 ran, and that the run raises no page errors.
 
-Each of the 5 palettes — **Medium Gray**, **Light Green**, **Dark Gray**, **Jade**
-and **Navy** — runs the same nineteen surfaces, so the gate records 95 palette/surface
-checks. The measurement flyout and the four Takeoff settings tabs run a second
+Each of the 7 palettes — **Medium Gray**, **Light Green**, **Dark Gray**, **Jade**,
+**Navy**, **Slate** and **Graphite** — runs the same nineteen surfaces, so the gate
+records 133 palette/surface checks. The measurement flyout and the four Takeoff settings tabs run a second
 time in Swedish, so a localized label that clips or breaks an accessible name
 fails too. The palette is
 chosen through **Settings → Preferences…**, which is itself one of the checked
@@ -536,7 +536,7 @@ Check each row in both English and Swedish, and at 100 % and 200 % UI scale.
 | Area | Check |
 | --- | --- |
 | Keyboard reaches the chrome | `Alt` or `F10` opens the menu bar, arrow keys move between menus and items, `Escape` closes without losing focus. Every top-bar button, tool-rail button, dock tab and status-bar control is reachable with `Tab` in a sensible order. |
-| Focus is always visible | The focus ring is visible on the menu bar, tool rail, dock tabs, page cards, layer rows, Markups rows, inspector fields, status chips and dialog buttons in all five themes. Zooming the canvas does not hide the ring. |
+| Focus is always visible | The focus ring is visible on the menu bar, tool rail, dock tabs, page cards, layer rows, Markups rows, inspector fields, status chips and dialog buttons in every theme. Zooming the canvas does not hide the ring. |
 | Dialog focus contract | A dialog moves focus inside on open. `Tab` and `Shift+Tab` may leave and re-enter it (the window is non-modal), `Escape` closes the focused or topmost dialog and focus returns to the control that opened it. The window moves by its header, stays inside the viewport and never blocks the drawing outside its own rectangle. The safe action is focused by default where one exists (for example **Save** in the unsaved-changes prompt). A destructive confirmation refuses with an explanation when its object changed or disappeared behind the dialog. See [ADR 0017](adr/0017-movable-non-modal-dialogs.md). |
 | Shortcuts do not trap typing | Shortcuts fire on the canvas and in the Markups and Layers lists, but typing in a text field, the inline editor, a rename field or a number input never triggers a tool or command. `Delete` and `Ctrl/Cmd+Z` act on the focused list. |
 | Canvas landmarks | The canvas exposes a name and role, the reference pane and the split divider are announced, and the split divider is keyboard-adjustable. A screen reader can find the canvas and its page context even though it cannot describe freehand geometry. |
@@ -594,7 +594,7 @@ build, ideally on Windows, macOS and Linux:
 - password prompts, Tauri window chrome and single-instance behaviour;
 - OS display scaling at 125–200 %, mixed-DPI monitors and system font
   differences;
-- mouse row reordering in the Pages list, the Layers tree and the takeoff table builder on Windows, macOS and Linux, plus dropping a PDF, TIF or `.gridscalr` on the window and on the Pages panel. While a row is held, confirm the insertion line follows the pointer to the landing slot, stays visible when the panel is scrolled and is high-contrast in all five themes, and that every row the drop will move is dimmed and ringed;
+- mouse row reordering in the Pages list, the Layers tree and the takeoff table builder on Windows, macOS and Linux, plus dropping a PDF, TIF or `.gridscalr` on the window and on the Pages panel. While a row is held, confirm the insertion line follows the pointer to the landing slot, stays visible when the panel is scrolled and is high-contrast in every theme, and that every row the drop will move is dimmed and ringed;
 - pen and touch hardware, palm rejection and long-press menus;
 - canvas rendering near the minimum and maximum zoom, very large pages and
   progressive PDF page loading;

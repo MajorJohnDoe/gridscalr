@@ -148,7 +148,7 @@
 
 .help-tab.is-active {
   background: var(--jade-dim);
-  border-color: rgba(53, 194, 161, 0.28);
+  border-color: color-mix(in srgb, var(--jade) 28%, transparent);
   color: var(--jade-bright);
 }
 
@@ -390,7 +390,7 @@
 
 .help-about-note {
   padding: 10px 12px;
-  border: 1px solid rgba(53, 194, 161, 0.2);
+  border: 1px solid color-mix(in srgb, var(--jade) 20%, transparent);
   border-radius: 6px;
   background: var(--jade-dim);
   color: var(--muted);

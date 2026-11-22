@@ -25,7 +25,7 @@ body {
 }
 
 ::selection {
-  background: rgba(53, 194, 161, 0.3);
+  background: color-mix(in srgb, var(--jade) 30%, transparent);
 }
 
 button,

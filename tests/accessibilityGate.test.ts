@@ -109,6 +109,8 @@ describe("accessibility gate rules", () => {
       "dark-grey",
       "jade",
       "navy",
+      "slate",
+      "graphite",
     ]);
     expect(A11Y_THEMES.find((theme) => theme.id === "light-green")?.label).toBe("Light Green");
   });
@@ -124,7 +126,7 @@ describe("accessibility gate rules", () => {
       surface: "shell",
       surfaceLabel: "Main shell",
     });
-    expect(checks.at(-1)?.key).toBe("navy:takeoff-cards");
+    expect(checks.at(-1)?.key).toBe("graphite:takeoff-cards");
   });
 
   it("lets a test narrow the theme list without changing the surfaces", () => {

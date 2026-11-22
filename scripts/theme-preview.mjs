@@ -43,6 +43,10 @@ async function applyTheme(page, theme) {
   await page.evaluate(
     ({ paletteCss, chromeCss, name }) => {
       document.querySelectorAll("style[data-theme-preview]").forEach((node) => node.remove());
+      // Shipped palettes are scoped to `:root[data-theme="..."]`, which outranks a
+      // bare `:root` override. Dropping the attribute lets the default `:root`
+      // palette load and the injected candidate win by source order.
+      document.documentElement.removeAttribute("data-theme");
       const style = document.createElement("style");
       style.dataset.themePreview = name;
       style.textContent = `${paletteCss}\n${chromeCss}`;

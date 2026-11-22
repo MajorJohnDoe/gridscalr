@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { canvasAccent, resetCanvasAccent } from "../src/canvas/themeAccent";
 import { loadAppPreferences } from "../src/io/appPreferences";
-import { applyTheme, resolveTheme, setThemePreference } from "../src/theme/theme";
+import { THEME_OPTIONS, applyTheme, resolveTheme, setThemePreference } from "../src/theme/theme";
 import { THEMES, checkThemeTokens, parseTokens } from "../scripts/theme-token-rules.mjs";
 
 const root = resolve(__dirname, "..");
@@ -60,6 +61,56 @@ describe("themes", () => {
     setThemePreference("navy");
     expect(loadAppPreferences().theme).toBe("navy");
     expect(document.documentElement.dataset.theme).toBe("navy");
+  });
+
+  it("offers every shipped palette in the theme picker", () => {
+    const offered = THEME_OPTIONS.filter((option) => option.value !== "system")
+      .map((option) => option.value)
+      .sort();
+    expect(offered).toEqual([...THEMES].sort());
+  });
+
+  it("scopes every palette to its own data-theme attribute", () => {
+    for (const theme of THEMES) {
+      const css = readCss(`src/styles/themes/${theme}.css`);
+      expect(css, theme).toContain(`:root[data-theme="${theme}"]`);
+    }
+  });
+
+  it("reads the canvas chrome accent from the active palette", () => {
+    document.documentElement.dataset.theme = "graphite";
+    const values = new Map([
+      ["--jade", " #9db0c9"],
+      ["--on-accent", " #1a1f26"],
+    ]);
+    const spy = vi.spyOn(window, "getComputedStyle").mockReturnValue({
+      getPropertyValue: (token: string) => values.get(token) ?? "",
+    } as unknown as CSSStyleDeclaration);
+    resetCanvasAccent();
+    const { accent, onAccent } = canvasAccent();
+    expect({ accent, onAccent }).toEqual({ accent: "#9db0c9", onAccent: "#1a1f26" });
+    spy.mockRestore();
+    resetCanvasAccent();
+  });
+});
+
+describe("accent alpha usage", () => {
+  it("derives translucent accents from the palette token, not a jade literal", () => {
+    // A second accent colour can only work when every translucent accent reads
+    // `var(--jade)`; the shipped jade rgba literal would stay green.
+    const dir = resolve(root, "src", "styles");
+    for (const file of readdirSync(dir).filter((name) => name.endsWith(".css"))) {
+      const css = readCss(`src/styles/${file}`);
+      expect(css, file).not.toMatch(/rgba\(\s*53,\s*194,\s*161/i);
+    }
+  });
+
+  it("keeps the canvas fallback in one place", () => {
+    for (const file of ["crop.ts", "interactionRenderer.ts"]) {
+      const source = readCss(`src/canvas/${file}`);
+      expect(source, file).not.toContain("#35c2a1");
+      expect(source, file).toContain("canvasAccent()");
+    }
   });
 });
 

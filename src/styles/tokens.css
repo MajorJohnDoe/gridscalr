@@ -39,7 +39,7 @@
   --status-danger: var(--danger);
   --status-warning: var(--warning);
   --status-success: var(--jade);
-  --selection: rgba(53, 194, 161, 0.3);
+  --selection: color-mix(in srgb, var(--jade) 30%, transparent);
   --focus-ring: var(--jade-bright);
   --scrollbar: #384148;
   --scrollbar-hover: #4c585f;
