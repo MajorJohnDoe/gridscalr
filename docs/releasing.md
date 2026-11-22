@@ -32,7 +32,7 @@ GRIDSCALR_DOCS_STRICT=1 npm run check:docs
 ```
 
 `docs:capture` writes the app version into `docs/screenshots/manifest.json` and
-regenerates the five `theme-*.png` images used by the README and the landing
+regenerates the seven `theme-*.png` images used by the README and the landing
 site, so run it after the version bump. Review the screenshots for a previous
 interface and confirm that every theme is still visible and correctly named.
 
