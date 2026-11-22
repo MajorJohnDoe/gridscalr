@@ -26,7 +26,10 @@
       content="Measure PDF and TIF drawings locally. Calibrate plans, count doors, windows and fixtures, and export procurement quantities for facilities operations."
     />
     <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/" />
-    <meta property="og:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
     <meta
       property="og:image:alt"
       content="GridScalr — measure PDF plans locally, with a calibrated industrial floor plan and quantities"
@@ -42,10 +45,15 @@
       name="twitter:description"
       content="Measure PDF and TIF drawings locally. Calibrate plans, count doors, windows and fixtures, and export procurement quantities for facilities operations."
     />
-    <meta name="twitter:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
 
     <link rel="stylesheet" href="assets/site.css" />
+    <link rel="stylesheet" href="assets/how-it-works.css" />
     <script src="assets/site.js" defer></script>
+    <script src="assets/how-it-works.js" defer></script>
 
     <script type="application/ld+json">
       {
@@ -147,7 +155,14 @@
     <header class="site-header">
       <div class="wrap header-inner">
         <a class="brand" href="#hero" aria-label="GridScalr home">
-          <img class="logo" src="assets/app-icon.svg" width="30" height="30" alt="" aria-hidden="true" />
+          <img
+            class="logo"
+            src="assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
           <span>GridScalr</span>
         </a>
 
@@ -169,7 +184,14 @@
     <aside class="lang-hint wrap" id="lang-hint" hidden lang="sv">
       <p>Vill du läsa den här sidan på svenska?</p>
       <a class="lang-hint-link" href="sv/" hreflang="sv">Till den svenska sidan</a>
-      <button class="lang-hint-close" type="button" data-dismiss-hint aria-label="Stäng språkförslaget">×</button>
+      <button
+        class="lang-hint-close"
+        type="button"
+        data-dismiss-hint
+        aria-label="Stäng språkförslaget"
+      >
+        ×
+      </button>
     </aside>
 
     <main id="main">
@@ -179,8 +201,8 @@
             <p class="eyebrow">Local-first PDF &amp; TIF takeoff</p>
             <h1>Turn PDF and TIF drawings into procurement quantities — locally.</h1>
             <p class="lede">
-              Calibrate the plan, measure areas, count doors and fixtures, and export CSV, Excel
-              or PDF. No account, no cloud, no upload.
+              Calibrate the plan, measure areas, count doors and fixtures, and export CSV, Excel or
+              PDF. No account, no cloud, no upload.
             </p>
 
             <div class="release-badge">
@@ -194,6 +216,7 @@
                 >Download GridScalr {{RELEASE_VERSION}}</a
               >
               <a class="button secondary" href="features/">See every feature</a>
+              <a class="button secondary" href="#how-it-works">See it in action</a>
             </div>
             <p class="download-note">
               Windows 10/11, macOS and Linux x86_64.
@@ -294,6 +317,846 @@
           <div class="section-head">
             <p class="eyebrow">From drawing to order</p>
             <h2>Three steps from plan to procurement quantities</h2>
+            <p>
+              Try it yourself: draw the six room areas on the plan, or count doors, windows and
+              fixtures and watch the quantities fill the Takeoff panel.
+            </p>
+          </div>
+
+          <div class="hiw" data-hiw>
+            <div class="hiw-bar" data-hiw-ui>
+              <button class="hiw-play" type="button" data-hiw-play>Play demo</button>
+              <span class="hiw-try" aria-hidden="true">
+                <span class="hiw-try-label">Try it</span>
+                <svg class="hiw-try-arrow" viewBox="0 0 54 22" fill="none" aria-hidden="true">
+                  <path
+                    d="M2 12h7c6 0 7-8 14-8s6 9 13 9h7m-3-4 4 4-4 4"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              <button class="hiw-mode" type="button" data-hiw-mode="area" aria-pressed="false">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m4 16 3-10 10-2 3 10-8 5-8-3Z" />
+                  <circle cx="7" cy="6" r="1.4" fill="currentColor" />
+                  <circle cx="17" cy="4" r="1.4" fill="currentColor" />
+                  <circle cx="20" cy="14" r="1.4" fill="currentColor" />
+                  <circle cx="12" cy="19" r="1.4" fill="currentColor" />
+                </svg>
+                <span>Measure areas</span>
+              </button>
+              <button class="hiw-mode" type="button" data-hiw-mode="qty" aria-pressed="false">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="8" cy="8" r="2.2" />
+                  <circle cx="16" cy="8" r="2.2" />
+                  <circle cx="8" cy="16" r="2.2" />
+                  <circle cx="16" cy="16" r="2.2" />
+                </svg>
+                <span>Quantities</span>
+              </button>
+              <button class="hiw-replay" type="button" data-hiw-replay hidden>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v5h5" />
+                </svg>
+                <span>Play again</span>
+              </button>
+              <button
+                class="hiw-sound"
+                type="button"
+                data-hiw-sound
+                aria-pressed="true"
+                aria-label="Mute demo sound"
+              >
+                <svg
+                  class="hiw-sound-on"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 9v6h4l5 4V5L8 9H4Z" />
+                  <path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a9 9 0 0 1 0 12" />
+                </svg>
+                <svg
+                  class="hiw-sound-off"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 9v6h4l5 4V5L8 9H4Z" />
+                  <path d="m16 9 5 6m0-6-5 6" />
+                </svg>
+                <span class="hiw-sound-label" data-hiw-sound-label>Sound on</span>
+              </button>
+              <p class="hiw-bar-hint">The demo is interactive — click the active mode to replay.</p>
+              <p class="hiw-live" role="status" aria-live="polite" data-hiw-live></p>
+            </div>
+
+            <div class="hiw-app" data-hiw-app tabindex="-1">
+              <div class="hiw-top" aria-hidden="true">
+                <div class="hiw-menu">
+                  <span class="hiw-brand-dot">
+                    <svg viewBox="0 0 32 32" aria-hidden="true">
+                      <rect width="32" height="32" rx="7" fill="#35c2a1" />
+                      <rect x="1" y="1" width="30" height="30" rx="6" fill="#0f1a1c" />
+                      <path
+                        d="M7.88 18 10.38 8.88 19.63 7.5 24.13 16.25 16.63 24.5Z"
+                        fill="#5fe6c9"
+                        fill-opacity=".3"
+                        stroke="#5fe6c9"
+                        stroke-width="1.6"
+                        stroke-linejoin="round"
+                      />
+                      <circle cx="7.88" cy="18" r="1.5" fill="#9bf7e2" />
+                      <circle cx="10.38" cy="8.88" r="1.5" fill="#9bf7e2" />
+                      <circle cx="19.63" cy="7.5" r="1.5" fill="#9bf7e2" />
+                      <circle cx="24.13" cy="16.25" r="1.5" fill="#9bf7e2" />
+                      <circle cx="16.63" cy="24.5" r="1.5" fill="#9bf7e2" />
+                    </svg>
+                    GridScalr
+                  </span>
+                  <span>File</span><span>Edit</span><span>View</span><span>Settings</span
+                  ><span>Help</span>
+                </div>
+
+                <div class="hiw-title">
+                  <strong>Northgate Logistics Hub · Takeoff</strong>
+                  <span>industriplan.pdf · Page 1 of 4 · Ground floor</span>
+                </div>
+
+                <span class="hiw-local">Local · no cloud</span>
+              </div>
+
+              <div class="hiw-context" aria-hidden="true">
+                <span class="hiw-tool" data-hiw-tool="scale">
+                  <svg
+                    class="hiw-tool-icon hiw-tool-icon--scale"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m4 15 11-11 5 5L9 20l-5-5Z" />
+                    <path d="m7 14 2 2m1-5 2 2m1-5 2 2m-9 3 2 2" />
+                  </svg>
+                  <svg
+                    class="hiw-tool-icon hiw-tool-icon--area"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m4 16 3-10 10-2 3 10-8 5-8-3Z" />
+                    <circle cx="7" cy="6" r="1.4" fill="currentColor" />
+                    <circle cx="17" cy="4" r="1.4" fill="currentColor" />
+                    <circle cx="20" cy="14" r="1.4" fill="currentColor" />
+                    <circle cx="12" cy="19" r="1.4" fill="currentColor" />
+                  </svg>
+                  <svg
+                    class="hiw-tool-icon hiw-tool-icon--count"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="8" cy="8" r="2.2" />
+                    <circle cx="16" cy="8" r="2.2" />
+                    <circle cx="8" cy="16" r="2.2" />
+                    <circle cx="16" cy="16" r="2.2" />
+                  </svg>
+                  <span data-hiw-tool-label>Calibrate</span>
+                </span>
+                <p class="hiw-tool-hint" data-hiw-tool-hint>
+                  Pick a known dimension or enter the 1:N scale
+                </p>
+                <span class="hiw-layer-select"
+                  ><i aria-hidden="true"></i> Layer <strong>Measurements</strong> ▾</span
+                >
+              </div>
+
+              <div class="hiw-main">
+                <aside class="hiw-rail" aria-hidden="true">
+                  <span class="hiw-rail-btn" title="Select"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M5 3.5 19 11l-6.1 1.9L11 19 5 3.5Z"
+                        fill="currentColor"
+                        stroke="none"
+                      /></svg
+                  ></span>
+                  <span class="hiw-rail-btn" title="Pan"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M8 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1V4.5a1.5 1.5 0 0 1 3 0V11m0-.5V6a1.5 1.5 0 0 1 3 0v6.2c0 4.1-2.5 6.8-6 6.8-2.3 0-3.7-1-4.8-2.8L4.4 13a1.7 1.7 0 0 1 2.9-1.7l.7 1.1"
+                      /></svg
+                  ></span>
+                  <span class="hiw-rail-btn" title="Zoom"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="10.5" cy="10.5" r="6.5" />
+                      <path d="m15.5 15.5 5 5M10.5 7v7M7 10.5h7" /></svg
+                  ></span>
+                  <span class="hiw-rail-divider"></span>
+                  <span class="hiw-rail-btn" title="Scale"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="m4 15 11-11 5 5L9 20l-5-5Z" />
+                      <path d="m7 14 2 2m1-5 2 2m1-5 2 2m-9 3 2 2" /></svg
+                  ></span>
+                  <span class="hiw-rail-btn" title="Length"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M4 17 20 7" />
+                      <circle cx="4" cy="17" r="2.2" />
+                      <circle cx="20" cy="7" r="2.2" />
+                      <path d="M9 12h6" opacity=".55" /></svg
+                  ></span>
+                  <span class="hiw-rail-btn is-active" data-hiw-rail="area" title="Area"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="m4 16 3-10 10-2 3 10-8 5-8-3Z" />
+                      <circle cx="7" cy="6" r="1.4" fill="currentColor" />
+                      <circle cx="17" cy="4" r="1.4" fill="currentColor" />
+                      <circle cx="20" cy="14" r="1.4" fill="currentColor" />
+                      <circle cx="12" cy="19" r="1.4" fill="currentColor" /></svg
+                  ></span>
+                  <span class="hiw-rail-btn" data-hiw-rail="count" title="Count"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="8" cy="8" r="2.2" />
+                      <circle cx="16" cy="8" r="2.2" />
+                      <circle cx="8" cy="16" r="2.2" />
+                      <circle cx="16" cy="16" r="2.2" /></svg
+                  ></span>
+                  <span class="hiw-rail-divider"></span>
+                  <span class="hiw-rail-btn" title="Rectangle"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="4" y="6" width="16" height="12" rx="1" /></svg
+                  ></span>
+                  <span class="hiw-rail-btn" title="Ellipse"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <ellipse cx="12" cy="12" rx="8.5" ry="6.5" /></svg
+                  ></span>
+                  <span class="hiw-rail-btn" title="Polyline"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M4 18h6V8h5v7h5" />
+                      <circle cx="4" cy="18" r="1.3" fill="currentColor" /></svg
+                  ></span>
+                  <span class="hiw-rail-btn" title="Text"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M5 6V4h14v2M12 4v16M8 20h8" /></svg
+                  ></span>
+                  <span class="hiw-rail-btn" title="Symbol"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"
+                      /></svg
+                  ></span>
+                  <span class="hiw-rail-btn" title="Image"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="3" y="4" width="18" height="16" rx="2" />
+                      <circle cx="8.5" cy="9" r="1.5" />
+                      <path d="m4 18 5-5 4 4 3-3 4 4" /></svg
+                  ></span>
+                  <span class="hiw-rail-btn" title="Cloud"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M7 18h10a4 4 0 0 0 .7-7.9A5.5 5.5 0 0 0 7 8.2 4.5 4.5 0 0 0 7 18Z"
+                      /></svg
+                  ></span>
+                  <span class="hiw-rail-divider"></span>
+                  <span class="hiw-rail-btn hiw-rail-bottom" title="Symbol library"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="m12 3 9 5-9 5-9-5 9-5Z" />
+                      <path d="m3 12 9 5 9-5M3 16l9 5 9-5" /></svg
+                  ></span>
+                </aside>
+
+                <aside class="hiw-pages" aria-hidden="true">
+                  <div class="hiw-panel-tabs">
+                    <span class="hiw-panel-tab is-active">Pages</span>
+                    <span class="hiw-panel-tab">Layers</span>
+                  </div>
+                  <div class="hiw-pages-body">
+                    <div class="hiw-page-card is-active">
+                      <img
+                        class="hiw-page-thumb"
+                        src="assets/industrial-plan.webp"
+                        width="60"
+                        height="42"
+                        loading="lazy"
+                        alt=""
+                        aria-hidden="true"
+                      />
+                      <div class="hiw-page-meta">
+                        <strong>Ground floor</strong>
+                        <span>Page 1 · 1191 × 842</span>
+                        <span>industriplan.pdf</span>
+                        <em class="hiw-page-badge" data-hiw-page-calibrated style="opacity: 1"
+                          >Calibrated</em
+                        >
+                      </div>
+                    </div>
+                    <div class="hiw-page-card is-muted">
+                      <img
+                        class="hiw-page-thumb"
+                        src="assets/industrial-plan.webp"
+                        width="60"
+                        height="42"
+                        loading="lazy"
+                        alt=""
+                        aria-hidden="true"
+                      />
+                      <div class="hiw-page-meta">
+                        <strong>Mezzanine</strong>
+                        <span>Page 2 · 1191 × 842</span>
+                        <span>industriplan.pdf</span>
+                      </div>
+                    </div>
+
+                    <div class="hiw-layers-title"><span>Drawing layers</span><span>12</span></div>
+                    <div class="hiw-layer-row">
+                      <i class="hiw-swatch hiw-swatch--draw"></i> Site markups
+                      <span class="hiw-layer-count">12</span>
+                    </div>
+                    <div class="hiw-layers-title">
+                      <span>Measurement layers</span><span data-hiw-layer-count>1</span>
+                    </div>
+                    <div class="hiw-layer-row is-active">
+                      <i class="hiw-swatch hiw-swatch--measure"></i> Measurements
+                      <span class="hiw-layer-count" data-hiw-layer-items>1 item</span>
+                    </div>
+                  </div>
+                </aside>
+
+                <div class="hiw-canvas">
+                  <div class="hiw-sheet">
+                    <img
+                      class="hiw-plan"
+                      src="assets/industrial-plan.webp"
+                      width="2151"
+                      height="1521"
+                      loading="lazy"
+                      decoding="async"
+                      alt="Industrial ground-floor plan of Northgate Logistics Hub with the warehouse, workshop, open office, meeting rooms, reception and breakroom."
+                    />
+                    <svg class="hiw-overlay" viewBox="0 0 2151 1521" aria-hidden="true">
+                      <g class="hiw-rooms-layer" data-hiw-rooms-layer>
+                        <path
+                          class="hiw-room-path"
+                          data-hiw-room="office"
+                          pathLength="1"
+                          d="M1402 592H1748V845H1402Z"
+                        />
+                        <path
+                          class="hiw-room-path"
+                          data-hiw-room="meetingTop"
+                          pathLength="1"
+                          d="M1758 592H1878V845H1758Z"
+                        />
+                        <path
+                          class="hiw-room-path"
+                          data-hiw-room="wc"
+                          pathLength="1"
+                          d="M1888 592H2000V845H1888Z"
+                        />
+                        <path
+                          class="hiw-room-path"
+                          data-hiw-room="reception"
+                          pathLength="1"
+                          d="M1402 952H1642V1195H1402Z"
+                        />
+                        <path
+                          class="hiw-room-path"
+                          data-hiw-room="meetingBottom"
+                          pathLength="1"
+                          d="M1652 952H1848V1195H1652Z"
+                        />
+                        <path
+                          class="hiw-room-path"
+                          data-hiw-room="breakroom"
+                          pathLength="1"
+                          d="M1858 952H2000V1195H1858Z"
+                        />
+                      </g>
+                      <path
+                        class="hiw-area-fill"
+                        data-hiw-area-fill
+                        d="M282 97H1360V1180H282Z"
+                        style="fill-opacity: 0.2"
+                      />
+                      <path
+                        class="hiw-area-outline"
+                        data-hiw-area-outline
+                        pathLength="1"
+                        stroke-dasharray="1"
+                        stroke-dashoffset="0"
+                        d="M282 97H1360V1180H282Z"
+                      />
+                      <line
+                        class="hiw-leader"
+                        data-hiw-leader
+                        x1="760"
+                        y1="285"
+                        x2="820"
+                        y2="610"
+                        pathLength="1"
+                        stroke-dasharray="1"
+                        stroke-dashoffset="0"
+                      />
+                      <g data-hiw-calib-group>
+                        <line
+                          class="hiw-calib-line is-on"
+                          data-hiw-calib-line
+                          x1="330"
+                          y1="1148"
+                          x2="850"
+                          y2="1148"
+                        />
+                        <g
+                          class="hiw-calib-chip"
+                          data-hiw-calib-chip
+                          transform="translate(590 1105)"
+                          style="opacity: 1"
+                        >
+                          <rect x="-80" y="-22" width="160" height="42" rx="21" />
+                          <text x="0" y="4">Calibrated</text>
+                        </g>
+                      </g>
+                      <g data-hiw-handles>
+                        <g
+                          class="hiw-handle"
+                          data-hiw-handle="0"
+                          transform="translate(282 97)"
+                          style="opacity: 1"
+                        >
+                          <rect x="-13" y="-13" width="26" height="26" rx="2" />
+                        </g>
+                        <g
+                          class="hiw-handle"
+                          data-hiw-handle="1"
+                          transform="translate(1360 97)"
+                          style="opacity: 1"
+                        >
+                          <rect x="-13" y="-13" width="26" height="26" rx="2" />
+                        </g>
+                        <g
+                          class="hiw-handle"
+                          data-hiw-handle="2"
+                          transform="translate(1360 1180)"
+                          style="opacity: 1"
+                        >
+                          <rect x="-13" y="-13" width="26" height="26" rx="2" />
+                        </g>
+                        <g
+                          class="hiw-handle"
+                          data-hiw-handle="3"
+                          transform="translate(282 1180)"
+                          style="opacity: 1"
+                        >
+                          <rect x="-13" y="-13" width="26" height="26" rx="2" />
+                        </g>
+                      </g>
+                      <g class="hiw-crosshair" data-hiw-crosshair>
+                        <circle r="9" />
+                        <path d="M-18 0H18M0 -18V18" />
+                      </g>
+                    </svg>
+
+                    <button
+                      class="hiw-measure is-shown"
+                      type="button"
+                      data-hiw-measure
+                      disabled
+                      aria-label="Show the measurement as quantities"
+                    >
+                      <span class="hiw-measure-primary">Warehouse floor</span>
+                      <span class="hiw-measure-secondary">484 m² · Perimeter 88 m</span>
+                    </button>
+
+                    <div class="hiw-room-label" data-hiw-room-label hidden aria-hidden="true">
+                      <span class="hiw-room-label-name" data-hiw-room-name>Open Office</span>
+                      <span class="hiw-room-label-value" data-hiw-room-value
+                        >35 m² · Perimeter 19 m</span
+                      >
+                    </div>
+
+                    <span
+                      class="hiw-cursor-status"
+                      data-hiw-cursor-status
+                      hidden
+                      aria-hidden="true"
+                    ></span>
+
+                    <div class="hiw-cursor" data-hiw-cursor hidden aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path
+                          d="M5 3.5 19 11l-6.1 1.9L11 19 5 3.5Z"
+                          fill="#ffffff"
+                          stroke="#0b1114"
+                          stroke-width="1.4"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                      <span class="hiw-cursor-ring" data-hiw-cursor-ring></span>
+                    </div>
+
+                    <span
+                      class="hiw-badge hiw-badge--door is-shown"
+                      data-hiw-badge="door"
+                      aria-hidden="true"
+                    >
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path
+                          d="M4 2v12M4 2a7 7 0 0 1 7 7M4 9h7"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.3"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                      6 doors
+                    </span>
+                    <span
+                      class="hiw-badge hiw-badge--window"
+                      data-hiw-badge="window"
+                      aria-hidden="true"
+                    >
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <rect
+                          x="3"
+                          y="4"
+                          width="10"
+                          height="8"
+                          rx="1"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.3"
+                        />
+                        <path d="M8 4v8" stroke="currentColor" stroke-width="1.3" />
+                      </svg>
+                      9 windows
+                    </span>
+                    <span class="hiw-doornum" data-hiw-doornum="1" aria-hidden="true">1</span>
+                    <span class="hiw-doornum" data-hiw-doornum="2" aria-hidden="true">2</span>
+                    <span class="hiw-doornum" data-hiw-doornum="3" aria-hidden="true">3</span>
+                    <span class="hiw-doornum" data-hiw-doornum="4" aria-hidden="true">4</span>
+                    <span class="hiw-doornum" data-hiw-doornum="5" aria-hidden="true">5</span>
+                    <span class="hiw-doornum" data-hiw-doornum="6" aria-hidden="true">6</span>
+                  </div>
+                </div>
+
+                <aside class="hiw-right" aria-hidden="true">
+                  <div class="hiw-tabs">
+                    <span class="hiw-tab is-active" data-hiw-tab="props">Properties</span>
+                    <span class="hiw-tab" data-hiw-tab="takeoff">Takeoff</span>
+                    <span class="hiw-tab">Project</span>
+                  </div>
+
+                  <div class="hiw-panel" data-hiw-panel="props">
+                    <div class="hiw-selection">
+                      <div class="hiw-selection-head">
+                        <span class="hiw-tag">Selection</span>
+                        <span class="hiw-kind" data-hiw-selection-kind>Area</span>
+                      </div>
+                      <strong class="hiw-area-big" data-hiw-area-big>484 m²</strong>
+                      <span class="hiw-area-sub" data-hiw-area-sub
+                        >Perimeter 88 m · Page 1 · Measurements · 4 points</span
+                      >
+                    </div>
+
+                    <div class="hiw-field">
+                      <span>Label size</span><strong data-hiw-field="labelSize">6 pt</strong>
+                    </div>
+                    <div class="hiw-field">
+                      <span>Category</span><strong data-hiw-field="category">Floor</strong>
+                    </div>
+                    <div class="hiw-field">
+                      <span>Room</span><strong data-hiw-field="room">Warehouse</strong>
+                    </div>
+                    <div class="hiw-field">
+                      <span>Colour</span>
+                      <span class="hiw-swatch-inline"
+                        ><i></i><strong data-hiw-field="colour">#4cc9f0</strong></span
+                      >
+                    </div>
+                    <div class="hiw-field">
+                      <span>Stroke width</span><strong data-hiw-field="stroke">0,75 pt</strong>
+                    </div>
+                    <div class="hiw-field"><span>Visible on page</span><strong>Yes</strong></div>
+                    <div class="hiw-field"><span>Locked</span><strong>No</strong></div>
+                  </div>
+
+                  <div class="hiw-panel hiw-takeoff-panel" data-hiw-panel="takeoff" hidden>
+                    <div class="hiw-takeoff-head"><span>Quantities</span><em>Live</em></div>
+                    <div class="hiw-qrow" data-hiw-row>
+                      <span>Floor</span>
+                      <strong><span data-hiw-value data-target="484">0.0</span> m²</strong>
+                    </div>
+                    <div class="hiw-qrow" data-hiw-row>
+                      <span>Doors</span>
+                      <strong><span data-hiw-value data-target="6">0</span> pcs</strong>
+                    </div>
+                    <div class="hiw-qrow" data-hiw-row>
+                      <span>Windows</span>
+                      <strong><span data-hiw-value data-target="9">0</span> pcs</strong>
+                    </div>
+                    <div class="hiw-qrow" data-hiw-row>
+                      <span>Order · 5 % waste</span>
+                      <strong><span data-hiw-value data-target="508.2">0.0</span> m²</strong>
+                    </div>
+                    <div class="hiw-export-row">
+                      <span data-hiw-export="3400">CSV</span>
+                      <span data-hiw-export="3500">XLSX</span>
+                      <span data-hiw-export="3600">PDF</span>
+                    </div>
+                    <p class="hiw-note">
+                      Quantities are calculated from the measurement and stay on your machine.
+                    </p>
+                  </div>
+
+                  <div class="hiw-panel" data-hiw-panel="rooms" hidden>
+                    <div class="hiw-rooms-head"><span>Room areas</span><em>6 rooms</em></div>
+                    <div class="hiw-selection">
+                      <div class="hiw-selection-head">
+                        <span class="hiw-tag">Selection</span>
+                        <span class="hiw-kind" data-hiw-room-kind>Area</span>
+                      </div>
+                      <strong class="hiw-area-big" data-hiw-room-area>35 m²</strong>
+                      <span class="hiw-area-sub" data-hiw-room-sub
+                        >Open Office · Perimeter 19 m</span
+                      >
+                    </div>
+                    <div class="hiw-room-list">
+                      <span class="hiw-room-row" data-hiw-room-row="office"
+                        ><span>Open Office</span><strong>35 m²</strong></span
+                      >
+                      <span class="hiw-room-row" data-hiw-room-row="meetingTop"
+                        ><span>Meeting · norr</span><strong>12,5 m²</strong></span
+                      >
+                      <span class="hiw-room-row" data-hiw-room-row="wc"
+                        ><span>WC / Shower</span><strong>12,5 m²</strong></span
+                      >
+                      <span class="hiw-room-row" data-hiw-room-row="reception"
+                        ><span>Reception</span><strong>25 m²</strong></span
+                      >
+                      <span class="hiw-room-row" data-hiw-room-row="meetingBottom"
+                        ><span>Meeting · söder</span><strong>20 m²</strong></span
+                      >
+                      <span class="hiw-room-row" data-hiw-room-row="breakroom"
+                        ><span>Breakroom</span><strong>15 m²</strong></span
+                      >
+                    </div>
+                    <div class="hiw-room-total">
+                      <span>Total</span><strong data-hiw-room-total>120 m²</strong>
+                    </div>
+                    <p class="hiw-note">
+                      Each row is one measured room. The total updates while the demo draws.
+                    </p>
+                  </div>
+
+                  <div class="hiw-panel" data-hiw-panel="qty" hidden>
+                    <div class="hiw-takeoff-head"><span>Quantities</span><em>Live</em></div>
+                    <div class="hiw-qty-section">Room areas</div>
+                    <div class="hiw-qty-row"><span>Open Office</span><strong>35 m²</strong></div>
+                    <div class="hiw-qty-row">
+                      <span>Meeting · norr</span><strong>12,5 m²</strong>
+                    </div>
+                    <div class="hiw-qty-row"><span>WC / Shower</span><strong>12,5 m²</strong></div>
+                    <div class="hiw-qty-row"><span>Reception</span><strong>25 m²</strong></div>
+                    <div class="hiw-qty-row">
+                      <span>Meeting · söder</span><strong>20 m²</strong>
+                    </div>
+                    <div class="hiw-qty-row"><span>Breakroom</span><strong>15 m²</strong></div>
+                    <div class="hiw-qty-section">Objects</div>
+                    <div class="hiw-qty-row">
+                      <span>Doors</span><strong><span data-hiw-qty-doors>0</span> pcs</strong>
+                    </div>
+                    <div class="hiw-qty-row">
+                      <span>Windows</span><strong><span data-hiw-qty-windows>0</span> pcs</strong>
+                    </div>
+                    <div class="hiw-qty-row">
+                      <span>Fixtures</span><strong><span data-hiw-qty-fixtures>0</span> pcs</strong>
+                    </div>
+                    <div class="hiw-qty-total">
+                      <span>Total</span><strong data-hiw-qty-total>120 m² · 0 objects</strong>
+                    </div>
+                    <div class="hiw-export-row">
+                      <span data-hiw-qexport>CSV</span>
+                      <span data-hiw-qexport>XLSX</span>
+                      <span data-hiw-qexport>PDF</span>
+                    </div>
+                    <p class="hiw-note">
+                      The Quantities mode shows the rooms on the right and counts doors, windows and
+                      fixtures. Everything stays local.
+                    </p>
+                  </div>
+                </aside>
+              </div>
+
+              <div class="hiw-status" aria-hidden="true">
+                <span class="hiw-status-chip is-ok" data-hiw-status
+                  ><i class="hiw-status-dot"></i
+                  ><span data-hiw-status-text>Calibrated · 1:100</span></span
+                >
+                <span class="hiw-status-unsaved">Unsaved changes</span>
+                <span>Autosave 15 s</span>
+                <span class="hiw-status-spacer"></span>
+                <span>Zoom 101 %</span>
+                <span>Page 1 / 4</span>
+              </div>
+
+              <div class="hiw-chip-layer" data-hiw-chips aria-hidden="true"></div>
+              <div class="hiw-stamp" data-hiw-stamp aria-hidden="true">READY</div>
+            </div>
+
+            <div class="hiw-compact" data-hiw-ui aria-hidden="true">
+              <span class="hiw-compact-status" data-hiw-compact-status>Calibrated · 1:100</span>
+              <strong class="hiw-compact-total" data-hiw-compact-total>484 m²</strong>
+            </div>
           </div>
 
           <ol class="steps">
@@ -301,8 +1164,8 @@
               <span class="step-number" aria-hidden="true">1</span>
               <h3>Open and calibrate</h3>
               <p>
-                Open a PDF plan or import a scanned TIF. Calibrate against a known dimension or enter
-                the printed 1:N scale, then lock it.
+                Open a PDF plan or import a scanned TIF. Calibrate against a known dimension or
+                enter the printed 1:N scale, then lock it.
               </p>
             </li>
             <li>
@@ -351,8 +1214,8 @@
               <p class="card-kicker">Technical property management</p>
               <h3>For tekniska förvaltare</h3>
               <p>
-                Follow up areas, prepare a count schedule for doors, windows and fixtures, review revision
-                changes and prepare procurement quantities.
+                Follow up areas, prepare a count schedule for doors, windows and fixtures, review
+                revision changes and prepare procurement quantities.
               </p>
             </article>
             <article class="card">
@@ -381,8 +1244,8 @@
             <p class="eyebrow">One takeoff, every sheet</p>
             <h2>Measure, count and export from the same project</h2>
             <p>
-              PDF takeoff and PDF measurement share the same item data, so the quantities,
-              schedules and exports stay in sync. There is no second spreadsheet to update.
+              PDF takeoff and PDF measurement share the same item data, so the quantities, schedules
+              and exports stay in sync. There is no second spreadsheet to update.
             </p>
           </div>
 
@@ -569,9 +1432,9 @@
             <p class="eyebrow">Five interface themes</p>
             <h2>Work in the light that suits the room</h2>
             <p>
-              Medium Gray is the default. Switch to Light for bright rooms, or pick Dark Gray,
-              Dark Jade or Navy for a darker workspace. Themes change the interface chrome and
-              the canvas surround only; drawings and PDF exports keep their colours.
+              Medium Gray is the default. Switch to Light for bright rooms, or pick Dark Gray, Dark
+              Jade or Navy for a darker workspace. Themes change the interface chrome and the canvas
+              surround only; drawings and PDF exports keep their colours.
             </p>
           </div>
 
@@ -717,8 +1580,8 @@
             <p class="eyebrow">Download</p>
             <h2>Download GridScalr {{RELEASE_VERSION}}</h2>
             <p>
-              The current public release for Windows, macOS and Linux. Get the installer here, or open the release
-              page for every file and checksum.
+              The current public release for Windows, macOS and Linux. Get the installer here, or
+              open the release page for every file and checksum.
             </p>
           </div>
 
@@ -824,7 +1687,9 @@ npm run tauri build</code></pre>
               <span>Every shortcut in the app.</span>
             </li>
             <li>
-              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/roadmap.md">Roadmap</a>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/roadmap.md"
+                >Roadmap</a
+              >
               <span>Shipped milestones, deferred work and open decisions.</span>
             </li>
             <li>
@@ -898,10 +1763,10 @@ npm run tauri build</code></pre>
                 Is GridScalr suitable for facilities operations and technical property management?
               </summary>
               <p>
-                Yes. The workflows cover room areas, fixture and equipment inventories, count schedules for
-                doors, windows and fixtures, maintenance planning, condition notes, revision review and
-                procurement quantities. The same user guide and role-based workflows ship inside the
-                app under Help.
+                Yes. The workflows cover room areas, fixture and equipment inventories, count
+                schedules for doors, windows and fixtures, maintenance planning, condition notes,
+                revision review and procurement quantities. The same user guide and role-based
+                workflows ship inside the app under Help.
               </p>
             </details>
           </div>
@@ -913,7 +1778,14 @@ npm run tauri build</code></pre>
       <div class="wrap footer-grid">
         <div>
           <a class="brand footer-brand" href="#hero" aria-label="GridScalr home">
-            <img class="logo" src="assets/app-icon.svg" width="26" height="26" alt="" aria-hidden="true" />
+            <img
+              class="logo"
+              src="assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
             <span>GridScalr</span>
           </a>
           <p class="muted">
@@ -927,21 +1799,35 @@ npm run tauri build</code></pre>
           <h2 class="footer-heading">Project</h2>
           <ul>
             <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
-            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
             <li>
               <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD_PARTY_NOTICES.md"
                 >Third-party notices</a
               >
             </li>
-            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/SECURITY.md">Security policy</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/SECURITY.md"
+                >Security policy</a
+              >
+            </li>
           </ul>
         </nav>
         <nav aria-label="Documentation">
           <h2 class="footer-heading">Documentation</h2>
           <ul>
             <li><a href="features/">All features</a></li>
-            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md">User guide</a></li>
-            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md">Workflows</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
             <li><a href="{{RELEASE_NOTES_URL}}">Release notes</a></li>
           </ul>
         </nav>
