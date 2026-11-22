@@ -16,6 +16,7 @@ import { selectionBounds } from "../model/transform";
 import type { MarkupItem, Point } from "../model/types";
 import { store } from "../state/store";
 import { CALIBRATION_COLOR } from "./draftRenderer";
+import { canvasAccent } from "./themeAccent";
 import { hexAlpha, roundRect, snapLabel } from "./geometry";
 import { groupHandles } from "./pointer/groupHandles";
 import { selectionHandles } from "./selectionHandles";
@@ -24,7 +25,6 @@ import type { Draft } from "./draftRenderer";
 import type { SnapResult } from "../model/snap";
 import { TEXT_FONT_STACK } from "../model/text";
 
-const ACCENT = "#35c2a1";
 const FONT_STACK = TEXT_FONT_STACK;
 
 export interface InteractionRenderContext {
@@ -55,6 +55,7 @@ export function drawInteraction(
 ): void {
   context.prepare(ctx);
   if (context.readOnly || !store.project) return;
+  const { accent: ACCENT, onAccent: ON_ACCENT } = canvasAccent();
   if (context.cropDraw(ctx)) return;
   if (context.searchHits && context.searchHits.page === context.page) {
     ctx.save();
@@ -104,7 +105,7 @@ export function drawInteraction(
         ctx.stroke();
       }
       for (const handle of handles) {
-        ctx.fillStyle = handle.role === "rotate" ? "#101619" : "#f7fbfc";
+        ctx.fillStyle = handle.role === "rotate" ? ON_ACCENT : "#f7fbfc";
         ctx.strokeStyle = ACCENT;
         ctx.lineWidth = 1.5;
         if (handle.role === "rotate") {
@@ -121,7 +122,7 @@ export function drawInteraction(
           ctx.arc(handle.point.x, handle.point.y, 5, 0, Math.PI * 2);
           ctx.fillStyle = ACCENT;
           ctx.fill();
-          ctx.strokeStyle = "#101619";
+          ctx.strokeStyle = ON_ACCENT;
           ctx.stroke();
         } else {
           ctx.beginPath();
@@ -133,14 +134,14 @@ export function drawInteraction(
       if (measured) {
         const resizePoint = context.labelResizePoint(item);
         if (resizePoint) {
-          ctx.fillStyle = context.hoverLabelResize ? ACCENT : "#101619";
+          ctx.fillStyle = context.hoverLabelResize ? ACCENT : ON_ACCENT;
           ctx.strokeStyle = ACCENT;
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.rect(resizePoint.x - 4, resizePoint.y - 4, 8, 8);
           ctx.fill();
           ctx.stroke();
-          ctx.strokeStyle = context.hoverLabelResize ? "#101619" : ACCENT;
+          ctx.strokeStyle = context.hoverLabelResize ? ON_ACCENT : ACCENT;
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(resizePoint.x - 1.5, resizePoint.y + 1.5);

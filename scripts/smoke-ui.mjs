@@ -1181,7 +1181,7 @@ try {
 
   // Every other palette keeps a readable row surface and a footer strip that
   // stays distinct from both the rows and the panel behind them.
-  for (const theme of ["dark-grey", "jade", "navy"]) {
+  for (const theme of ["dark-grey", "jade", "navy", "slate", "graphite"]) {
     await themeSelect.selectOption(theme);
     const surfaces = await readLayerSurfaces(page);
     assert.ok(surfaces, `${theme}: the Layers sections should render their inset surfaces`);

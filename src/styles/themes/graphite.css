@@ -1,0 +1,107 @@
+/*
+ * Graphite theme: near-black neutral chrome. #2c2c2e is the panel base,
+ * #343a43 lifts menus, popovers and controls with white text, #444952 draws
+ * the borders and hover fills, #6e7178 stays the muted detail tone, and the
+ * accent is the same muted steel as Slate.
+ */
+
+:root[data-theme="graphite"] {
+  color-scheme: dark;
+
+  --bg: #26272a;
+  --bg-deep: #1b1c1e;
+  --panel: #2c2c2e;
+  --panel-raised: #343a43;
+  --panel-hover: #444952;
+  --border: #444952;
+  --border-soft: #35373b;
+  --text: #ffffff;
+  --text-strong: #ffffff;
+  --muted: #c2c7cf;
+  --muted-2: #b3b8c1;
+
+  --jade: #9db0c9;
+  --jade-bright: #c0d0e4;
+  --jade-dim: rgba(157, 176, 201, 0.16);
+  --on-accent: #1a1f26;
+  --cyan: #7fd4ea;
+  --amber: #e5b06a;
+  --violet: #bcaef0;
+  --danger: #ff8f8f;
+  --warning: #e8bc7a;
+
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+
+  --markups-bg: #2a2b2d;
+  --markups-head: #323337;
+  --markups-toolbar: #232426;
+  --markups-header: #343a43;
+  --markups-hover: #3d424b;
+  --markups-border: #444952;
+  --markups-row-border: #303236;
+
+  --chrome-topbar: linear-gradient(180deg, #303337 0%, #2a2b2e 100%);
+  --chrome-rail: linear-gradient(180deg, #2e3034 0%, #26272a 100%);
+  --surface-tab: #2c2c2e;
+  --surface-sunken: #26272a;
+  --surface-inset: #202123;
+  --surface-inset-foot: rgb(255 255 255 / 8%);
+  --statusbar-bg: #1d1e20;
+
+  --glass-panel: rgba(44, 44, 46, 0.96);
+  --glass-cropbar: rgba(38, 39, 41, 0.94);
+  --glass-strip: rgba(42, 43, 45, 0.97);
+  --glass-editor: rgba(24, 25, 27, 0.97);
+  --glass-editor-strong: rgba(24, 25, 27, 0.95);
+  --glass-editor-input: rgba(20, 21, 23, 0.6);
+  --glass-loading: rgba(33, 34, 36, 0.85);
+  --glass-controls: rgba(52, 58, 67, 0.94);
+  --glass-welcome: linear-gradient(180deg, rgba(56, 62, 72, 0.97), rgba(40, 41, 43, 0.98));
+  --modal-grad: linear-gradient(180deg, #3a3f48, #2c2c2e);
+  --modal-border: #4c525c;
+  --toast-bg: #343a43;
+  --input-sunken: #1f2022;
+
+  --overlay-lightbox: rgba(8, 9, 11, 0.9);
+  --hover-soft: rgba(255, 255, 255, 0.08);
+  --hover-softer: rgba(255, 255, 255, 0.05);
+  --hover-strong: rgba(255, 255, 255, 0.24);
+
+  --canvas-grid: rgba(200, 208, 220, 0.03);
+  --canvas-glow: rgba(157, 176, 201, 0.05);
+
+  --scrollbar: #444952;
+  --scrollbar-hover: #6e7178;
+  --border-hover: #6e7178;
+
+  --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.55);
+  --shadow-pop-sm: 0 12px 36px rgba(0, 0, 0, 0.5);
+  --shadow-toast: 0 8px 28px rgba(0, 0, 0, 0.42);
+  --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.32);
+  --shadow-strip: 0 8px 26px rgba(0, 0, 0, 0.42);
+  --shadow-label: 0 6px 22px rgba(0, 0, 0, 0.45);
+
+  --markups-inset: inset 0 1px 0 rgba(180, 190, 200, 0.18);
+  --hover-row: rgba(255, 255, 255, 0.016);
+  --placeholder: rgba(221, 225, 231, 0.46);
+  --hint: #8f949c;
+  --mark: rgba(229, 176, 106, 0.32);
+  --tool-dot-ring: #6e7178;
+  --help-row: rgba(255, 255, 255, 0.035);
+  --help-figure-shadow: rgba(0, 0, 0, 0.45);
+  --export-list: rgba(0, 0, 0, 0.16);
+
+  /* Placed takeoff table: printed-document roles, slate neutral. */
+  --table-paper: #ffffff;
+  --table-band-head: #e7eaef;
+  --table-band-row-alt: #eef1f4;
+  --table-band-group: #dbe0e6;
+  --table-band-subtotal: #e8ebef;
+  --table-band-total: #2b3138;
+  --table-ink: #1b2026;
+  --table-ink-strong: #0c1116;
+  --table-ink-inverse: #f8fafc;
+  --table-ink-muted: #5a636d;
+  --table-rule: #d0d7de;
+  --table-rule-strong: #94a0ab;
+}

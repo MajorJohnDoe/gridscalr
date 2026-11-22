@@ -1,7 +1,8 @@
 import { loadAppPreferences, saveAppPreferences, type ThemePreference } from "../io/appPreferences";
 import type { MessageKey } from "../i18n/types.generated";
 
-export type ThemeId = "medium-grey" | "light-green" | "dark-grey" | "jade" | "navy";
+export type ThemeId =
+  "medium-grey" | "light-green" | "dark-grey" | "jade" | "navy" | "slate" | "graphite";
 
 export interface ThemeOption {
   value: ThemePreference;
@@ -15,6 +16,8 @@ export const THEME_OPTIONS: ThemeOption[] = [
   { value: "dark-grey", labelKey: "theme.darkGrey" },
   { value: "jade", labelKey: "theme.jade" },
   { value: "navy", labelKey: "theme.navy" },
+  { value: "slate", labelKey: "theme.slate" },
+  { value: "graphite", labelKey: "theme.graphite" },
 ];
 
 const LIGHT_QUERY = "(prefers-color-scheme: light)";

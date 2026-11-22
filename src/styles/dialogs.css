@@ -348,7 +348,7 @@
 
 .page-import-tile.is-selected {
   border-color: var(--jade);
-  background: rgba(53, 194, 161, 0.1);
+  background: color-mix(in srgb, var(--jade) 10%, transparent);
 }
 
 .page-import-tile:not(.is-selected) .page-import-thumb {
@@ -982,7 +982,7 @@
 }
 
 .quantity-stat.is-net {
-  border-color: rgba(53, 194, 161, 0.2);
+  border-color: color-mix(in srgb, var(--jade) 20%, transparent);
 }
 
 .quantity-stat.is-net .quantity-stat-value {
@@ -990,8 +990,8 @@
 }
 
 .quantity-stat.is-order {
-  border-color: rgba(53, 194, 161, 0.32);
-  background: rgba(53, 194, 161, 0.06);
+  border-color: color-mix(in srgb, var(--jade) 32%, transparent);
+  background: color-mix(in srgb, var(--jade) 6%, transparent);
 }
 
 .quantity-stat.is-order .quantity-stat-value {
@@ -1016,7 +1016,7 @@
 
 .quantity-grand {
   padding: 8px;
-  border: 1px solid rgba(53, 194, 161, 0.2);
+  border: 1px solid color-mix(in srgb, var(--jade) 20%, transparent);
   border-radius: 7px;
   background: var(--jade-dim);
 }
@@ -1241,7 +1241,7 @@
 
 .inspector-restore:hover {
   color: var(--jade-bright);
-  border-color: rgba(53, 194, 161, 0.35);
+  border-color: color-mix(in srgb, var(--jade) 35%, transparent);
 }
 
 .inspector-restore[hidden] {
@@ -1250,7 +1250,7 @@
 
 .dock-restore:hover {
   color: var(--jade-bright);
-  border-color: rgba(53, 194, 161, 0.35);
+  border-color: color-mix(in srgb, var(--jade) 35%, transparent);
 }
 
 .dock-restore[hidden],
@@ -1294,7 +1294,7 @@
 
 .inspector-tab.is-active {
   color: var(--jade-bright);
-  background: rgba(53, 194, 161, 0.12);
+  background: color-mix(in srgb, var(--jade) 12%, transparent);
 }
 
 .inspector-tab:disabled {
@@ -1638,7 +1638,7 @@
 
 .layer-scope-btn.is-active {
   color: var(--jade-bright);
-  border-color: rgba(53, 194, 161, 0.35);
+  border-color: color-mix(in srgb, var(--jade) 35%, transparent);
   background: var(--jade-dim);
 }
 
@@ -1655,7 +1655,7 @@
   width: 100%;
   height: 22px;
   padding: 0 5px;
-  border: 1px solid rgba(53, 194, 161, 0.45);
+  border: 1px solid color-mix(in srgb, var(--jade) 45%, transparent);
   border-radius: 4px;
   background: var(--bg-deep);
   color: var(--text);

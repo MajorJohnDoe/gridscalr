@@ -42,6 +42,8 @@ export const A11Y_THEMES = [
   { id: "dark-grey", label: "Dark Gray" },
   { id: "jade", label: "Jade" },
   { id: "navy", label: "Navy" },
+  { id: "slate", label: "Slate" },
+  { id: "graphite", label: "Graphite" },
 ];
 
 /**

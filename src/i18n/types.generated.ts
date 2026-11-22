@@ -208,6 +208,8 @@ export type MessageKey =
   | "theme.darkGrey"
   | "theme.jade"
   | "theme.navy"
+  | "theme.slate"
+  | "theme.graphite"
   | "app.itemsCopied"
   | "menu.file"
   | "menu.edit"

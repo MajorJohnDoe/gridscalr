@@ -157,7 +157,7 @@
 
 .tool-variant-row.is-selected {
   background: var(--jade-dim);
-  border-color: rgba(53, 194, 161, 0.25);
+  border-color: color-mix(in srgb, var(--jade) 25%, transparent);
 }
 
 .tool-variant-check {

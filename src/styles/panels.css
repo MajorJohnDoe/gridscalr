@@ -48,7 +48,11 @@
 
 .inspector-section.selection-section {
   border-left: 2px solid var(--jade);
-  background: linear-gradient(180deg, rgba(53, 194, 161, 0.075), transparent 72%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--jade) 7.5%, transparent),
+    transparent 72%
+  );
 }
 
 .inspector-section.selection-section h2 {
@@ -179,7 +183,7 @@
 }
 
 .source-option.is-selected {
-  border-color: rgba(53, 194, 161, 0.55);
+  border-color: color-mix(in srgb, var(--jade) 55%, transparent);
   background: var(--jade-dim);
 }
 
@@ -230,8 +234,8 @@
 }
 
 .selection-card {
-  border: 1px solid rgba(53, 194, 161, 0.24);
-  background: rgba(53, 194, 161, 0.055);
+  border: 1px solid color-mix(in srgb, var(--jade) 24%, transparent);
+  background: color-mix(in srgb, var(--jade) 5.5%, transparent);
   border-radius: 7px;
   padding: 10px;
 }
@@ -332,7 +336,7 @@
 
 .layer-row.is-selected {
   background: var(--jade-dim);
-  border-color: rgba(53, 194, 161, 0.3);
+  border-color: color-mix(in srgb, var(--jade) 30%, transparent);
 }
 
 .layer-row.is-selected .layer-name {
@@ -559,7 +563,7 @@
 
 .layer-item-row.is-selected {
   background: var(--jade-dim);
-  border-color: rgba(53, 194, 161, 0.24);
+  border-color: color-mix(in srgb, var(--jade) 24%, transparent);
   color: var(--text);
 }
 
@@ -646,7 +650,7 @@
 }
 
 .page-card.is-active {
-  border-color: rgba(53, 194, 161, 0.4);
+  border-color: color-mix(in srgb, var(--jade) 40%, transparent);
   background: var(--jade-dim);
 }
 
@@ -741,8 +745,8 @@
 }
 
 .page-badge.is-calibrated {
-  background: rgba(53, 194, 161, 0.13);
-  color: color-mix(in srgb, var(--jade-bright) 75%, var(--text));
+  background: color-mix(in srgb, var(--jade) 13%, transparent);
+  color: color-mix(in srgb, var(--jade-bright) 50%, var(--text-strong));
 }
 
 /* ---------- Markups ---------- */
@@ -820,7 +824,7 @@
 }
 
 .markup-row:focus-visible {
-  outline: 1px solid rgba(53, 194, 161, 0.65);
+  outline: 1px solid color-mix(in srgb, var(--jade) 65%, transparent);
   outline-offset: -1px;
 }
 
@@ -829,7 +833,7 @@
   min-width: 0;
   height: 20px;
   padding: 0 4px;
-  border: 1px solid rgba(53, 194, 161, 0.7);
+  border: 1px solid color-mix(in srgb, var(--jade) 70%, transparent);
   border-radius: 3px;
   outline: none;
   background: var(--bg-deep);
@@ -840,7 +844,7 @@
 
 .markup-row.is-selected {
   background: var(--jade-dim);
-  border-color: rgba(53, 194, 161, 0.25);
+  border-color: color-mix(in srgb, var(--jade) 25%, transparent);
 }
 
 .markup-icon {
@@ -1016,8 +1020,8 @@
 
 .status-chip.is-calibrated {
   color: var(--jade-bright);
-  border-color: rgba(53, 194, 161, 0.28);
-  background: rgba(53, 194, 161, 0.08);
+  border-color: color-mix(in srgb, var(--jade) 28%, transparent);
+  background: color-mix(in srgb, var(--jade) 8%, transparent);
 }
 
 .status-chip.is-warning {
@@ -1028,8 +1032,8 @@
 
 .status-chip.is-selected {
   color: var(--jade-bright);
-  border-color: rgba(53, 194, 161, 0.3);
-  background: rgba(53, 194, 161, 0.1);
+  border-color: color-mix(in srgb, var(--jade) 30%, transparent);
+  background: color-mix(in srgb, var(--jade) 10%, transparent);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-size: 11px;

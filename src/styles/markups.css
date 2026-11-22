@@ -328,7 +328,7 @@
   width: min(240px, 100%);
   height: 22px;
   padding: 0 5px;
-  border: 1px solid rgba(53, 194, 161, 0.45);
+  border: 1px solid color-mix(in srgb, var(--jade) 45%, transparent);
   border-radius: 4px;
   background: var(--bg-deep);
   color: var(--text);
@@ -577,7 +577,7 @@
 
 .compare-restore:hover {
   color: var(--jade-bright);
-  border-color: rgba(53, 194, 161, 0.35);
+  border-color: color-mix(in srgb, var(--jade) 35%, transparent);
 }
 
 .compare-restore[hidden] {
@@ -798,7 +798,7 @@
 }
 
 .compare-row.is-selected {
-  background: rgba(53, 194, 161, 0.12);
+  background: color-mix(in srgb, var(--jade) 12%, transparent);
   box-shadow: inset 2px 0 0 var(--jade);
 }
 
@@ -935,8 +935,8 @@
 }
 
 .search-field:focus-within {
-  border-color: rgba(53, 194, 161, 0.65);
-  box-shadow: 0 0 0 2px rgba(53, 194, 161, 0.1);
+  border-color: color-mix(in srgb, var(--jade) 65%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--jade) 10%, transparent);
 }
 
 .search-field-icon {
@@ -991,7 +991,7 @@
 
 .search-result:hover,
 .search-result.is-active {
-  background: rgba(53, 194, 161, 0.1);
+  background: color-mix(in srgb, var(--jade) 10%, transparent);
 }
 
 .search-result.is-active {

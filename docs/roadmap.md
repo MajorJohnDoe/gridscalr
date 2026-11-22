@@ -375,7 +375,7 @@ full list.
 | PDF vector geometry snapping | A candidate spike, not scheduled. |
 | Count schedule attributes | Not scheduled; no width, height or fire rating. |
 | Statutory area classifications | Not implemented. BTA/BRA/NTA/LOA are not calculated; categories and rooms are user-defined. |
-| Theme | Medium Gray is the default; Light, Dark Gray, Dark Jade and Navy are optional, with System following the OS preference. |
+| Theme | Medium Gray is the default; Light, Dark Gray, Dark Jade, Navy, Slate and Graphite are optional, with System following the OS preference. |
 | Project package format | Standard `.gridscalr.zip` with manifest and relative paths. See [ADR 0002](adr/0002-project-package.md). |
 | 1.0 | A quality gate, not a schedule. See the release gate above. |
 

@@ -19,8 +19,8 @@ import {
   type BoxHandleRole,
 } from "./geometry";
 import { t } from "../i18n";
+import { canvasAccent } from "./themeAccent";
 
-const ACCENT = "#35c2a1";
 const FONT_STACK = TEXT_FONT_STACK;
 
 interface CropDrag {
@@ -210,6 +210,7 @@ export class CropController {
     const mode = this.mode;
     const size = this.host.pageSize();
     if (!mode || !size) return false;
+    const { accent: ACCENT, onAccent: ON_ACCENT } = canvasAccent();
     const pageTopLeft = this.host.toScreen({ x: 0, y: 0 });
     const pageBottomRight = this.host.toScreen({ x: size.width, y: size.height });
     const pageRect = {
@@ -270,7 +271,7 @@ export class CropController {
     ctx.strokeRect(crop.x + 0.75, crop.y + 0.75, crop.width, crop.height);
     ctx.setLineDash([]);
 
-    ctx.fillStyle = "#101619";
+    ctx.fillStyle = ON_ACCENT;
     ctx.strokeStyle = ACCENT;
     ctx.lineWidth = 1.5;
     for (const [, point] of this.handlePoints(mode.rect)) {

@@ -203,7 +203,7 @@ src/
   ui/                    top menu, sidebar, page/layer lists, Markups panel, context bar, inspector, status bar
   ui/dialogs.ts         project calibration, manual-scale and recovery dialogs; re-exports the shared dialog host prompts
   styles/tokens.css      theme token contract and semantic aliases
-  styles/themes/         medium grey default, light green, dark grey, jade and navy palettes plus chrome overrides
+  styles/themes/         medium grey default, light green, dark grey, jade, navy, slate and graphite palettes plus chrome overrides
   theme/theme.ts         theme preference resolution, application and System-mode watching
   public/boot-theme.js   CSP-safe pre-paint theme bootstrap
   styles/base.css        reset, typography and shared utilities

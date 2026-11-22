@@ -18,6 +18,8 @@ const screenshots = [
   "theme-dark-grey.png",
   "theme-jade.png",
   "theme-navy.png",
+  "theme-slate.png",
+  "theme-graphite.png",
   "measure.png",
   "calibration.png",
   "markups.png",

@@ -4,6 +4,8 @@ import "./styles/themes/jade.css";
 import "./styles/themes/light-green.css";
 import "./styles/themes/dark-grey.css";
 import "./styles/themes/navy.css";
+import "./styles/themes/slate.css";
+import "./styles/themes/graphite.css";
 import "./styles/base.css";
 import "./styles/shell.css";
 import "./styles/rail.css";
