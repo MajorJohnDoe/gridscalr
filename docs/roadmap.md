@@ -5,7 +5,7 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.31.0** · Project-file schema: **28, in development**
+Current version: **0.32.0** · Project-file schema: **28, in development**
 
 1.0 is **deferred** and remains a quality gate, not a target date. Work is
 organised by foundation slices so the product can release pre-1.0 minors while
@@ -139,6 +139,16 @@ effort shipped as **0.30.0** on 2026-11-20
 ([`release-notes/0.30.0.md`](release-notes/0.30.0.md)) with no schema change, and
 the phase records are in
 [`plan/takeoff-improvements-handover.md`](plan/takeoff-improvements-handover.md).
+
+**Performance panel** shipped as **0.32.0** on 2026-11-23
+([`release-notes/0.32.0.md`](release-notes/0.32.0.md)): an opt-in recorder and
+movable panel under **Help → Diagnostics** that measures frame time, main-thread
+long tasks, named spans, PDF rasterisation and heap, plus the same block in
+**Copy diagnostics**. No schema field changed and schema 28 stays the current
+development schema. Issue
+[#345](https://github.com/MajorJohnDoe/gridscalr/issues/345); the file-budget
+gap it exposed is recorded as F-144 in
+[`plan/foundation-findings.md`](plan/foundation-findings.md).
 
 Schema 28 shipped in 0.29.0, not in the released 0.28.0 binary. The quality gate
 for 1.0 is unchanged: Windows, macOS and Linux artifacts, the two interface
