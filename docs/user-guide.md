@@ -1096,6 +1096,7 @@ Open **Settings → Preferences…**. The dialog groups app-level choices by cat
 - **Data** – autosave, rolling backups, recovery snapshots and the recent-file list.
   **Autosave recovery** turns snapshots on or off, sets the **Write at most every** interval to 15, 30 or 60 seconds, and offers **Pause for this session**. The current state is explained below the controls. **Rolling backups** sets **Backups kept per project** from 2 to 10 (default 3); the new limit applies on the next successful save, and **Open backup manager…** opens the manager for the open project.
   **Open recovery center…** lists every stored autosave and structural checkpoint, where one selected record can be restored or deleted and the storage total and per-project size are shown. **Clear recovery data** removes every stored recovery snapshot and structural checkpoint, and **Clear recent files** removes the recent-file list. These remove local convenience data only; project files and source drawings are never touched. Missing recent files are marked and can be removed one at a time.
+- **Diagnostics** – **Enable the performance panel** turns on the opt-in recorder and its movable panel. It is off until you enable it, and closing the panel turns the recording off again. The panel is described under [The app feels slow](#the-app-feels-slow).
 
 ![Preferences dialog on the Data category with autosave controls, rolling backup retention and the recovery center action](screenshots/preferences-data.png)
 
@@ -1121,8 +1122,9 @@ Project settings are stored in the `.gridscalr` file and are undoable while the 
 - **Help → Workflows** opens task-oriented guides for operations technicians and technical property managers.
 - **Help → User guide** (`F1`) opens this guide inside the app.
 - **Help → Keyboard shortcuts** (`?`) opens the shortcut reference.
-- **Help → Copy diagnostics** copies a report with the app version, project schema, platform, WebView version, build mode, viewport, autosave state, recovery storage use (total and per project, without names or paths) and anonymised project statistics (documents, pages, layers, items by kind, categories, count types, embedded data size). It never includes the project name, drawing names, labels or file paths. The last few runtime events are included; see [Troubleshooting](#troubleshooting).
-- **Help → Report a problem…** shows the same diagnostics next to the issue tracker link, with buttons to copy both.
+- **Help → Diagnostics → Copy diagnostics** copies a report with the app version, project schema, platform, WebView version, build mode, viewport, autosave state, recovery storage use (total and per project, without names or paths) and anonymised project statistics (documents, pages, layers, items by kind, categories, count types, embedded data size). It never includes the project name, drawing names, labels or file paths. The last few runtime events are included; see [Troubleshooting](#troubleshooting).
+- **Help → Diagnostics → Report a problem…** shows the same diagnostics next to the issue tracker link, with buttons to copy both.
+- **Help → Diagnostics → Performance panel** opens the opt-in performance panel. It is off until it is enabled in **Preferences → Diagnostics**, and closing the panel stops the recording. The panel is described under [The app feels slow](#the-app-feels-slow).
 - **Help → About GridScalr** shows the installed version and project schema.
 
 The help content is bundled with the application. It does not use the network. Use the search field to filter the current topic, or the table of contents to jump between sections. Screenshots can be clicked to open them at full size.
@@ -1152,6 +1154,20 @@ The full list is in **Help → Keyboard shortcuts** and in [shortcuts.md](shortc
 
 ## Troubleshooting
 
+### The app feels slow
+
+Open **Preferences → Diagnostics** and enable the performance panel, or choose **Help → Diagnostics → Performance panel**. It floats above the drawing, can be dragged by its header, and reports:
+
+- **Frame now** – how long the last frame took: green below 20 ms, amber from 20 ms, red from 50 ms.
+- **Worst (30 s)** – the slowest frame of the last 30 seconds and how long ago it happened, so a stall can be tied to what you were doing.
+- **Blocked** – how much time the interface spent unable to answer input in the last two seconds, and the long tasks that caused it.
+- **Heap** – the working set against the documented 2 GB budget. This row exists on Windows only; macOS and Linux do not expose it.
+- **Project** – page, item and embedded-data counts, so a number is always read against the project it came from.
+
+The sparkline shows 30 seconds of frame time with a mark under every page render, undo, save and autosave. **Show details** adds a table of named spans — serialising the project, shell rendering, canvas redraw, PDF rasterisation, operator-list building, thumbnails, autosave and project open — with count, p50, p95 and max.
+
+**Hold** freezes the last window so a spike can be read; **Copy summary** copies the same technical block, which is also appended to **Copy diagnostics**. It carries counts, durations and sizes only, never a project name, item label or drawing path, so it is safe to attach to a public issue. The panel is a support aid rather than a benchmark: nothing is recorded while it is closed, nothing is uploaded, and nothing is written to the project file.
+
 ### The scale looks wrong
 
 Check that the page is calibrated or has the correct manual `1:N` ratio, and that the page scale is not locked. Applying a scale to all pages skips locked pages.
@@ -1180,12 +1196,12 @@ Restart the app and make sure Microsoft Edge WebView2 is up to date. On Linux, c
 
 ### Autosave is failing
 
-When the recovery snapshot cannot be written, the status bar shows a persistent **Autosave failing** chip until an autosave succeeds again. If the local store is full, the chip reads **Recovery storage full** and opens the recovery center when clicked, so old records can be deleted. The project stays open and saving to a file still works; free local storage or close other browser tabs, then continue editing. Use **Help → Copy diagnostics** to include the message and recent events in a bug report. Autosave never stores drawing content in the log; paths and names are stripped.
+When the recovery snapshot cannot be written, the status bar shows a persistent **Autosave failing** chip until an autosave succeeds again. If the local store is full, the chip reads **Recovery storage full** and opens the recovery center when clicked, so old records can be deleted. The project stays open and saving to a file still works; free local storage or close other browser tabs, then continue editing. Use **Help → Diagnostics → Copy diagnostics** to include the message and recent events in a bug report. Autosave never stores drawing content in the log; paths and names are stripped.
 
 ### Something failed without a message
 
-Runtime errors are recorded in a local, rolling log of the last 80 events (no drawing content, labels or paths). **Help → Copy diagnostics** includes the most recent entries so a maintainer can see what happened after startup. The log is stored on this computer only and is never uploaded.
+Runtime errors are recorded in a local, rolling log of the last 80 events (no drawing content, labels or paths). **Help → Diagnostics → Copy diagnostics** includes the most recent entries so a maintainer can see what happened after startup. The log is stored on this computer only and is never uploaded.
 
 ### An error dialog mentions a file path
 
-A failed file operation keeps the technical detail on screen because it helps troubleshooting, and that detail can include a folder or drawing name. When the message contains an absolute path, the dialog offers **Copy sanitized details**, which copies the same message with paths replaced by `<path>` and keeps the error code. **Help → Copy diagnostics** never includes paths.
+A failed file operation keeps the technical detail on screen because it helps troubleshooting, and that detail can include a folder or drawing name. When the message contains an absolute path, the dialog offers **Copy sanitized details**, which copies the same message with paths replaced by `<path>` and keeps the error code. **Help → Diagnostics → Copy diagnostics** never includes paths.

@@ -27,6 +27,7 @@ import "./styles/help.css";
 import "./styles/popovers.css";
 import "./styles/themes/chrome.css";
 import "./styles/status.css";
+import "./styles/perfMonitor.css";
 import "./styles/responsive.css";
 import { App } from "./app/App";
 import { installDiagnosticsLogging, logEvent } from "./features/diagnostics/log";

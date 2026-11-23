@@ -37,6 +37,7 @@ const FOUNDATION_FEATURES = [
   "src/features/schedules",
   "src/features/takeoffSettings",
   "src/features/dialogHost",
+  "src/features/perfMonitor",
 ];
 
 const frontendErrors = [];

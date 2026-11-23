@@ -19,6 +19,7 @@ import {
 } from "../model/layers";
 import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { deleteItems, translateItems } from "../model/commands";
+import { perfMark, perfSpan, perfSpanAsync } from "../features/perfMonitor";
 
 import { focusViewTransform, isCancellation, pointInBox } from "./geometry";
 import { CropController } from "./crop";
@@ -1078,7 +1079,10 @@ export class CanvasView {
     this.rendering = true;
     this.loading.classList.add("is-visible");
     try {
-      const result = await renderer.renderCrop(page, crop, this.viewZoom * this.dpr);
+      const result = await perfSpanAsync("pdf-raster", () =>
+        renderer.renderCrop(page, crop, this.viewZoom * this.dpr),
+      );
+      perfMark("raster");
       if (generation !== this.renderGeneration) return;
       if (page !== this.viewPage) return;
       this.lastRender = result;
@@ -1104,10 +1108,12 @@ export class CanvasView {
   }
 
   private drawAll(): void {
-    this.drawBase();
-    this.drawContent();
-    this.drawInteraction();
-    this.updateCursor();
+    perfSpan("canvas-redraw", () => {
+      this.drawBase();
+      this.drawContent();
+      this.drawInteraction();
+      this.updateCursor();
+    });
   }
 
   private drawBase(): void {

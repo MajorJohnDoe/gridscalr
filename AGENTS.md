@@ -497,6 +497,9 @@ src/features/conflictedCopies/ strict discovery naming, delete guards, manager f
 src/features/statusOverview/ pure project-status model, one-read controller and the status popover
 src/features/viewOnly/ inspection-tool rule and the panel guard for a true view-only session
 src/features/sessionRecovery/ scoped autosave, byte-budgeted recovery store, recovery center, lease takeover and external-change watcher
+src/features/perfMonitor/ opt-in performance recorder (frame sampling, long tasks, named spans), movable panel, support summary
+src/features/perfMonitor/model.ts pure sample buffers, window statistics and the path-free summary text
+src/features/perfMonitor/recorder.ts rAF sampling, long-task observer, span timing and heap reads
 src/features/schematics/   operation-card templates, sheet fields, symbol catalogue surface, fit and dialogs
 src/features/schematics/index.ts public surface for sheet templates, rendering, symbols and dialogs
 src/features/schematics/symbols/registry.ts localized symbol labels, search text and render-plan wrappers

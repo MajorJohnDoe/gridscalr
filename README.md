@@ -376,6 +376,8 @@ npm run docs:demo   # fixtures/demo-project.gridscalr
 The same reference material ships inside the app: **Help → User guide**,
 **Help → Workflows**, **Help → Keyboard shortcuts** and **Help → About**, which
 reports the running version and the project-file schema read from the code.
+**Help → Diagnostics** holds **Copy diagnostics**, **Report a problem…** and the
+opt-in **Performance panel**.
 
 ## Privacy and security
 
@@ -410,6 +412,14 @@ surface, the repair planner with its filters and preview, the project doctor,
 source availability and explicit
 unused managed-copy cleanup, load-report presentation and path-free diagnostics;
 `src/model/integrity.ts` holds the pure rules.
+`src/features/perfMonitor/` owns the opt-in performance recorder — frame
+sampling, long-task observation and the named spans `serialize`, `shell-render`,
+`canvas-redraw`, `pdf-raster`, `pdf-operator-list`, `thumbnail`,
+`autosave-write` and `project-open` — the movable panel with its 30 s sparkline,
+and the support summary that **Copy diagnostics** appends. It is off until
+enabled in **Preferences → Diagnostics**, reads the same budget functions the
+app already enforces, and reports counts, durations and sizes only, never a
+project name, item label or path.
 The fields and spaces features in `src/features/fields/` and
 `src/features/spaces/` own typed property definitions, field sets, the room
 register and derived room areas; `src/features/schedules/` reads `spaceAreas()`

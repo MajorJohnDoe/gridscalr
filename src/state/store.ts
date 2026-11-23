@@ -8,6 +8,7 @@ import {
   type DuplicatePageOptions,
   type DuplicatePageSummary,
 } from "../features/pageModel";
+import { perfMark, perfSpan } from "../features/perfMonitor";
 import { includedLocalPages } from "../model/documents";
 import {
   currentPageId,
@@ -858,15 +859,21 @@ export class Store {
   }
 
   private snapshot(): string | null {
-    if (!this.project) return null;
+    const project = this.project;
+    if (!project) return null;
     const imagePayloads = new Set<string>();
-    for (const asset of Object.values(this.project.assets ?? {})) {
+    for (const asset of Object.values(project.assets ?? {})) {
       if (!asset.data) continue;
       this.assetPayloads.set(asset.id, asset.data);
       imagePayloads.add(asset.data);
     }
-    return JSON.stringify(this.project, (_key, value) =>
-      typeof value === "string" && imagePayloads.has(value) ? undefined : value,
+    return perfSpan(
+      "serialize",
+      () =>
+        JSON.stringify(project, (_key, value) =>
+          typeof value === "string" && imagePayloads.has(value) ? undefined : value,
+        ),
+      (text) => text.length,
     );
   }
 
@@ -941,6 +948,7 @@ export class Store {
     if (this.readOnly) return;
     const previous = this.undoStack.pop();
     if (!previous || !this.project) return;
+    perfMark("undo");
     const visiblePageId = currentPageId(this.project, this.ui.page);
     pushHistory(this.redoStack, this.snapshot() ?? JSON.stringify(this.project));
     this.project = this.restoreSnapshot(previous);
@@ -952,6 +960,7 @@ export class Store {
     if (this.readOnly) return;
     const next = this.redoStack.pop();
     if (!next || !this.project) return;
+    perfMark("redo");
     const visiblePageId = currentPageId(this.project, this.ui.page);
     pushHistory(this.undoStack, this.snapshot() ?? JSON.stringify(this.project));
     this.project = this.restoreSnapshot(next);

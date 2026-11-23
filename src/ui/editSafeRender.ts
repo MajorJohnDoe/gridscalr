@@ -1,4 +1,5 @@
 import type { ChangeReason } from "../state/store";
+import { perfSpan } from "../features/perfMonitor";
 import {
   captureField,
   isEditableField,
@@ -171,12 +172,14 @@ function flush(root: HTMLElement, state: ShellRenderState): void {
   state.snapshot = null;
   state.running = true;
   try {
-    let passes = 0;
-    do {
-      if (state.queued > 0) state.queued -= 1;
-      state.paint();
-      passes += 1;
-    } while (state.queued > 0 && passes < MAX_RENDERS_PER_FLUSH);
+    perfSpan("shell-render", () => {
+      let passes = 0;
+      do {
+        if (state.queued > 0) state.queued -= 1;
+        state.paint();
+        passes += 1;
+      } while (state.queued > 0 && passes < MAX_RENDERS_PER_FLUSH);
+    });
   } finally {
     state.running = false;
     state.queued = 0;
