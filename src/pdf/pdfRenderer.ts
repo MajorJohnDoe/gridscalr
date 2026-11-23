@@ -7,6 +7,7 @@ import {
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { pageOrderSignature, type DocumentPageOrderEntry } from "../model/pages";
 import type { PageSize, Point } from "../model/types";
+import { perfSpanAsync } from "../features/perfMonitor";
 import { contentBoundsFromPixels } from "./thumbnails";
 import { t } from "../i18n";
 
@@ -255,7 +256,7 @@ export class PdfRenderer {
     // Images (including CCITT/JBIG2 decoded through WASM) are attached to the
     // operator list. Building it up front prevents a blank first paint while
     // the image is still pending in the worker.
-    await page.getOperatorList();
+    await perfSpanAsync("pdf-operator-list", () => page.getOperatorList());
     this.pages.set(pageNumber, page);
     return page;
   }
@@ -278,7 +279,7 @@ export class PdfRenderer {
    */
   async renderPageThumbnail(pageNumber: number, maxDimension = 256): Promise<HTMLCanvasElement> {
     const page = await this.getPage(pageNumber);
-    return renderPagePreview(page, maxDimension, true);
+    return perfSpanAsync("thumbnail", () => renderPagePreview(page, maxDimension, true));
   }
 
   async getDocumentData(index: number): Promise<Uint8Array> {

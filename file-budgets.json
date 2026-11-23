@@ -19,17 +19,18 @@
     "src/features/fields": 400,
     "src/features/spaces": 400,
     "src/features/schedules": 400,
-    "src/features/takeoffSettings": 400
+    "src/features/takeoffSettings": 400,
+    "src/features/perfMonitor": 400
   },
   "files": {
-    "src/app/App.ts": 1094,
-    "src/canvas/CanvasView.ts": 1516,
+    "src/app/App.ts": 1100,
+    "src/canvas/CanvasView.ts": 1522,
     "src/canvas/editors.ts": 2,
     "src/canvas/itemRenderer.ts": 15,
     "src/features/schematics/model/sheetTemplate.ts": 714,
     "src/model/labelLayout.ts": 812,
     "src/pdf/pdfExport.ts": 117,
-    "src/state/store.ts": 993,
+    "src/state/store.ts": 1002,
     "src/styles/dialogs.css": 1694,
     "src/styles/markups.css": 1051,
     "src/styles/panels.css": 1099,

@@ -35,6 +35,7 @@ import { resetPanelLayout, setInspectorCollapsed, setSidebarCollapsed } from "./
 import { categoryLayout, field, presetEditor, section } from "./settingsControls";
 import { autosaveSection } from "./settings/autosave";
 import { backupSection } from "./settings/backups";
+import { diagnosticsSection } from "./settings/diagnostics";
 import { toast } from "./toast";
 
 let activePreferencesClose: (() => void) | null = null;
@@ -408,6 +409,11 @@ function buildPreferencesLayout(initialId?: string) {
       { id: "layers", label: t("preferences.layers"), render: layersSection },
       { id: "stamps", label: t("preferences.stamps"), render: stampsSection },
       { id: "data", label: t("preferences.data"), render: dataSection },
+      {
+        id: "diagnostics",
+        label: t("preferences.diagnostics.title"),
+        render: () => [diagnosticsSection()],
+      },
     ],
     initialId,
   );

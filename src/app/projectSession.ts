@@ -23,6 +23,7 @@ import {
 import { assertWritablePath } from "../io/writeGuard";
 import { describeError } from "../io/platformError";
 import { logEvent } from "../features/diagnostics/log";
+import { perfSpanAsync } from "../features/perfMonitor";
 import { chooseProjectSource, type SheetSourceChoice } from "../features/schematics";
 import { messageDialog, unsavedChangesDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
@@ -314,6 +315,10 @@ export class ProjectSession {
 
   /** Loads a project and captures the disk version it was loaded from. */
   private async loadProjectTextWithStamp(text: string, path: string | null): Promise<boolean> {
+    return perfSpanAsync("project-open", () => this.loadProjectTextTracked(text, path));
+  }
+
+  private async loadProjectTextTracked(text: string, path: string | null): Promise<boolean> {
     let parsed: Project | null = null;
     try {
       parsed = parseProject(text);

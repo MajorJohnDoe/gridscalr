@@ -40,6 +40,7 @@ const UI_ALLOWLIST = new Set(["GridScalr", "pt"]);
  */
 const TEMPLATE_EXCLUDE_FILES = new Set([
   "src/features/diagnostics/model.ts",
+  "src/features/perfMonitor/model.ts",
   "src/features/projectPackage/model.ts",
   "src/help/markdown.ts",
   "src/model/symbolPaths.ts",

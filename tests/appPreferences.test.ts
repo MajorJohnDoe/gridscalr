@@ -40,6 +40,7 @@ describe("app preferences", () => {
       theme: "medium-grey",
       autosave: { enabled: true, intervalSeconds: 15 },
       backups: { retention: 3 },
+      performance: { recording: false },
     });
   });
 
@@ -62,6 +63,7 @@ describe("app preferences", () => {
       ...DEFAULT_APP_PREFERENCES,
       autosave: { enabled: true, intervalSeconds: 15 },
       backups: { retention: 3 },
+      performance: { recording: false },
     });
   });
 
@@ -73,6 +75,7 @@ describe("app preferences", () => {
       theme: "medium-grey",
       autosave: { enabled: true, intervalSeconds: 15 },
       backups: { retention: 3 },
+      performance: { recording: false },
     });
 
     localStorage.setItem("gridscalr.preferences.v1", JSON.stringify({ csvFormat: "interchange" }));
@@ -82,6 +85,7 @@ describe("app preferences", () => {
       theme: "medium-grey",
       autosave: { enabled: true, intervalSeconds: 15 },
       backups: { retention: 3 },
+      performance: { recording: false },
     });
   });
 
@@ -96,6 +100,7 @@ describe("app preferences", () => {
       theme: "navy",
       autosave: { enabled: true, intervalSeconds: 15 },
       backups: { retention: 3 },
+      performance: { recording: false },
     });
   });
 
@@ -149,6 +154,7 @@ describe("app preferences", () => {
       theme: "medium-grey",
       autosave: { enabled: true, intervalSeconds: 15 },
       backups: { retention: 3 },
+      performance: { recording: false },
     });
     expect(loadAppPreferences()).toEqual(saved);
 
@@ -159,6 +165,7 @@ describe("app preferences", () => {
       theme: "medium-grey",
       autosave: { enabled: true, intervalSeconds: 15 },
       backups: { retention: 3 },
+      performance: { recording: false },
     });
     expect(loadAppPreferences()).toEqual(next);
   });
@@ -178,6 +185,7 @@ describe("app preferences", () => {
       theme: "medium-grey",
       autosave: { enabled: true, intervalSeconds: 30 },
       backups: { retention: 3 },
+      performance: { recording: false },
     });
     expect(loadAppPreferences()).toEqual(enabled);
   });
@@ -190,6 +198,7 @@ describe("app preferences", () => {
       theme: "medium-grey",
       autosave: { enabled: true, intervalSeconds: 15 },
       backups: { retention: 6 },
+      performance: { recording: false },
     });
     expect(loadAppPreferences()).toEqual(saved);
 
@@ -201,5 +210,22 @@ describe("app preferences", () => {
     saveAppPreferences({ language: "sv", csvFormat: "interchange" });
     expect(resetAppPreferences()).toEqual(DEFAULT_APP_PREFERENCES);
     expect(loadAppPreferences()).toEqual(DEFAULT_APP_PREFERENCES);
+  });
+
+  it("keeps the performance panel opt-in", () => {
+    expect(loadAppPreferences().performance).toEqual({ recording: false });
+
+    const saved = saveAppPreferences({ performance: { recording: true } });
+    expect(saved.performance).toEqual({ recording: true });
+    expect(loadAppPreferences().performance).toEqual({ recording: true });
+
+    // Only an explicit true enables recording; a hand-edited value does not.
+    localStorage.setItem(
+      "gridscalr.preferences.v1",
+      JSON.stringify({ performance: { recording: "yes" } }),
+    );
+    expect(loadAppPreferences().performance).toEqual({ recording: false });
+    localStorage.setItem("gridscalr.preferences.v1", JSON.stringify({ performance: null }));
+    expect(loadAppPreferences().performance).toEqual({ recording: false });
   });
 });

@@ -33,6 +33,11 @@ export interface BackupPreference {
   retention: number;
 }
 
+/** Opt-in performance recorder and panel. Off until the user turns it on. */
+export interface PerformancePreference {
+  recording: boolean;
+}
+
 export interface AppPreferences {
   /** UI language. `system` follows the operating system locale. */
   language: LanguagePreference;
@@ -44,6 +49,8 @@ export interface AppPreferences {
   autosave: AutosavePreference;
   /** Rolling backup retention applied on the next successful save. */
   backups: BackupPreference;
+  /** Performance panel and its recorder. */
+  performance: PerformancePreference;
 }
 
 const PREFERENCES_KEY = "gridscalr.preferences.v1";
@@ -54,6 +61,7 @@ export const DEFAULT_APP_PREFERENCES: AppPreferences = {
   theme: "medium-grey",
   autosave: { enabled: true, intervalSeconds: 15 },
   backups: { retention: DEFAULT_BACKUP_RETENTION },
+  performance: { recording: false },
 };
 
 function isLanguage(value: unknown): value is LanguagePreference {
@@ -117,11 +125,18 @@ export function normalizeBackupPreference(value: unknown): BackupPreference {
   };
 }
 
+/** The performance panel is opt-in; only an explicit `true` enables it. */
+export function normalizePerformancePreference(value: unknown): PerformancePreference {
+  const record = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  return { recording: record.recording === true };
+}
+
 function defaultPreferences(): AppPreferences {
   return {
     ...DEFAULT_APP_PREFERENCES,
     autosave: { ...DEFAULT_APP_PREFERENCES.autosave },
     backups: { ...DEFAULT_APP_PREFERENCES.backups },
+    performance: { ...DEFAULT_APP_PREFERENCES.performance },
   };
 }
 
@@ -138,6 +153,7 @@ export function loadAppPreferences(): AppPreferences {
       theme: normalizeTheme(parsed.theme),
       autosave: normalizeAutosavePreference(parsed.autosave),
       backups: normalizeBackupPreference(parsed.backups),
+      performance: normalizePerformancePreference(parsed.performance),
     };
   } catch {
     return defaultPreferences();

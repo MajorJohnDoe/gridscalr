@@ -8,6 +8,7 @@ import {
   listRecoveryRecords,
   writeAutosaveRecord,
 } from "./autosave";
+import { perfMark, perfSpanAsync } from "../perfMonitor";
 import {
   autosaveIntervalMs,
   autosaveState,
@@ -328,16 +329,19 @@ export class SessionRecoveryController {
     const path = store.projectPath;
     if (this.lastAutosave?.revision === revision && this.lastAutosave.path === path) return;
     try {
-      await writeAutosaveRecord({
-        projectId: project.id,
-        projectName: project.name,
-        projectPath: path,
-        instanceId: this.instanceId,
-        baseFileSha256: store.fileStamp?.sha256 ?? null,
-        savedAt: new Date().toISOString(),
-        serialized: JSON.stringify(project),
-        appVersion: appVersion(),
-      });
+      await perfSpanAsync("autosave-write", () =>
+        writeAutosaveRecord({
+          projectId: project.id,
+          projectName: project.name,
+          projectPath: path,
+          instanceId: this.instanceId,
+          baseFileSha256: store.fileStamp?.sha256 ?? null,
+          savedAt: new Date().toISOString(),
+          serialized: JSON.stringify(project),
+          appVersion: appVersion(),
+        }),
+      );
+      perfMark("autosave");
       this.lastAutosave = { revision, path };
       this.lastAutosaveAt = Date.now();
       if (store.autosaveError) {

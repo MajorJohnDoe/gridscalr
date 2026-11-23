@@ -122,6 +122,8 @@ import {
 import { toast } from "../ui/toast";
 import { loadLayerColorDefaults } from "../io/layerDefaults";
 import { logEvent } from "../features/diagnostics/log";
+import { projectStats } from "../features/diagnostics/model";
+import { installPerfPanel, refreshPerfPanel } from "../features/perfMonitor";
 import { writeProjectConditional } from "../features/saveIntegrity";
 import type { SessionRecoveryController } from "../features/sessionRecovery";
 import { openLineTypeDialog, openRailDialog, openSheetFieldsDialog } from "../features/schematics";
@@ -328,6 +330,9 @@ export class App {
       openProjectDoctor: () => void openProjectDoctorFlow(this.projectDoctorHost()),
     };
     setMenuActions(this.actions);
+    installPerfPanel({
+      projectShape: () => (store.project ? projectStats(store.project) : null),
+    });
     this.windowControls = mountWindowControls(this.refs.topbar, {
       quit: () => void this.session.quitFlow(),
     });
@@ -510,6 +515,7 @@ export class App {
 
   private readonly onLanguageChanged = (): void => {
     relabelShell(this.refs);
+    refreshPerfPanel();
     resetStatusBar();
     this.renderAll();
     this.canvas.invalidate();

@@ -3604,3 +3604,27 @@ remains the scheduling home.
   states that DOM order is deterministic but does not decide paint order.
 - **Related:** #321, #322, #332, #333, #338, ADR 0017,
   `src/features/dialogHost/controller.ts`, `src/styles/dialogs.css`.
+
+### F-144 — The frontend file budget does not enforce the documented 400 lines for a new foundation feature
+
+- **Problem:** ADR 0013 and `AGENTS.md` say a new file targets 300 lines and must
+  not exceed 400. `file-budgets.json` enforces 400 only for directories listed in
+  `directoryMax`; every other frontend file falls under `defaultMax: 700`. A new
+  foundation feature directory that is not added to `directoryMax` therefore
+  gets 700 lines of headroom from a mechanical gate that claims 400.
+- **Impact:** The first `perfMonitor/panel.ts` reached 439 lines and
+  `check:file-budgets` passed. The limit was only noticed by hand. A reviewer who
+  trusts the gate would merge an oversized file, which is the exact drift
+  `--update` and the `directoryMax` list exist to prevent.
+- **Worked around:** `"src/features/perfMonitor": 400` was added to
+  `directoryMax` and the panel was split into `panel.ts`, `sparkline.ts` and
+  `table.ts` (360 lines) in the same change, so the file is inside the documented
+  limit and the gate now enforces it for this directory.
+- **Next step:** decide whether `defaultMax` should be 400 for
+  `src/features/**` (with the reviewed `files` exceptions covering the existing
+  legacy layouts), or whether `check:file-budgets` should require a
+  `directoryMax` entry for every foundation feature. The first option is the
+  smaller change; it needs a pass over the existing feature directories to
+  confirm none of them relies on 700.
+- **Related:** #345, ADR [0013](../adr/0013-module-first-foundation.md),
+  `scripts/file-budget-rules.mjs`, `file-budgets.json`.

@@ -15,6 +15,7 @@ import { openPreferencesDialog } from "./preferencesDialog";
 import { openSettingsDialog } from "./settingsDialog";
 import { isMarkupsOpen } from "./markupsPanel";
 import { isSummaryOpen } from "../features/schedules";
+import { isPerfPanelOpen, togglePerformancePanel } from "../features/perfMonitor";
 import { openTakeoffSettingsDialog } from "../features/takeoffSettings";
 import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
 import { toast } from "./toast";
@@ -335,8 +336,18 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
           shortcut: APP_SHORTCUTS.shortcuts,
         }),
         separator(),
-        action(t("menu.help.diagnostics"), actions.copyDiagnostics),
-        action(t("menu.help.report"), actions.reportProblem),
+        {
+          kind: "submenu",
+          label: t("menu.help.diagnosticsGroup"),
+          items: [
+            action(t("menu.help.diagnostics"), actions.copyDiagnostics),
+            action(t("menu.help.report"), actions.reportProblem),
+            separator(),
+            action(t("menu.help.performance"), () => togglePerformancePanel(), {
+              checked: isPerfPanelOpen(),
+            }),
+          ],
+        },
         separator(),
         action(t("menu.help.about"), () => openHelp("about")),
       ],
