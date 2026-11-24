@@ -736,6 +736,8 @@ scripts/capture-site-shots.mjs Playwright capture of the website's per-language 
 site/                      bilingual landing page and feature tour; English at /, Swedish at /sv/
 site/features/index.html   English feature tour
 site/sv/funktioner/index.html Swedish feature tour
+site/guides/index.html     guide index; English guides under /guides/, Swedish under /sv/guider/
+site/guides/*/index.html   one guide per task, paired with sv/guider/<slug>/
 site/release.json          displayed release version, date, notes URL and download asset URLs
 .github/workflows/pages.yml GitHub Pages build and deploy
 ```

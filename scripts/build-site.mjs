@@ -239,6 +239,54 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/mangdning/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/quantity-takeoff/" />
   </url>
+  <url>
+    <loc>${baseUrl}/guides/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/guides/area-pdf/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/area-pdf/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/mata-area-pdf/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/area-pdf/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/mata-area-pdf/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/area-pdf/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/mata-area-pdf/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/area-pdf/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/guides/calibrate-drawing/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/calibrate-drawing/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/kalibrera-ritning/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/calibrate-drawing/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/kalibrera-ritning/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/calibrate-drawing/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/kalibrera-ritning/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/calibrate-drawing/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/guides/waste-and-rounding/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/waste-and-rounding/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/spill-och-avrundning/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/waste-and-rounding/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/spill-och-avrundning/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/waste-and-rounding/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/spill-och-avrundning/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/waste-and-rounding/" />
+  </url>
 </urlset>
 `;
 

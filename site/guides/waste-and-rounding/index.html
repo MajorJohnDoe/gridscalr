@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quantity takeoff with waste and rounding</title>
+    <meta
+      name="description"
+      content="How to calculate waste, rounding and order quantity from the net area: per object, not per report. A worked example and a checklist before export."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/guides/waste-and-rounding/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/waste-and-rounding/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/spill-och-avrundning/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/waste-and-rounding/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Quantity takeoff with waste and rounding" />
+    <meta
+      property="og:description"
+      content="How to calculate waste, rounding and order quantity from the net area: per object, not per report. A worked example and a checklist before export."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/guides/waste-and-rounding/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Quantity takeoff with waste and rounding" />
+    <meta
+      name="twitter:description"
+      content="How to calculate waste, rounding and order quantity from the net area: per object, not per report. A worked example and a checklist before export."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Quantity takeoff with waste and rounding",
+        "url": "https://majorjohndoe.github.io/gridscalr/guides/waste-and-rounding/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Quantity takeoff with waste and rounding",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/waste-and-rounding/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Should waste be added to gross or net?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "To net. Gross includes deductions that should not be ordered; waste applies to what is actually ordered."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Where do I set waste and rounding?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Per object or category in the takeoff settings, so different materials can follow different rules in one project."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I see the order quantity before exporting?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The order dialog shows gross, deduction, net, waste and order quantity per room."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a href="{{ROOT}}guides/waste-and-rounding/" hreflang="en" lang="en" aria-current="page"
+            >English</a
+          >
+          <a href="{{ROOT}}sv/guider/spill-och-avrundning/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>Quantity takeoff with waste and rounding</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Quantity takeoff with waste and rounding</h1>
+          <p class="lede">
+            The order quantity is not the area. It is the net area plus the rules you set per
+            object, rounded once.
+          </p>
+          <p class="guide-meta">
+            Updated 24 November 2026 · 5 min read · Checked against GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#net">Net first</a></li>
+            <li><a href="#waste">Waste per object</a></li>
+            <li><a href="#round">Round last</a></li>
+            <li><a href="#order">The order quantity</a></li>
+            <li><a href="#checklist">Checklist before export</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {RELEASE_VERSION} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              Calculate on the net area, add waste per object and round last. Then the order
+              quantity is traceable: 484 m² net with 10 % waste gives 532.5 m² to order. Waste and
+              rounding belong to the object or category, not to the report.
+            </p>
+          </div>
+
+          <h2 id="net">Net first</h2>
+          <p>
+            Start from the net: gross minus deductions. A shaft that was measured as floor should
+            not be ordered as floor, and the deduction is what keeps the gross visible while the net
+            stays correct.
+          </p>
+          <h2 id="waste">Waste per object</h2>
+          <p>
+            Waste is a percentage on the net, set per object or category. Flooring, wall panels and
+            surface materials rarely share the same rule, and a single percentage on the whole
+            project hides that. Set it where the material is chosen.
+          </p>
+          <h2 id="round">Round last</h2>
+          <p>
+            Rounding is applied after waste, per object, so small items do not disappear in a report
+            total. A door count of 14 stays 14; a 3.4 m length with 10 % waste becomes 3.74 m and is
+            rounded once, not twice.
+          </p>
+          <h2 id="order">The order quantity</h2>
+          <p>
+            The dialog shows gross, deduction, net, waste and order quantity per room. The same
+            numbers appear in the schedule, the Excel workbook and the print-ready PDF, because they
+            are all derived from the objects.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>The order quantity</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/order.webp"
+              data-lightbox
+              aria-label="Click to enlarge: Warehouse: 484 m² gross, 0 deduction, 48.4 m² waste and 532.5 m² to order."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/order.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Warehouse: 484 m² gross, 0 deduction, 48.4 m² waste and 532.5 m² to order."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Warehouse: 484 m² gross, 0 deduction, 48.4 m² waste and 532.5 m² to order.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="checklist">Checklist before export</h2>
+          <ul>
+            <li>Every room has an area or a count.</li>
+            <li>Deductions sit in the room they belong to.</li>
+            <li>Waste matches the material, not the report.</li>
+            <li>Rounding is set per object.</li>
+            <li>The revision matches the plan you measured.</li>
+            <li>Hidden items and layers are intentional.</li>
+          </ul>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Checklist before export</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/table.webp"
+              data-lightbox
+              aria-label="Click to enlarge: The schedule and the order dialog read the same measured objects."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/table.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The schedule and the order dialog read the same measured objects."
+              />
+            </a>
+            <figcaption>
+              <span>The schedule and the order dialog read the same measured objects.</span>
+            </figcaption>
+          </figure>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>Adding waste to gross instead of net, which over-orders every opening.</li>
+            <li>Using one waste percentage for materials with different rules.</li>
+            <li>Rounding per report instead of per object, so small items disappear.</li>
+            <li>Exporting before the revision check, so the order builds on an old plan.</li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Should waste be added to gross or net?</summary>
+              <p>
+                To net. Gross includes deductions that should not be ordered; waste applies to what
+                is actually ordered.
+              </p>
+            </details>
+            <details>
+              <summary>Where do I set waste and rounding?</summary>
+              <p>
+                Per object or category in the takeoff settings, so different materials can follow
+                different rules in one project.
+              </p>
+            </details>
+            <details>
+              <summary>Can I see the order quantity before exporting?</summary>
+              <p>
+                Yes. The order dialog shows gross, deduction, net, waste and order quantity per
+                room.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}quantity-takeoff/"
+              ><b>Quantity takeoff</b><span>The task page for net, waste and exports.</span></a
+            >
+            <a href="{{ROOT}}guides/area-pdf/"
+              ><b>Measure area in a PDF</b><span>Where the net area comes from.</span></a
+            >
+            <a href="{{ROOT}}guides/calibrate-drawing/"
+              ><b>Calibrate a drawing</b><span>The scale behind every measurement.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Check the four numbers</h2>
+            <p>
+              Open the demo project and compare the order dialog with the schedule and the PDF
+              report.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Get the demo project</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>

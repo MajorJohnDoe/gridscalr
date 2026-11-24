@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Calibrate a drawing: 1:50, 1:100 and 1:400</title>
+    <meta
+      name="description"
+      content="Calibrate a PDF or TIF drawing against a known dimension or the printed scale, check it against a second dimension, and lock the scale per sheet."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/guides/calibrate-drawing/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/calibrate-drawing/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/kalibrera-ritning/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/calibrate-drawing/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Calibrate a drawing: 1:50, 1:100 and 1:400" />
+    <meta
+      property="og:description"
+      content="Calibrate a PDF or TIF drawing against a known dimension or the printed scale, check it against a second dimension, and lock the scale per sheet."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/guides/calibrate-drawing/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Calibrate a drawing: 1:50, 1:100 and 1:400" />
+    <meta
+      name="twitter:description"
+      content="Calibrate a PDF or TIF drawing against a known dimension or the printed scale, check it against a second dimension, and lock the scale per sheet."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Calibrate a drawing: 1:50, 1:100 and 1:400",
+        "url": "https://majorjohndoe.github.io/gridscalr/guides/calibrate-drawing/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Calibrate a drawing: 1:50, 1:100 and 1:400",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/calibrate-drawing/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What does 1:100 mean?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "One millimetre on the drawing equals 100 millimetres in the building. At 1:50 the same line covers half the real length."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can different sheets have different scales?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The scale is stored per page, which is common in a set with details and site plans."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens to existing measurements after recalibration?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "They keep the scale they were created with. Updating them is a separate, deliberate action."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a href="{{ROOT}}guides/calibrate-drawing/" hreflang="en" lang="en" aria-current="page"
+            >English</a
+          >
+          <a href="{{ROOT}}sv/guider/kalibrera-ritning/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>Calibrate a drawing: 1:50, 1:100 and 1:400</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Calibrate a drawing: 1:50, 1:100 and 1:400</h1>
+          <p class="lede">
+            The scale decides every length, area and volume. Calibrate once, check twice and lock
+            the sheet.
+          </p>
+          <p class="guide-meta">
+            Updated 24 November 2026 · 5 min read · Checked against GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#reference">Pick the reference</a></li>
+            <li><a href="#measure">Measure the known dimension</a></li>
+            <li><a href="#scale">Enter or derive the scale</a></li>
+            <li><a href="#check">Check and lock</a></li>
+            <li><a href="#wrong">When the scale does not fit</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {RELEASE_VERSION} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              Measure a known dimension on the drawing or enter the printed scale. Check the result
+              against a second dimension, and lock the scale when it is right. The scale belongs to
+              one sheet, and each measurement keeps the scale it was created with.
+            </p>
+          </div>
+
+          <h2 id="reference">Pick the reference</h2>
+          <p>
+            A dimension line on the drawing is the safest reference, because it reflects how the
+            sheet was produced. The printed scale is faster but depends on the PDF not having been
+            resized. When both are available, use the dimension line and keep the scale as a
+            cross-check.
+          </p>
+          <h2 id="measure">Measure the known dimension</h2>
+          <p>
+            Zoom in and place the two points on the ends of the dimension line. Snapping helps, but
+            a line that has been redrawn or scaled can be slightly off; compare with a wall or a
+            door before you trust it.
+          </p>
+          <h2 id="scale">Enter or derive the scale</h2>
+          <p>
+            Enter the known length and unit, and the app derives millimetres per point. You can also
+            type the printed scale directly. A sheet with several scales needs one calibration per
+            view, because the scale is stored per page and per measurement.
+          </p>
+          <h2 id="check">Check and lock</h2>
+          <p>
+            Measure a second known dimension. If the two disagree, the reference is wrong or the
+            sheet is distorted. When they agree, lock the scale so a stray drag cannot change it.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Check and lock</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/calibration.webp"
+              data-lightbox
+              aria-label="Click to enlarge: Calibration against a known 10 m dimension, with a per-page lock option."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/calibration.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Calibration against a known 10 m dimension, with a per-page lock option."
+              />
+            </a>
+            <figcaption>
+              <span>Calibration against a known 10 m dimension, with a per-page lock option.</span>
+            </figcaption>
+          </figure>
+          <h2 id="wrong">When the scale does not fit</h2>
+          <p>
+            Three causes cover most cases: the PDF was printed with "fit to page", the scan was
+            resized, or the dimension belongs to another view on the same sheet. Check the drawing's
+            own note, recalibrate, and remember that existing measurements keep their original
+            scale.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>When the scale does not fit</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/hero.webp"
+              data-lightbox
+              aria-label="Click to enlarge: Every measurement keeps the scale it was created with, even after a recalibration."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Every measurement keeps the scale it was created with, even after a recalibration."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Every measurement keeps the scale it was created with, even after a
+                recalibration.</span
+              >
+            </figcaption>
+          </figure>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>Calibrating on a sheet that was printed with fit-to-page.</li>
+            <li>Trusting a dimension line that was redrawn at another scale.</li>
+            <li>Assuming one calibration covers every sheet in the set.</li>
+            <li>Recalibrating without deciding whether existing measurements should follow.</li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>What does 1:100 mean?</summary>
+              <p>
+                One millimetre on the drawing equals 100 millimetres in the building. At 1:50 the
+                same line covers half the real length.
+              </p>
+            </details>
+            <details>
+              <summary>Can different sheets have different scales?</summary>
+              <p>
+                Yes. The scale is stored per page, which is common in a set with details and site
+                plans.
+              </p>
+            </details>
+            <details>
+              <summary>What happens to existing measurements after recalibration?</summary>
+              <p>
+                They keep the scale they were created with. Updating them is a separate, deliberate
+                action.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}guides/area-pdf/"
+              ><b>Measure area in a PDF</b
+              ><span>Use the calibrated scale for room areas and deductions.</span></a
+            >
+            <a href="{{ROOT}}area-takeoff/"
+              ><b>Measure area on a drawing</b><span>The task page for areas and rooms.</span></a
+            >
+            <a href="{{ROOT}}quantity-takeoff/"
+              ><b>Quantity takeoff</b><span>What the calibrated measurements become.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Calibrate the demo plan</h2>
+            <p>
+              The demo plan has a 10 m calibration line, so you can try the check and the lock on a
+              real sheet.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Get the demo project</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -38,6 +38,26 @@ const pairUrls = {
     sv: `${baseUrl}/sv/mangdning/`,
     "x-default": `${baseUrl}/quantity-takeoff/`,
   },
+  guides: {
+    en: `${baseUrl}/guides/`,
+    sv: `${baseUrl}/sv/guider/`,
+    "x-default": `${baseUrl}/guides/`,
+  },
+  guideArea: {
+    en: `${baseUrl}/guides/area-pdf/`,
+    sv: `${baseUrl}/sv/guider/mata-area-pdf/`,
+    "x-default": `${baseUrl}/guides/area-pdf/`,
+  },
+  guideCalibrate: {
+    en: `${baseUrl}/guides/calibrate-drawing/`,
+    sv: `${baseUrl}/sv/guider/kalibrera-ritning/`,
+    "x-default": `${baseUrl}/guides/calibrate-drawing/`,
+  },
+  guideWaste: {
+    en: `${baseUrl}/guides/waste-and-rounding/`,
+    sv: `${baseUrl}/sv/guider/spill-och-avrundning/`,
+    "x-default": `${baseUrl}/guides/waste-and-rounding/`,
+  },
 };
 
 const pages = [
@@ -201,6 +221,118 @@ const pages = [
     h1Terms: ["ritning", "beställningsmängd"],
     metaTerms: ["beställningsmängder", "brutto", "avdrag", "netto", "spill", "excel"],
     bodyTerms: ["mängd", "spill", "avrundning", "excel", "schema"],
+  },
+  {
+    file: "guides/index.html",
+    lang: "en",
+    kind: "guide",
+    pair: "guides",
+    canonical: pairUrls.guides.en,
+    title: "Guides for area, operation cards and quantities",
+    description:
+      "Step-by-step guides for measuring areas in PDF drawings, calibrating a drawing, operation cards and quantity takeoff with waste and rounding.",
+    titleTerms: ["guides", "area", "operation cards", "quantities"],
+    h1Terms: ["guides", "drawing"],
+    metaTerms: ["guides", "areas", "pdf", "operation cards", "quantity takeoff"],
+    bodyTerms: ["measure area", "quantity takeoff", "calibrate a drawing"],
+  },
+  {
+    file: "sv/guider/index.html",
+    lang: "sv",
+    kind: "guide",
+    pair: "guides",
+    canonical: pairUrls.guides.sv,
+    title: "Guider för area, driftkort och mängdning",
+    description:
+      "Steg-för-steg-guider för att mäta area i PDF-ritningar, kalibrera en ritning, rita driftkort och ta fram mängder med spill och avrundning.",
+    titleTerms: ["guider", "area", "driftkort", "mängdning"],
+    h1Terms: ["guider", "ritningen"],
+    metaTerms: ["guider", "area", "pdf", "driftkort", "mängder"],
+    bodyTerms: ["mäta area", "mängdning", "kalibrera", "driftkort"],
+  },
+  {
+    file: "guides/area-pdf/index.html",
+    lang: "en",
+    kind: "guide",
+    pair: "guideArea",
+    canonical: pairUrls.guideArea.en,
+    title: "Measure area in a PDF drawing — step by step",
+    description:
+      "How to measure area in a PDF drawing: calibrate the scale, draw a rectangle or polygon, subtract shafts and openings, and check the net area before export.",
+    titleTerms: ["area", "pdf", "step"],
+    h1Terms: ["measure area", "pdf"],
+    metaTerms: ["calibrate", "rectangle", "polygon", "shafts", "net area"],
+    bodyTerms: ["calibrate", "deduction", "net area", "room", "waste"],
+  },
+  {
+    file: "sv/guider/mata-area-pdf/index.html",
+    lang: "sv",
+    kind: "guide",
+    pair: "guideArea",
+    canonical: pairUrls.guideArea.sv,
+    title: "Mäta area i PDF — steg för steg med kalibrering",
+    description:
+      "Så mäter du area i en PDF-ritning: kalibrera skalan, rita rektangel eller polygon, dra av schakt och kontrollera nettoarean före export. Steg för steg.",
+    titleTerms: ["mäta area", "pdf", "kalibrering"],
+    h1Terms: ["mäta area", "pdf-ritning"],
+    metaTerms: ["kalibrera", "rektangel", "polygon", "schakt", "nettoarea"],
+    bodyTerms: ["kalibrera", "avdrag", "nettoarea", "rum", "spill"],
+  },
+  {
+    file: "guides/calibrate-drawing/index.html",
+    lang: "en",
+    kind: "guide",
+    pair: "guideCalibrate",
+    canonical: pairUrls.guideCalibrate.en,
+    title: "Calibrate a drawing: 1:50, 1:100 and 1:400",
+    description:
+      "Calibrate a PDF or TIF drawing against a known dimension or the printed scale, check it against a second dimension, and lock the scale per sheet.",
+    titleTerms: ["calibrate", "1:50", "1:100", "1:400"],
+    h1Terms: ["calibrate", "drawing", "1:50", "1:100"],
+    metaTerms: ["calibrate", "pdf", "tif", "known dimension", "printed scale"],
+    bodyTerms: ["calibration", "scale", "dimension", "lock", "sheet"],
+  },
+  {
+    file: "sv/guider/kalibrera-ritning/index.html",
+    lang: "sv",
+    kind: "guide",
+    pair: "guideCalibrate",
+    canonical: pairUrls.guideCalibrate.sv,
+    title: "Kalibrera en ritning – skala 1:50, 1:100 och 1:400",
+    description:
+      "Kalibrera en PDF- eller TIF-ritning mot ett känt mått eller utskriven skala, kontrollera mot ett andra mått och lås skalan per sida.",
+    titleTerms: ["kalibrera", "1:50", "1:100", "1:400"],
+    h1Terms: ["kalibrera", "ritning", "1:50"],
+    metaTerms: ["kalibrera", "pdf", "tif", "känt mått", "utskriven skala"],
+    bodyTerms: ["kalibrering", "skala", "dimension", "lås", "sida"],
+  },
+  {
+    file: "guides/waste-and-rounding/index.html",
+    lang: "en",
+    kind: "guide",
+    pair: "guideWaste",
+    canonical: pairUrls.guideWaste.en,
+    title: "Quantity takeoff with waste and rounding",
+    description:
+      "How to calculate waste, rounding and order quantity from the net area: per object, not per report. A worked example and a checklist before export.",
+    titleTerms: ["quantity takeoff", "waste", "rounding"],
+    h1Terms: ["quantity takeoff", "waste", "rounding"],
+    metaTerms: ["waste", "rounding", "order quantity", "net area", "per object"],
+    bodyTerms: ["waste", "rounding", "net", "order quantity", "deduction"],
+  },
+  {
+    file: "sv/guider/spill-och-avrundning/index.html",
+    lang: "sv",
+    kind: "guide",
+    pair: "guideWaste",
+    canonical: pairUrls.guideWaste.sv,
+    title: "Mängdning med spill och avrundning – rätt beställning",
+    description:
+      "Så räknar du spill, avrundning och beställningsmängd från nettoarean: per objekt, inte per rapport. Räkneexempel och checklista före export.",
+    titleTerms: ["mängdning", "spill", "avrundning"],
+    h1Terms: ["mängdning", "spill", "avrundning"],
+    metaTerms: ["spill", "avrundning", "beställningsmängd", "nettoarea", "per objekt"],
+    bodyTerms: ["spill", "avrundning", "netto", "beställningsmängd", "avdrag"],
   },
 ];
 
@@ -425,7 +557,8 @@ function checkHead(document, page, release) {
 
 function checkImages(document, page) {
   const images = [...document.querySelectorAll("img")];
-  const minimum = page.kind === "home" ? 6 : page.kind === "task" ? 4 : 12;
+  const minimum =
+    page.kind === "home" ? 6 : page.kind === "task" ? 4 : page.kind === "guide" ? 2 : 12;
   assert(images.length >= minimum, `${page.file}: expected at least ${minimum} images`);
 
   const eager = images.filter((img) => img.getAttribute("fetchpriority") === "high");
@@ -454,7 +587,8 @@ function checkImages(document, page) {
   }
 
   const lightboxTriggers = [...document.querySelectorAll("[data-lightbox]")];
-  const minimumShots = page.kind === "home" ? 5 : page.kind === "task" ? 4 : 14;
+  const minimumShots =
+    page.kind === "home" ? 5 : page.kind === "task" ? 4 : page.kind === "guide" ? 2 : 14;
   assert(
     lightboxTriggers.length >= minimumShots,
     `${page.file}: expected at least ${minimumShots} lightbox screenshots`,
