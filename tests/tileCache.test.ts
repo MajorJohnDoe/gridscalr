@@ -4,7 +4,6 @@ import {
   TILE_CSS_SIZE,
   buildTilePlan,
   distanceFromViewport,
-  renderScaleFor,
   selectEvictions,
   supportsTileCache,
   tileByteSize,
@@ -34,44 +33,68 @@ function entry(key: string, x: number, lastUsed = 0): TileCacheEntryMeta {
 }
 
 describe("tile grid", () => {
-  it("covers the whole raster with integer device-pixel tiles", () => {
+  it("covers the raster with page-anchored tiles", () => {
     const result = plan();
+    expect(result.scale).toBe(1);
     expect(result.width).toBe(600);
     expect(result.height).toBe(400);
     expect(result.columns).toBe(2);
     expect(result.rows).toBe(1);
     expect(result.tiles).toHaveLength(2);
-    expect(result.tiles[0]).toMatchObject({ x: 0, y: 0, width: 512, height: 400 });
-    expect(result.tiles[1]).toMatchObject({ x: 512, y: 0, width: 88, height: 400 });
-    const covered = result.tiles.reduce((sum, tile) => sum + tile.width * tile.height, 0);
-    expect(covered).toBe(600 * 400);
+    expect(result.tiles[0]).toMatchObject({ column: 0, row: 0, x: 0, y: 0 });
+    expect(result.tiles[1]).toMatchObject({ column: 1, row: 0, x: 512, y: 0 });
+    const right = Math.max(...result.tiles.map((tile) => tile.x + tile.width));
+    const bottom = Math.max(...result.tiles.map((tile) => tile.y + tile.height));
+    expect(right).toBeGreaterThanOrEqual(result.width);
+    expect(bottom).toBeGreaterThanOrEqual(result.height);
   });
 
-  it("uses the device scale for the tile size and the page-space rect", () => {
+  it("uses one device tile size at the exact render scale", () => {
     const result = plan({ zoom: 2, dpr: 2 });
     expect(result.scale).toBe(4);
     expect(result.width).toBe(2400);
     expect(result.height).toBe(1600);
-    // 512 CSS px at DPR 2 is 1024 device pixels.
     expect(result.tiles[0].width).toBe(1024);
     expect(result.tiles[0].rect.width).toBe(1024 / 4);
     expect(result.columns).toBe(3);
   });
 
-  it("applies the same 4096 px / 8 Mpixel cap as the full-page crop", () => {
-    const square = { x: 0, y: 0, width: 3000, height: 3000 };
-    const scale = renderScaleFor(square, 10);
-    expect(scale).toBeCloseTo(Math.sqrt(8_000_000 / 9_000_000), 6);
-    const wide = renderScaleFor({ x: 0, y: 0, width: 8192, height: 100 }, 1);
-    expect(wide).toBeCloseTo(4096 / 8192, 6);
+  it("still covers the crop when it starts inside a tile", () => {
+    const result = plan({ crop: { x: 300, y: 200, width: 600, height: 400 } });
+    expect(result.tiles[0].x).toBeLessThan(0);
+    expect(result.tiles[0].y).toBeLessThan(0);
+    const right = Math.max(...result.tiles.map((tile) => tile.x + tile.width));
+    const bottom = Math.max(...result.tiles.map((tile) => tile.y + tile.height));
+    expect(right).toBeGreaterThanOrEqual(result.width);
+    expect(bottom).toBeGreaterThanOrEqual(result.height);
   });
 
-  it("produces a stable key per page, crop and tile", () => {
+  it("reuses every tile when a pan stays inside the rendered columns", () => {
+    const before = plan();
+    const after = plan({ crop: { x: 128, y: 0, width: 600, height: 400 } });
+    const beforeKeys = new Set(before.tiles.map((tile) => tileKey(before, tile)));
+    expect(after.tiles.every((tile) => beforeKeys.has(tileKey(after, tile)))).toBe(true);
+  });
+
+  it("renders only the newly exposed column after a longer pan", () => {
+    const before = plan();
+    const after = plan({ crop: { x: 600, y: 0, width: 600, height: 400 } });
+    const beforeKeys = new Set(before.tiles.map((tile) => tileKey(before, tile)));
+    const fresh = after.tiles.filter((tile) => !beforeKeys.has(tileKey(after, tile)));
+    expect(fresh).toHaveLength(1);
+    expect(fresh[0].column).toBe(2);
+  });
+
+  it("keeps one signature for the page at a given scale", () => {
     const a = plan();
-    const b = plan();
+    const b = plan({ crop: { x: 300, y: 100, width: 600, height: 400 } });
     expect(a.signature).toBe(b.signature);
     expect(tileKey(a, a.tiles[0])).toBe(tileKey(b, b.tiles[0]));
-    expect(tileKey(a, a.tiles[0])).not.toBe(tileKey(a, a.tiles[1]));
+  });
+
+  it("changes the signature when the render scale changes", () => {
+    expect(plan().signature).not.toBe(plan({ zoom: 2 }).signature);
+    expect(plan().signature).not.toBe(plan({ dpr: 2 }).signature);
   });
 });
 

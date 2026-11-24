@@ -19,7 +19,6 @@ export {
   ZOOM_BUCKET_STEPS,
   buildTilePlan,
   distanceFromViewport,
-  renderScaleFor,
   selectEvictions,
   supportsTileCache,
   tileByteSize,

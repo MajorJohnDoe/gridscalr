@@ -23,7 +23,7 @@ import { GestureRenderController, type GestureKind } from "../features/gestureRe
 import type { TileCacheStats } from "../features/tileCache";
 
 import { focusViewTransform, pointInBox } from "./geometry";
-import { CanvasRasterController } from "./raster";
+import { CanvasRasterController, backdropFor } from "./raster";
 import { CropController } from "./crop";
 import { PointerController } from "./pointer/PointerController";
 import { createItemInStore, type ItemOptions } from "./pointer/itemFactory";
@@ -74,7 +74,7 @@ import { openScheduleBuilder } from "../features/schedules";
 import { calloutLayout, cloudLabelLayout } from "../model/annotations";
 import type { ImageAsset, ItemKind, MarkupItem, PageSize, Point, Project } from "../model/types";
 import { formatNumber } from "../model/units";
-import { type PdfRenderer } from "../pdf/pdfRenderer";
+import { type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
 import {
   clampZoom,
@@ -1120,16 +1120,16 @@ export class CanvasView {
     ctx.fillRect(x, y, w, h);
     ctx.restore();
 
-    const raster = this.raster.current;
-    if (raster && raster.pageNumber === this.viewPage) {
-      const rect = raster.rect;
-      ctx.drawImage(
-        raster.canvas,
-        panX + rect.x * zoom,
-        panY + rect.y * zoom,
-        rect.width * zoom,
-        rect.height * zoom,
-      );
+    const underlay = this.raster.underlay;
+    if (underlay && underlay.pageNumber === this.viewPage) {
+      ctx.drawImage(underlay.canvas, x, y, w, h);
+    }
+
+    const current = this.raster.current;
+    const backdrop = backdropFor(this.raster.backdrop, current, this.viewPage);
+    if (backdrop) this.drawRaster(ctx, backdrop);
+    if (current && current.pageNumber === this.viewPage) {
+      this.drawRaster(ctx, current);
     } else if (this.raster.rendering) {
       ctx.save();
       ctx.fillStyle = "rgba(30, 40, 45, 0.35)";
@@ -1168,6 +1168,19 @@ export class CanvasView {
     ctx.strokeStyle = "rgba(255,255,255,0.22)";
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  }
+
+  /** Draws one raster with the current view, whatever crop it was rendered for. */
+  private drawRaster(ctx: CanvasRenderingContext2D, raster: RenderResult): void {
+    const { zoom, panX, panY } = this.view;
+    const rect = raster.rect;
+    ctx.drawImage(
+      raster.canvas,
+      panX + rect.x * zoom,
+      panY + rect.y * zoom,
+      rect.width * zoom,
+      rect.height * zoom,
+    );
   }
 
   private drawContent(): void {

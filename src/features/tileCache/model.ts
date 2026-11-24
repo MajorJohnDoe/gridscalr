@@ -2,11 +2,11 @@
  * Tile cache: the pure 512 CSS px grid, zoom buckets, visible-first ordering,
  * budget-bounded eviction and the capability check.
  *
- * The grid is expressed in the raster's own device pixels: a tile is a whole
- * number of pixels, so tiles meet without a seam and the composed page matches
- * the single-crop render as closely as PDF.js rasterises the same geometry.
- * Edges are aligned to the crop origin, not the screen, because the crop is
- * what the canvas draws.
+ * The grid is anchored to the page, not to the current crop: a tile is
+ * identified by its page-space column and row at one render scale, so panning
+ * keeps every tile that is still on screen and only the newly exposed edge is
+ * rendered. The composition canvas is still crop-sized; tiles that start
+ * outside it are clipped by the canvas itself.
  */
 
 /** One tile is 512 CSS px on each side before the device scale is applied. */
@@ -117,17 +117,6 @@ export function tileByteSize(width: number, height: number): number {
   return w * h * TILE_BYTES_PER_PIXEL;
 }
 
-/** The same cap `renderCrop()` applies, so the tiled view has the same density. */
-export function renderScaleFor(crop: TileRect, requestedScale: number): number {
-  const width = Math.max(0.5, crop.width);
-  const height = Math.max(0.5, crop.height);
-  let scale = Math.min(requestedScale, 4096 / Math.max(width, 1), 4096 / Math.max(height, 1));
-  if (width * height * scale * scale > 8_000_000) {
-    scale = Math.sqrt(8_000_000 / (width * height));
-  }
-  return Math.max(0.05, scale);
-}
-
 function clampDpr(dpr: number): number {
   if (!Number.isFinite(dpr)) return 1;
   return Math.max(0.5, Math.min(4, dpr));
@@ -155,54 +144,57 @@ export function distanceFromViewport(rect: TileRect, viewport: TileRect): number
 }
 
 export function buildTilePlan(input: TilePlanInput): TilePlan {
-  const scale = renderScaleFor(input.crop, input.zoom * clampDpr(input.dpr));
+  const dpr = clampDpr(input.dpr);
+  const scale = Math.max(0.05, input.zoom * dpr);
+  const deviceSize = Math.max(1, Math.round(TILE_CSS_SIZE * dpr));
+  // Page-anchored lattice: the tile step depends only on the zoom, so two crops
+  // at the same zoom describe the same tiles and share their cache entries.
+  const pageTile = deviceSize / scale;
   const width = Math.max(1, Math.ceil(input.crop.width * scale));
   const height = Math.max(1, Math.ceil(input.crop.height * scale));
-  const deviceSize = Math.max(1, Math.round(TILE_CSS_SIZE * clampDpr(input.dpr)));
-  const columns = Math.max(1, Math.ceil(width / deviceSize));
-  const rows = Math.max(1, Math.ceil(height / deviceSize));
+  const firstColumn = Math.floor(input.crop.x / pageTile);
+  const firstRow = Math.floor(input.crop.y / pageTile);
+  const lastColumn = Math.floor((input.crop.x + input.crop.width - 1e-6) / pageTile);
+  const lastRow = Math.floor((input.crop.y + input.crop.height - 1e-6) / pageTile);
   const bucket = zoomBucket(input.zoom);
   const tiles: PlannedTile[] = [];
-  for (let row = 0; row < rows; row += 1) {
-    for (let column = 0; column < columns; column += 1) {
-      const x = column * deviceSize;
-      const y = row * deviceSize;
-      const tileWidth = Math.min(deviceSize, width - x);
-      const tileHeight = Math.min(deviceSize, height - y);
-      if (tileWidth < 1 || tileHeight < 1) continue;
-      const dest = { x, y, width: tileWidth, height: tileHeight };
+  for (let row = firstRow; row <= lastRow; row += 1) {
+    for (let column = firstColumn; column <= lastColumn; column += 1) {
+      // Destinations are crop-device pixels; a tile that begins left of or
+      // above the crop is clipped by the composition canvas.
+      const dest = {
+        x: Math.round((column * pageTile - input.crop.x) * scale),
+        y: Math.round((row * pageTile - input.crop.y) * scale),
+        width: deviceSize,
+        height: deviceSize,
+      };
       tiles.push({
         column,
         row,
         ...dest,
         rect: {
-          x: input.crop.x + x / scale,
-          y: input.crop.y + y / scale,
-          width: tileWidth / scale,
-          height: tileHeight / scale,
+          x: column * pageTile,
+          y: row * pageTile,
+          width: pageTile,
+          height: pageTile,
         },
         distance: distanceFromViewport(dest, input.visible),
       });
     }
   }
-  const signature = [
-    input.pageId,
-    bucket,
-    input.zoom.toFixed(4),
-    scale.toFixed(5),
-    `${input.crop.x.toFixed(3)},${input.crop.y.toFixed(3)},${input.crop.width.toFixed(3)},${input.crop.height.toFixed(3)}`,
-    `${width}x${height}`,
-  ].join("|");
+  // The signature covers the page, the exact render scale and the device tile
+  // size. It deliberately excludes the crop, so a pan is a cache hit.
+  const signature = [input.pageId, scale.toFixed(6), deviceSize].join("|");
   return {
     pageId: input.pageId,
     pageNumber: input.pageNumber,
     bucket,
     scale,
-    dpr: clampDpr(input.dpr),
+    dpr,
     width,
     height,
-    columns,
-    rows,
+    columns: lastColumn - firstColumn + 1,
+    rows: lastRow - firstRow + 1,
     signature,
     crop: { ...input.crop },
     visible: input.visible,
