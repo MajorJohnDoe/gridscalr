@@ -1,5 +1,5 @@
 import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
-import { dirname, extname, resolve } from "node:path";
+import { dirname, extname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -203,6 +203,42 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/funktioner/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/features/" />
   </url>
+  <url>
+    <loc>${baseUrl}/area-takeoff/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/area-takeoff/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/mata-area/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/area-takeoff/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/mata-area/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/area-takeoff/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/mata-area/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/area-takeoff/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/operation-cards/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/operation-cards/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/driftkort/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/operation-cards/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/driftkort/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/operation-cards/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/driftkort/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/operation-cards/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/quantity-takeoff/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/quantity-takeoff/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/mangdning/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/quantity-takeoff/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/mangdning/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/quantity-takeoff/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/mangdning/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/quantity-takeoff/" />
+  </url>
 </urlset>
 `;
 
@@ -244,6 +280,10 @@ await cp(socialPreview, resolve(outputDir, "social-preview.png"));
 
 for (const file of await walkHtml(outputDir)) {
   let html = await readFile(file, "utf8");
+  // {{ROOT}} is the relative path back to the site root for this page, so a
+  // shared nav or footer works at any depth.
+  const depth = relative(outputDir, dirname(file)).split(sep).filter(Boolean).length;
+  html = html.split("{{ROOT}}").join("../".repeat(depth));
   for (const [token, value] of Object.entries(tokens)) {
     html = html.split(token).join(value);
   }

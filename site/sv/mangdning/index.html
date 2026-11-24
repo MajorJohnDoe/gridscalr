@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mängdning från ritning — netto, spill och beställning</title>
+    <meta name="description" content="Gör uppmätta areor och räknade objekt till beställningsmängder: brutto, avdrag, netto, spill och avrundning per objekt, exporterat till Excel, CSV eller PDF." />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/sv/mangdning/" />
+    <link rel="alternate" hreflang="en" href="https://majorjohndoe.github.io/gridscalr/quantity-takeoff/" />
+    <link rel="alternate" hreflang="sv" href="https://majorjohndoe.github.io/gridscalr/sv/mangdning/" />
+    <link rel="alternate" hreflang="x-default" href="https://majorjohndoe.github.io/gridscalr/quantity-takeoff/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Mängdning från ritning — netto, spill och beställning" />
+    <meta property="og:description" content="Gör uppmätta areor och räknade objekt till beställningsmängder: brutto, avdrag, netto, spill och avrundning per objekt, exporterat till Excel, CSV eller PDF." />
+    <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/sv/mangdning/" />
+    <meta property="og:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+    <meta property="og:image:alt" content="GridScalr — measure areas, draw operation cards and take off quantities" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Mängdning från ritning — netto, spill och beställning" />
+    <meta name="twitter:description" content="Gör uppmätta areor och räknade objekt till beställningsmängder: brutto, avdrag, netto, spill och avrundning per objekt, exporterat till Excel, CSV eller PDF." />
+    <meta name="twitter:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Mängdning från ritning — netto, spill och beställning",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/mangdning/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {"@type": "WebSite", "name": "GridScalr", "url": "https://majorjohndoe.github.io/gridscalr/"}
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {"@type": "ListItem", "position": 1, "name": "GridScalr", "item": "https://majorjohndoe.github.io/gridscalr/"},
+          {"@type": "ListItem", "position": 2, "name": "Mängdning", "item": "https://majorjohndoe.github.io/gridscalr/sv/mangdning/"}
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [{"@type": "Question", "name": "Uppdateras schemat när jag mäter?", "acceptedAnswer": {"@type": "Answer", "text": "Ja. Mängderna härleds från objekten; det finns ingen separat tabell att uppdatera."}},
+{"@type": "Question", "name": "Kan jag exportera till Excel?", "acceptedAnswer": {"@type": "Answer", "text": "Ja. Arbetsboken har blad för sammanställning, kategori, rum, sida, markeringar och källor, byggda från samma data."}},
+{"@type": "Question", "name": "Hur hanteras räknade objekt?", "acceptedAnswer": {"@type": "Answer", "text": "Varje antalstyp får en rad med stycken per objekt och en summa, så att dörrar, fönster och inventarier kan beställas per typ."}}]
+      }
+    </script>
+  </head>  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/" aria-current="page">Mängder</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}quantity-takeoff/" hreflang="en" lang="en">English</a>
+          <a href="{{ROOT}}sv/mangdning/" hreflang="sv" lang="sv" aria-current="page">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span>
+            <a href="{{ROOT}}sv/funktioner/">Funktioner</a><span>/</span>
+            <span>Mängdning</span>
+          </nav>
+          <p class="eyebrow">Mängder</p>
+          <h1>Från ritning till beställningsmängd</h1>
+          <p class="lede">Mängden räknas från objekten i projektet, inte från ett andra kalkylark. Brutto, avdrag, netto, spill och beställningsmängd följer varje mätning och varje räknat objekt.</p>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}">Ladda ner GridScalr {{RELEASE_VERSION}}</a>
+            <a class="button secondary" href="{{ROOT}}#download">Alla filer</a>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Beställning · lager och mellanbjälklag</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/order.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Lager: 484 m² brutto, 0 avdrag, 48,4 m² spill och 532,5 m² att beställa."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/order.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Beställningsdialogen i GridScalr med brutto, avdrag, netto, spill och beställningsmängd per rum, samt exportknappar för CSV, Excel och PDF."
+              />
+            </a>
+            <figcaption><span>Lager: 484 m² brutto, 0 avdrag, 48,4 m² spill och 532,5 m² att beställa.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="steps">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Så fungerar det</p>
+            <h2>Mät, sätt reglerna, exportera</h2>
+          </div>
+          <ol class="steps">
+            <li>
+              <span class="step-number">1</span>
+              <h3>Mät och räkna</h3>
+              <p>Mät areor och längder och räkna dörrar, fönster och utrustning. Varje objekt bär kategori, rum och enhet.</p>
+            </li>
+            <li>
+              <span class="step-number">2</span>
+              <h3>Sätt spill och avrundning</h3>
+              <p>Ange spillprocent och avrundning per objekt eller kategori, så att olika material kan följa olika regler i samma projekt.</p>
+            </li>
+            <li>
+              <span class="step-number">3</span>
+              <h3>Granska och exportera</h3>
+              <p>Kontrollera netto och beställningsmängd per rum, granska revisionen och exportera XLSX, CSV eller en utskriftsvänlig PDF.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section" id="facts">
+        <div class="wrap split">
+          <div class="prose-block">
+            <p class="eyebrow">Mängder</p>
+            <h2>De fyra talen</h2>
+            <ul class="checklist facts-list">
+              <li><strong>Netto</strong> Brutto minus avdrag, per rum</li>
+              <li><strong>Spill</strong> Procent och avrundning per objekt</li>
+              <li><strong>Antal</strong> Dörrar, fönster och utrustning per typ</li>
+              <li><strong>Export</strong> Excel med sex blad, CSV och PDF</li>
+            </ul>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>De fyra talen</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/hero.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Varje mängd går att spåra till en sida och en mätning."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="GridScalr med en kalibrerad plan och en area på 484 m² markerad."
+              />
+            </a>
+            <figcaption><span>Varje mängd går att spåra till en sida och en mätning.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="example">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Räkneexempel</p>
+            <h2>Så ser siffrorna ut</h2>
+            <p>Avdraget dras från bruttoarean, spelet läggs på nettot och avrundningen sker sist — per objekt, inte per rapport.</p>
+          </div>
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>Rum</th><th>Brutto</th><th>Avdrag</th><th>Netto</th><th>Spill 10 %</th><th>Beställning</th></tr></thead>
+                <tbody>
+                  <tr><td>Lager</td><td>484,00</td><td>0</td><td>484,00</td><td>48,40</td><td class="order">532,50</td></tr><tr><td>Mellanbjälklag</td><td>120,00</td><td>6,25</td><td>113,75</td><td>11,38</td><td class="order">125,50</td></tr>
+                  <tr class="total"><td>Våning 1, netto</td><td>—</td><td>—</td><td>597,75</td><td>—</td><td>—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Så ser siffrorna ut</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/table.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Schemat grupperar samma objekt per kategori, med summa per grupp."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/table.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Mängdschemat i GridScalr med grupper per kategori och rader för etikett, rum och kategori, bredvid en plan över mellanbjälklaget."
+              />
+            </a>
+            <figcaption><span>Schemat grupperar samma objekt per kategori, med summa per grupp.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="mistakes">
+        <div class="wrap split">
+          <div class="prose-block">
+            <p class="eyebrow">Läs mer</p>
+            <h2>Vanliga fel</h2>
+            <ul class="checklist">
+              <li>Lägga spill på brutto i stället för netto, vilket överbeställer varje öppning.</li>              <li>Glömma avdraget, så att ett schakt beställs som golv.</li>              <li>Avrunda per rapport i stället för per objekt, så att små poster försvinner.</li>              <li>Exportera före revisionskontrollen, så att beställningen bygger på en gammal plan.</li>
+            </ul>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Vanliga fel</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/export.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Ritningsexporten tar med synliga lager, etiketter och teckenförklaring."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/export.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Exportdialogen i GridScalr med val av sidor, beskärning, lager och teckenförklaring."
+              />
+            </a>
+            <figcaption><span>Ritningsexporten tar med synliga lager, etiketter och teckenförklaring.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="faq">
+        <div class="wrap prose-block">
+          <p class="eyebrow">Frågor</p>
+          <h2>Frågor</h2>
+          <div class="faq-list">
+              <details open>
+                <summary>Uppdateras schemat när jag mäter?</summary>
+                <p>Ja. Mängderna härleds från objekten; det finns ingen separat tabell att uppdatera.</p>
+              </details>
+              <details>
+                <summary>Kan jag exportera till Excel?</summary>
+                <p>Ja. Arbetsboken har blad för sammanställning, kategori, rum, sida, markeringar och källor, byggda från samma data.</p>
+              </details>
+              <details>
+                <summary>Hur hanteras räknade objekt?</summary>
+                <p>Varje antalstyp får en rad med stycken per objekt och en summa, så att dörrar, fönster och inventarier kan beställas per typ.</p>
+              </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="related">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Relaterat</p>
+            <h2>Fortsätt</h2>
+          </div>
+          <div class="docs-links">
+              <a href="{{ROOT}}sv/mata-area/"><b>Mäta area</b><span>Mätningarna bakom mängderna.</span></a>
+              <a href="{{ROOT}}sv/driftkort/"><b>Driftkort</b><span>Dokumentera systemet i samma projekt.</span></a>
+              <a href="{{ROOT}}sv/funktioner/"><b>Funktioner</b><span>Alla vyer i aktuell release.</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Kontrollera siffrorna själv</h2>
+            <p>Öppna demoprojektet och jämför beställningsdialogen med schemat och PDF-rapporten.</p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}">Ladda ner GridScalr {{RELEASE_VERSION}}</a>
+            <a class="button secondary" href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr">Hämta demoprojektet</a>
+            <a class="button secondary" data-release-page href="{{RELEASE_URL}}">Release notes och checksummor</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img class="logo" src="{{ROOT}}assets/app-icon.svg" width="26" height="26" alt="" aria-hidden="true" />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens</p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md">Tredjepartsnotiser</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md">Säkerhetspolicy</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md">Användarguide</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md">Arbetsflöden</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/">Release notes</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>

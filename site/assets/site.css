@@ -2336,3 +2336,142 @@ table.data td.order {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ── Task landing pages ─────────────────────────────────────────────────── */
+
+.subhero {
+  padding: 30px 0 52px;
+}
+
+.subhero h1 {
+  max-width: 26ch;
+  margin: 0 0 16px;
+  font-size: clamp(1.95rem, 3.7vw, 2.95rem);
+  font-weight: 680;
+  letter-spacing: -0.026em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.subhero .lede {
+  max-width: 66ch;
+  margin: 0 0 20px;
+}
+
+.subhero .big-shot {
+  margin-top: 32px;
+}
+
+.crumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+  color: var(--muted-2);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+
+.crumb a {
+  color: var(--muted-2);
+  text-decoration: none;
+}
+
+.crumb a:hover {
+  color: var(--text-strong);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 44px;
+  align-items: center;
+}
+
+.prose-block {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 68ch;
+}
+
+.prose-block h2 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: clamp(1.4rem, 2.2vw, 1.85rem);
+  font-weight: 660;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checklist li {
+  position: relative;
+  padding-left: 24px;
+  color: var(--muted);
+  font-size: 0.93rem;
+}
+
+.checklist li::before {
+  position: absolute;
+  left: 0;
+  color: #9db0c9;
+  content: "→";
+  font-family: var(--mono);
+  font-size: 0.82rem;
+}
+
+.facts-list li::before {
+  color: var(--border);
+  content: "·";
+}
+
+.facts-list strong {
+  margin-right: 4px;
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.faq-list details {
+  border-top: 1px solid var(--border);
+  padding: 14px 0;
+}
+
+.faq-list summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.faq-list p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.page-hero.subhero {
+  border-bottom: 1px solid var(--border);
+}
+
+.footer-version {
+  margin-top: 10px;
+  color: var(--muted-2);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 960px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .subhero h1 {
+    font-size: clamp(1.8rem, 6vw, 2.4rem);
+  }
+}
