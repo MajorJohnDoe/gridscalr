@@ -8,6 +8,7 @@ import {
   makeReferenceProject,
   openCompareProject,
   openDemoProject,
+  openFileSubmenu,
   repoRoot,
   startVite,
   waitForApp,
@@ -158,7 +159,7 @@ try {
   );
 
   // Package commands are visible but disabled in the browser fallback.
-  await page.getByRole("menuitem", { name: "File" }).click();
+  await openFileSubmenu(page, "Send & share");
   const packageItem = page.getByRole("menuitem", { name: /Share project package/ });
   const openPackageItem = page.getByRole("menuitem", { name: /Open package/ });
   assert.equal(await packageItem.isDisabled(), true, "package should be desktop-only");
@@ -1471,7 +1472,7 @@ try {
   await waitForToastsGone(page);
 
   // A raw PDF drawing can be the reference: no diff list, but visuals and export.
-  await page.getByRole("menuitem", { name: "File" }).click();
+  await openFileSubmenu(page, "Compare");
   const drawingReferenceChooserPromise = page.waitForEvent("filechooser");
   await page.getByRole("menuitem", { name: "Compare with drawing…" }).click();
   const drawingReferenceChooser = await drawingReferenceChooserPromise;

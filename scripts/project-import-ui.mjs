@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   launchBrowser,
+  openFileSubmenu,
   repoRoot,
   startVite,
   waitForApp,
@@ -232,7 +233,7 @@ try {
   await waitForToastsGone(page);
   assert.equal(await page.locator(".page-card").count(), 1);
 
-  await page.getByRole("menuitem", { name: "File" }).click();
+  await openFileSubmenu(page, "Import");
   const chooserPromise = page.waitForEvent("filechooser");
   await page.getByRole("menuitem", { name: /Import pages from project/ }).click();
   const chooser = await chooserPromise;
@@ -391,8 +392,8 @@ try {
   // keeps the pages selectable and marks them unavailable; the preflight owns
   // the relink because no page can be imported without it.
   async function openMissingSourcePicker() {
-    await page.getByRole("menuitem", { name: "File" }).click();
     const chooser = page.waitForEvent("filechooser");
+    await openFileSubmenu(page, "Import");
     await page.getByRole("menuitem", { name: /Import pages from project/ }).click();
     await (await chooser).setFiles(missingPath);
     const dialog = page.getByRole("dialog", { name: "Import pages from project" });

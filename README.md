@@ -174,22 +174,24 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   the package plus a reserve — and a dependency advisory gate that blocks a new
   moderate advisory unless it is reviewed and accepted with an expiry date.
 - Pan and zoom with the mouse, wheel, touchpad pinch or two-finger touch; one finger keeps drawing and selecting on a touchscreen.
+- Keep the **File** menu scannable. **New project…**, **Open project…**, **Open drawing…** and **Open recent** lead, followed by the save commands, then the **Import**, **Compare**, **Send & share**, **Export** and **Maintenance** groups, and finally **Close project** and **Quit**.
 - Undo/redo, conditional saves that preserve both versions on a conflict,
   automatic rolling backups and **Save a copy** exports, autosave recovery,
   recent files, and the user guide bundled under **Help**. A save conflict can
   show a read-only difference summary against the disk version without merging
-  either file. **File → Conflicted copies…** lists the copies beside the project,
-  opens one as its own project, compares it with the open project and deletes it
-  after confirmation; discovery matches only the documented name, never follows
-  a link and never deletes automatically.
+  either file. **File → Maintenance → Conflicted copies…** lists the copies
+  beside the project, opens one as its own project, compares it with the open
+  project and deletes it after confirmation; discovery matches only the
+  documented name, never follows a link and never deletes automatically.
 - Control recovery and safety from the shell. **Preferences → Data** turns
   autosave on or off, sets a 15, 30 or 60 second interval, pauses it for the
   session and sets how many rolling backups to keep (2–10). A **Recovery
   center** lists every autosave and structural checkpoint with its time, size
   and base-version state so one record can be restored or deleted, and the
-  store is bounded at 64 MiB per project and 256 MiB overall. **File → Backup
-  manager…** restores a backup as a copy or replaces the open project, after
-  locating any missing drawings, and deletes backups explicitly. A project that
+  store is bounded at 64 MiB per project and 256 MiB overall. **File →
+  Maintenance → Backup manager…** restores a backup as a copy or replaces the
+  open project, after locating any missing drawings, and deletes backups
+  explicitly. A project that
   is open in another window opens **View-only**, where every edit is blocked
   until **Take over to edit** succeeds, and the saved/unsaved chip opens a
   project status popover with the last save and backup, the autosave interval,

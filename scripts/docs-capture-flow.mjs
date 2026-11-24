@@ -10,6 +10,7 @@ import {
   openCompareProject,
   openCustomFieldsDialog,
   openDemoProject,
+  openFileSubmenu,
   openMarkupsItem,
   openPlacedTableInspector,
   openScheduleCsvImport,
@@ -284,7 +285,7 @@ export async function captureDocumentation(page, { outputDir, base }) {
   if (!embeddedPhoto) throw new Error("Could not render the demo inspection image.");
   const photoBuffer = Buffer.from(embeddedPhoto.split(",")[1], "base64");
   const fileChooser = page.waitForEvent("filechooser");
-  await page.getByRole("menuitem", { name: "File" }).click();
+  await openFileSubmenu(page, "Import");
   await page.getByRole("menuitem", { name: "Import image…" }).click();
   await (
     await fileChooser

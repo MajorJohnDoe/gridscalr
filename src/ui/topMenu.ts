@@ -1,5 +1,4 @@
 import { hasClipboard } from "../model/clipboard";
-import { clearRecent, getRecent, isTauri } from "../io/platform";
 import { store } from "../state/store";
 import { el } from "./dom";
 import { openHelp } from "./helpDialog";
@@ -17,59 +16,10 @@ import { isMarkupsOpen } from "./markupsPanel";
 import { isSummaryOpen } from "../features/schedules";
 import { isPerfPanelOpen, togglePerformancePanel } from "../features/perfMonitor";
 import { openTakeoffSettingsDialog } from "../features/takeoffSettings";
-import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
-import { toast } from "./toast";
+import { APP_SHORTCUTS } from "./shortcuts";
 import { t } from "../i18n";
-
-interface ActionItem {
-  kind: "action";
-  label: string;
-  shortcut?: string;
-  disabled?: boolean;
-  checked?: boolean;
-  danger?: boolean;
-  action: () => void;
-}
-
-interface SeparatorItem {
-  kind: "separator";
-}
-
-interface SubmenuItem {
-  kind: "submenu";
-  label: string;
-  key?: string;
-  disabled?: boolean;
-  items: MenuItem[];
-}
-
-type MenuItem = ActionItem | SeparatorItem | SubmenuItem;
-
-interface MenuDefinition {
-  id: string;
-  label: string;
-  items: () => MenuItem[];
-}
-
-function action(
-  label: string,
-  run: () => void,
-  options: { shortcut?: string; disabled?: boolean; checked?: boolean; danger?: boolean } = {},
-): ActionItem {
-  return {
-    kind: "action",
-    label,
-    shortcut: options.shortcut ? formatShortcut(options.shortcut) : undefined,
-    disabled: options.disabled,
-    checked: options.checked,
-    danger: options.danger,
-    action: run,
-  };
-}
-
-function separator(): SeparatorItem {
-  return { kind: "separator" };
-}
+import { fileMenu } from "./menus/fileMenu";
+import { action, separator, type MenuDefinition, type MenuItem } from "./menus/menuItems";
 
 function hasSelection(): boolean {
   return store.ui.selection.length > 0;
@@ -79,123 +29,9 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
   const project = store.project;
   const hasProject = Boolean(project);
   const viewOnly = store.readOnly;
-  const recent = getRecent();
 
   return [
-    {
-      id: "file",
-      label: t("menu.file"),
-      items: () => [
-        action(t("menu.file.newProject"), actions.newProject, {
-          shortcut: APP_SHORTCUTS.newProject,
-        }),
-        action(t("menu.file.openProject"), actions.openProject, {
-          shortcut: APP_SHORTCUTS.openProject,
-        }),
-        action(t("menu.file.openDrawing"), actions.openPdf, {
-          shortcut: APP_SHORTCUTS.openDrawing,
-        }),
-        action(t("menu.file.importProjectPages"), actions.importProjectPages, {
-          disabled: !hasProject || viewOnly,
-        }),
-        action(t("menu.file.consolidateDrawings"), actions.consolidateDrawings, {
-          disabled: !hasProject || viewOnly,
-        }),
-        action(t("menu.file.compareRevision"), actions.openCompare, { disabled: !hasProject }),
-        action(t("menu.file.compareDrawing"), actions.openDrawingReference, {
-          disabled: !hasProject,
-        }),
-        {
-          kind: "submenu",
-          label: t("menu.file.openRecent"),
-          disabled: recent.length === 0,
-          items: recent.length
-            ? [
-                ...recent.slice(0, 10).map((entry) =>
-                  action(
-                    t("menu.file.recentEntry", {
-                      name: entry.name,
-                      kind:
-                        entry.kind === "project"
-                          ? t("menu.file.recentProject")
-                          : t("menu.file.recentDrawing"),
-                    }),
-                    () => actions.openRecent(entry),
-                  ),
-                ),
-                separator(),
-                action(t("menu.file.clearRecent"), () => {
-                  clearRecent();
-                  actions.refresh();
-                  toast(t("menu.file.recentCleared"), "info");
-                }),
-              ]
-            : [action(t("menu.file.noRecent"), () => undefined, { disabled: true })],
-        },
-        separator(),
-        action(t("menu.file.save"), actions.saveProject, {
-          shortcut: APP_SHORTCUTS.save,
-          disabled: !hasProject || viewOnly,
-        }),
-        action(t("menu.file.saveAs"), actions.saveProjectAs, {
-          shortcut: APP_SHORTCUTS.saveAs,
-          disabled: !hasProject || viewOnly,
-        }),
-        action(t("menu.file.saveCopy"), actions.saveProjectCopy, {
-          disabled: !hasProject,
-        }),
-        action(t("menu.file.backupNow"), actions.backupProject, {
-          disabled: !hasProject || !isTauri,
-        }),
-        action(t("menu.file.backupManager"), actions.openBackupManager, {
-          disabled: !hasProject || !isTauri,
-        }),
-        action(t("menu.file.conflictedCopies"), actions.openConflictedCopies, {
-          disabled: !hasProject || !isTauri,
-        }),
-        action(t("menu.file.projectDoctor"), actions.openProjectDoctor, {
-          disabled: !hasProject,
-        }),
-        separator(),
-        action(t("menu.file.package"), actions.packageProject, {
-          disabled: !hasProject || !isTauri,
-        }),
-        action(t("menu.file.openPackage"), actions.openPackage, {
-          disabled: !isTauri,
-        }),
-        ...(isTauri
-          ? []
-          : [
-              action(t("menu.file.packageDesktopOnly"), () => undefined, {
-                disabled: true,
-              }),
-            ]),
-        separator(),
-        action(t("menu.file.importImage"), actions.insertImage, {
-          disabled: !hasProject || viewOnly,
-        }),
-        {
-          kind: "submenu",
-          label: t("menu.file.export"),
-          key: "export",
-          disabled: !hasProject,
-          items: [
-            action(t("menu.file.exportDrawing"), () => actions.exportAs("drawing")),
-            action(t("menu.file.exportPng"), () => actions.exportAs("png")),
-            separator(),
-            action(t("menu.file.exportMarkupsCsv"), () => actions.exportAs("csv")),
-            action(t("menu.file.exportQuantityCsv"), () => actions.exportAs("quantity-csv")),
-            action(t("menu.file.exportQuantityXlsx"), () => actions.exportAs("quantity-xlsx")),
-            action(t("menu.file.exportQuantityPdf"), () => actions.exportAs("quantity-pdf")),
-            separator(),
-            action(t("menu.file.exportJson"), () => actions.exportAs("json")),
-          ],
-        },
-        separator(),
-        action(t("menu.file.closeProject"), actions.closeProject, { disabled: !hasProject }),
-        action(t("menu.file.quit"), actions.quit, { shortcut: APP_SHORTCUTS.quit }),
-      ],
-    },
+    fileMenu(actions),
     {
       id: "edit",
       label: t("menu.edit"),
@@ -368,6 +204,7 @@ let menuRoot: HTMLElement | null = null;
 let openMenuId: string | null = null;
 let openedByHover = false;
 let panels: HTMLElement[] = [];
+const submenuAnchors = new Map<number, HTMLElement>();
 
 /** Top-level menu buttons, shared by the initial build and the relabel pass. */
 const MENU_TRIGGERS = [
@@ -464,6 +301,7 @@ function openMenu(id: string, focusFirst: boolean, byHover = false): void {
   document.body.append(root);
   menuRoot = root;
   panels = [panel];
+  submenuAnchors.clear();
 
   const rect = button.getBoundingClientRect();
   positionPanel(panel, rect.left, rect.bottom + 8);
@@ -537,8 +375,9 @@ function createPanel(items: MenuItem[], level: number): HTMLElement {
       event.preventDefault();
       event.stopPropagation();
       if (level > 0) {
-        buttonsAtLevel(level);
-        focusItemButton(level - 1);
+        const anchor = submenuAnchors.get(level);
+        closePanelAt(level);
+        anchor?.focus();
       } else {
         const trigger = openMenuId ? menuButtons.get(openMenuId) : undefined;
         closeMenus();
@@ -562,8 +401,9 @@ function createPanel(items: MenuItem[], level: number): HTMLElement {
     if (event.key === "ArrowLeft") {
       if (level > 0) {
         event.preventDefault();
-        closeSubmenusAbove(level - 1);
-        focusItemButton(level - 1);
+        const anchor = submenuAnchors.get(level);
+        closePanelAt(level);
+        anchor?.focus();
       } else if (openMenuId) {
         event.preventDefault();
         const ids = [...menuButtons.keys()];
@@ -598,14 +438,10 @@ function positionPanel(panel: HTMLElement, left: number, top: number): void {
 
 function openSubmenu(anchor: HTMLElement, items: MenuItem[], level: number): void {
   closeSubmenusAbove(level - 1);
-  const existing = panels[level];
-  if (existing) {
-    existing.remove();
-    panels = panels.slice(0, level);
-  }
   const panel = createPanel(items, level);
   menuRoot?.append(panel);
   panels[level] = panel;
+  submenuAnchors.set(level, anchor);
   const rect = anchor.getBoundingClientRect();
   positionPanel(panel, rect.right + 3, rect.top - 4);
   anchor.setAttribute("aria-expanded", "true");
@@ -616,6 +452,7 @@ function closeSubmenusAbove(level: number): void {
   for (let index = panels.length - 1; index > level; index -= 1) {
     panels[index]?.remove();
     panels.pop();
+    submenuAnchors.delete(index);
   }
   for (const panel of panels) {
     for (const item of panel.querySelectorAll<HTMLElement>(".menu-submenu.is-open")) {
@@ -625,27 +462,22 @@ function closeSubmenusAbove(level: number): void {
   }
 }
 
-function buttonsAtLevel(level: number): void {
-  panels[level]?.remove();
-  panels = panels.slice(0, level);
+/** Removes the panel at `level` and every deeper panel, then focuses the parent item. */
+function closePanelAt(level: number): void {
+  for (let index = panels.length - 1; index >= level; index -= 1) {
+    panels[index]?.remove();
+    panels.pop();
+    const anchor = submenuAnchors.get(index);
+    submenuAnchors.delete(index);
+    anchor?.classList.remove("is-open");
+    anchor?.setAttribute("aria-expanded", "false");
+  }
 }
 
 function focusFirstItem(panel: HTMLElement | undefined): void {
   if (!panel) return;
   const items = [...panel.querySelectorAll<HTMLButtonElement>(".menu-item:not(:disabled)")];
   items[0]?.focus();
-}
-
-function focusItemButton(level: number): void {
-  const panel = panels[level];
-  if (!panel) return;
-  const open = panel.querySelector<HTMLButtonElement>(".menu-submenu.is-open");
-  if (open) {
-    open.focus();
-    return;
-  }
-  const items = [...panel.querySelectorAll<HTMLButtonElement>(".menu-submenu")];
-  items[items.length - 1]?.focus();
 }
 
 function moveFocus(panel: HTMLElement, step: number): void {
@@ -667,6 +499,7 @@ export function closeMenus(): void {
   openMenuId = null;
   openedByHover = false;
   panels = [];
+  submenuAnchors.clear();
 }
 
 export function openExportMenu(): void {

@@ -69,8 +69,8 @@ The Markups table is sorted and grouped rather than user-ordered, so it follows 
 **View → Reference view (same page)** (`Ctrl/Cmd+Shift+2`) opens a second, read-only canvas beside the main one. Its toolbar selects the source:
 
 - **Same page** mirrors the current page by default. Pan and zoom stay synchronized, and the reference follows the primary page until you choose another page in the reference bar. The bar shows a short hint explaining that this is not a second drawing.
-- **Revision** compares a saved `.gridscalr` project. Choose **File → Compare with revision…**, use **Open…** in the pane, or select **Revision** and pick the file.
-- **Drawing** compares a raw PDF drawing. Choose **File → Compare with drawing…**, use **Open…**, or select **Drawing** and pick the PDF.
+- **Revision** compares a saved `.gridscalr` project. Choose **File → Compare → Compare with revision…**, use **Open…** in the pane, or select **Revision** and pick the file.
+- **Drawing** compares a raw PDF drawing. Choose **File → Compare → Compare with drawing…**, use **Open…**, or select **Drawing** and pick the PDF.
 
 The bar also names the loaded reference and shows its page count. **Open…** replaces the reference for the current source, and the close button restores the primary canvas. Drag the divider to change how much room each pane gets, and use the mouse wheel or a touchpad pinch over either pane to zoom.
 
@@ -157,11 +157,11 @@ Use the right-click menu on a page card for the drawing actions. A PDF source of
 - **Relink source…** – find a moved reference file. GridScalr verifies the page count, warns on a checksum mismatch, and searches the project folder and its drawings folder by checksum before asking you to pick a file.
 - **Replace source…** – map a new revision of a PDF or TIF when pages were added, removed or moved. A TIF replacement converts the new scan to its derived PDF and compares the raw TIF checksum, so the pages keep their identity. When the replaced PDF is a managed copy, GridScalr copies the new revision into the project folder as well, so the document stays a managed copy and its provenance points at the new pick. The previous copy is left on disk and appears under unused managed copies in the project doctor until you remove it.
 
-**File → Consolidate drawings…** copies every remaining referenced PDF into the project folder, checks each checksum, rewrites the paths and reports how many drawings were copied. It is one explicit action with a recovery checkpoint; originals are untouched. If any source changed or is missing, the project is not modified.
+**File → Import → Consolidate drawings…** copies every remaining referenced PDF into the project folder, checks each checksum, rewrites the paths and reports how many drawings were copied. It is one explicit action with a recovery checkpoint; originals are untouched. If any source changed or is missing, the project is not modified.
 
 While a project is open, a source-changed or missing-source banner offers **Reload**, **Use current**, **Relink** and **Copy into project**. Nothing is accepted automatically. A page-count change is never guessed; use **Replace source…** to map the pages.
 
-A project can reference a drawing outside its own folder, for example a shared plan library. Opening such a project shows a dismissible warning that names the drawings and offers **Copy into project** or **Relink**. GridScalr never blocks a legitimate reference, but treat a project file as input: it can point at any PDF you are allowed to read, so only open projects from a source you trust. The warning also appears in **File → Project doctor…**.
+A project can reference a drawing outside its own folder, for example a shared plan library. Opening such a project shows a dismissible warning that names the drawings and offers **Copy into project** or **Relink**. GridScalr never blocks a legitimate reference, but treat a project file as input: it can point at any PDF you are allowed to read, so only open projects from a source you trust. The warning also appears in **File → Maintenance → Project doctor…**.
 
 GridScalr never writes to a referenced drawing, to the original path recorded behind a managed copy, or anywhere inside the `<project>.drawings/` folder. A save or export that resolves there, through a symlink or an alternate spelling, is refused.
 
@@ -234,7 +234,7 @@ Drag a page card, or the grip in its corner, and drop it on the line between two
 
 The page menu offers the rest of the workflow, and each action is also on the keyboard when a page card or the canvas has focus. **Insert page before…** and **Insert page after…** name the target first, for example **before page 3 — Sheet A-101**, and ask before they add another record for the same source sheet; `Alt` + `PageUp` / `PageDown` inserts before or after the current page. **Move page to position…** (`Alt` + `Shift` + `M`) lists every position that actually changes the order and moves the page there as one undo step. **Duplicate page…** (`Alt` + `Shift` + `D`) opens the duplicate options. **Delete page…** (`Alt` + `Shift` + `Delete`) asks for confirmation. Page numbers in the title row, Markups and reports follow the current order. Deleting a page stays an explicit, confirmed action and cannot be undone.
 
-Drop a PDF or TIF drawing on the page cards to add its pages. The insertion line shows where the pages will land; dropping below the last card appends. The usual page picker and import preflight appear before anything changes, and the whole import is one undo step. Dropping a `.gridscalr` project here does not open or replace the current project; use **File → Import pages from project…** instead.
+Drop a PDF or TIF drawing on the page cards to add its pages. The insertion line shows where the pages will land; dropping below the last card appends. The usual page picker and import preflight appear before anything changes, and the whole import is one undo step. Dropping a `.gridscalr` project here does not open or replace the current project; use **File → Import → Import pages from project…** instead.
 
 **Delete page…** removes that page record, its items and its layer page state. `Alt` + `Shift` + `Delete` opens the same confirmation. Later pages are not renumbered in the saved file; only their displayed numbers change. Deleting is structural and cannot be undone. A project may have no pages at all.
 
@@ -250,7 +250,7 @@ Replacing a managed copy keeps managed mode: the new PDF is copied into `<projec
 
 ### Import pages from another project
 
-Use **File → Import pages from project…**, or right-click the empty area below the page cards and choose **Import pages from project…**, when work was split across two `.gridscalr` files.
+Use **File → Import → Import pages from project…**, or right-click the empty area below the page cards and choose **Import pages from project…**, when work was split across two `.gridscalr` files.
 
 1. Choose the source project.
 2. The picker groups its pages by source document. Each card shows the sheet preview, page name, location and item count. No pages are selected at first.
@@ -289,7 +289,7 @@ and zero documents are valid, not corrupt.
   types, count presets or Markups views would be dropped before it writes.
 - **Load report:** when an opened project contains dropped, repaired or invalid
   data, the load report names it instead of filtering it silently.
-- **Project doctor:** open it from **File → Project doctor…**, or from a blocked
+- **Project doctor:** open it from **File → Maintenance → Project doctor…**, or from a blocked
   save or a load report. It lists issues by severity and entity. Filter the list
   by severity, entity kind or repair availability; a filter only narrows the
   list — it never changes which repairs are available — and **Select all shown
@@ -609,7 +609,7 @@ A placed table is an ordinary drawing item:
 
 The table reads as a printed sheet rather than a markup: a grey header band, subtle alternating row bands, a banded group header with a rule above it when the takeoff table groups its rows, one separated subtotal row per group and a dark grand total row. Numbers are right-aligned and text is left-aligned, headings, groups, subtotals and the grand total are bold, and the cell padding and rule weights are the same on every row. The sheet underneath is white in every theme, so the table keeps the same light paper and dark ink in every theme; only the neutral tint, the rules and the accent of the header follow the chosen palette. The drawing PDF export draws the same bands, rules and text.
 
-The table is a live view over the takeoff table definition: a measurement, room area, custom value or takeoff table edit changes the drawn table immediately. Nothing is copied onto the item. A takeoff table that was deleted outside the interface is drawn as a named placeholder and reported by **File → Project doctor…**.
+The table is a live view over the takeoff table definition: a measurement, room area, custom value or takeoff table edit changes the drawn table immediately. Nothing is copied onto the item. A takeoff table that was deleted outside the interface is drawn as a named placeholder and reported by **File → Maintenance → Project doctor…**.
 
 The row range keeps a long table predictable. When some rows do not fit the box or the chosen range stops before the last row, Properties warns and offers **Continue on a new table**, which places the remaining rows directly below with the same width, columns and totals. The table never shrinks below its minimum font size and never clips silently: long cell text is shortened with an ellipsis, and rows that do not fit at the minimum size are reported as an overflow instead.
 
@@ -746,7 +746,7 @@ Each drag or inline edit is one undo step.
 
 ## Images
 
-Use **File → Import image…** to add a PNG or JPEG. `Ctrl/Cmd+V` also inserts an image when the clipboard contains one; when it does not, the same shortcut pastes markups.
+Use **File → Import → Import image…** to add a PNG or JPEG. `Ctrl/Cmd+V` also inserts an image when the clipboard contains one; when it does not, the same shortcut pastes markups.
 
 - Images are embedded in the project, so the `.gridscalr` file stays portable.
 - Each image is limited to 20 MB and 4000 px on its longest side. Larger images are proportionally downscaled.
@@ -959,8 +959,8 @@ Reports cover every page and every category, exclude hidden items and hidden lay
 - **File → Save** (`Ctrl/Cmd+S`) writes a `.gridscalr` project file. If there are no unsaved changes, Save does not rewrite the file.
 - **File → Save as…** (`Ctrl/Cmd+Shift+S`) writes to a new path and keeps working there.
 - **File → Save a copy…** writes a backup copy without changing the open project or its saved state. The copy stores document links relative to its own folder, so it stays usable on its own. Use it before a risky edit or before moving a project.
-- **File → Back up now…** writes an on-demand backup in the local app data folder.
-- **File → Backup manager…** lists every backup for the open project with its time, size and the project path it was written from. **Restore as copy** is the default and opens the selected backup as unsaved work. **Replace open project** is offered only when the project is saved; it binds the backup to the current path after a separate confirmation, and nothing is written until you save. **Delete selected** and **Delete all** ask for confirmation and never touch the project file or a drawing.
+- **File → Maintenance → Back up now…** writes an on-demand backup in the local app data folder.
+- **File → Maintenance → Backup manager…** lists every backup for the open project with its time, size and the project path it was written from. **Restore as copy** is the default and opens the selected backup as unsaved work. **Replace open project** is offered only when the project is saved; it binds the backup to the current path after a separate confirmation, and nothing is written until you save. **Delete selected** and **Delete all** ask for confirmation and never touch the project file or a drawing.
 - Relative drawing links in a backup are resolved from the project path recorded with that backup and, when that folder no longer exists, from the folder of the project open in the window. Drawings that cannot be found are listed before the restore starts: **Locate drawings…** asks for each one and the load still verifies its checksum. A stale absolute path is reported, never loaded in place of the recorded relative link, and cancelling leaves the open project unchanged.
 
 A desktop save is conditional against the file version GridScalr loaded. If another program, a second window or a cloud client changed the project file on disk, GridScalr opens a conflict dialog instead of overwriting it:
@@ -971,7 +971,7 @@ A desktop save is conditional against the file version GridScalr loaded. If anot
 - **Overwrite** writes your version over the disk file. This is an explicit danger action.
 - **Cancel** keeps editing without writing.
 
-A conflicted copy is an ordinary file beside the project. **File → Conflicted copies…** lists every copy in the open project's folder with its name, time and size. The same dialog is reachable from the project status popover in the status bar, where the copy count is shown when there is at least one.
+A conflicted copy is an ordinary file beside the project. **File → Maintenance → Conflicted copies…** lists every copy in the open project's folder with its name, time and size. The same dialog is reachable from the project status popover in the status bar, where the copy count is shown when there is at least one.
 
 - **Open as project** loads the selected copy in this window as its own project. The original project file is never written; the copy keeps its own path, so a later Save writes to the copy.
 - **Compare with open project** opens the same read-only revision comparison as the save conflict dialog. It lists changed pages and markups and never merges or writes anything.
@@ -1037,7 +1037,7 @@ While a desktop project is open, GridScalr checks the project file stamp every f
 
 ### Share a project package
 
-**File → Share project package…** is the share action for a project. It writes the project and its drawings as one standard ZIP named `<project>.gridscalr.zip`. The package is a transport container; the `.gridscalr` format is unchanged, and the recipient opens it with **File → Open package…** or by extracting the project and its `documents/` folder. The flattened drawing PDF stays the deterministic drawing export, while the package is what carries the editable project to another computer.
+**File → Send & share → Share project package…** is the share action for a project. It writes the project and its drawings as one standard ZIP named `<project>.gridscalr.zip`. The package is a transport container; the `.gridscalr` format is unchanged, and the recipient opens it with **File → Send & share → Open package…** or by extracting the project and its `documents/` folder. The flattened drawing PDF stays the deterministic drawing export, while the package is what carries the editable project to another computer.
 
 ![Share project package dialog with optional exports and TIF scans](screenshots/package.png)
 
@@ -1052,7 +1052,7 @@ While a desktop project is open, GridScalr checks the project file stamp every f
 - The dialog shows the expected uncompressed size while you choose the optional exports. GridScalr refuses a package larger than the 2 GiB uncompressed limit, and a destination without room for the package plus a 64 MiB reserve, before it writes anything.
 - The output file is subject to the same source-drawing guard as every other export.
 
-**File → Open package…** verifies the manifest and every checksum before a fresh extraction opens the project. The package is extracted to `<package folder>/<project name>/`. If that folder exists, open the existing extraction (including any edits made there) or replace it with a fresh one; you can also choose another folder. Cancel removes temporary files and leaves the package untouched. The extracted copy can be edited; the package file itself is not modified.
+**File → Send & share → Open package…** verifies the manifest and every checksum before a fresh extraction opens the project. The package is extracted to `<package folder>/<project name>/`. If that folder exists, open the existing extraction (including any edits made there) or replace it with a fresh one; you can also choose another folder. Cancel removes temporary files and leaves the package untouched. The extracted copy can be edited; the package file itself is not modified.
 
 You can also unzip the package yourself and open the `.gridscalr` file with **File → Open project…**. Keep the `documents/` folder next to the project file so the relative links resolve.
 

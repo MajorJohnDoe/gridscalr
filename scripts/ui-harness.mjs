@@ -595,10 +595,16 @@ export async function makeReferenceProject() {
   return path;
 }
 
-/** Opens the revision comparison through File → Compare with revision…. */
-export async function openCompareProject(page, path) {
+/** Opens the File menu and one of its grouped submenus by its visible label. */
+export async function openFileSubmenu(page, label) {
   await page.getByRole("menuitem", { name: "File" }).click();
+  await page.getByRole("menuitem", { name: label }).click();
+}
+
+/** Opens the revision comparison through File → Compare → Compare with revision…. */
+export async function openCompareProject(page, path) {
   const chooserPromise = page.waitForEvent("filechooser");
+  await openFileSubmenu(page, "Compare");
   await page.getByRole("menuitem", { name: "Compare with revision…" }).click();
   const chooser = await chooserPromise;
   await chooser.setFiles(path);
