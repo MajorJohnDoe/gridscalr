@@ -295,3 +295,101 @@ clear the 20 % improvement bar. Frame p95 is still vsync-clamped (F-146).
 - Project open and the benchmark's absolute p95 remain inside every budget with
   wide headroom.
 
+## Phase 3 — Gesture-time content reuse (2026-11-24)
+
+- Code measured: `perf/3-gesture-reuse`, cut from `main` `e56fa71` (phase 2
+  merged). Schema: unchanged (28). No snapshot, export or UI change.
+- Shape and viewport: identical to phases 1–2. Both the before and the after rows
+  come from the same probe script on this machine — two three-run probes with
+  only the application change between them, median reported.
+
+### What changed
+
+- `src/features/gestureRender/` owns gesture-time reuse. During a pan or a wheel
+  zoom the content canvas paints the previous item raster with one uniform scale
+  and one translation (`rasterTransform`) instead of running `drawContent()`.
+  The base viewport is latched when the gesture begins and the pixels are
+  captured on the first frame, so repeated frames never compound the transform.
+- A pointer pan settles at pointerup; a wheel stream settles 120 ms after the
+  last wheel event (`GESTURE_SETTLE_MS`, `src/features/gestureRender/model.ts`).
+  A touch pinch settles when the gesture ends. The settle drops the raster and
+  runs the existing real redraw plus the existing PDF raster schedule.
+- Gesture edges are the existing pointer paths: `NavigationGesture` (space-pan,
+  middle-button pan, pan tool, Ctrl + wheel zoom and wheel pan) and
+  `TouchNavigation` (two-finger pan and pinch). `CanvasView` gained one adapter
+  call in `drawContentStage`, one controller field and two host delegates.
+- The `interaction` canvas is untouched: selection handles, the marquee, snapping
+  and the draft overlay still draw on every frame.
+- `FrameWindow` gained `overGoodMs` (frames at or above 20 ms) and `perf:probe`
+  reports it, so the metric F-146 asked for exists (F-146).
+
+### Interaction: before and after
+
+Both rows are the same 5 s scripted pan (120 pointer moves) and three-step
+Ctrl + wheel zoom on the browser fallback. Frame samples and long tasks are
+cleared after the edit loop, so they cover only the pan and zoom.
+
+| Measure | CI before | CI after | Reference before | Reference after |
+| --- | --- | --- | --- | --- |
+| `draw-items` p50 | 18.7 ms | 0.0 ms | 19.1 ms | 0.0 ms |
+| `draw-items` p95 | 20.4 ms | **4.9 ms (−76.0 %)** | 21.8 ms | **4.9 ms (−77.5 %)** |
+| `draw-items` total | 2 130.8 ms | **71.6 ms (−96.6 %)** | 2 083.0 ms | **76.4 ms (−96.3 %)** |
+| `draw-items` spans | 124 | 128 | 124 | 128 |
+| `draw-items` max | 23.1 ms | 21.4 ms | 28.5 ms | 16.9 ms |
+| `canvas-redraw` p95 / total | 20.6 / 2 153.0 ms | 5.1 / 100.1 ms | 21.9 / 2 104.5 ms | 5.1 / 103.4 ms |
+| `draw-base` total | 28.0 ms | 30.6 ms | 25.2 ms | 29.4 ms |
+| Frame p50 / p95 | 16.7 / 16.7 ms | 16.7 / 16.8 ms | 16.7 / 16.8 ms | 16.7 / 16.8 ms |
+| Frame p99 / max | 16.8 / 33.4 ms | 16.8 / 33.3 ms | 16.8 / 49.9 ms | 16.8 / 33.4 ms |
+| Frames over 20 ms | 1 | 1 | 3 | 1 |
+| Long-task windows | 0 | 0 | 1 | 0 |
+| `pdf-render` p95 / total (count) | 26.0 / 78.4 ms (4) | 25.7 / 110.9 ms (6) | 28.3 / 96.4 ms (4) | 22.8 / 103.1 ms (6) |
+
+The four extra `draw-items` spans are the settle redraws (pointerup plus three
+zoom settles); they carry the 21.4 ms / 16.9 ms max, while the per-frame paint is
+below the 0.1 ms timer resolution at p50 and under 5 ms at p95. `draw-base` is
+unchanged within noise. `pdf-render` records two more spans in the same window
+because the settles re-arm the existing 90 ms PDF debounce (the first frames
+coalesce); its p95 and total stay in the same band, and the PDF raster is now
+refreshed after the zoom settles rather than only on the wheel event.
+
+Frames over 20 ms did not regress. Frame p95 stayed vsync-clamped at 16.7–16.8 ms
+in every row, exactly as F-146 predicted, which is why the phase compares
+`draw-items` and `overGoodMs` instead.
+
+### Alignment evidence
+
+A mid-gesture capture of `#canvas-content` was compared with the settled redraw
+at the same viewport (ad-hoc Playwright check, no committed script):
+
+| Gesture | Differing pixels (> 48/255 on any channel) | Max channel delta |
+| --- | --- | --- |
+| Pan by 120 × 60 px, held | 0 of 639 856 | 13 (resampling of antialiased edges) |
+| One Ctrl + wheel step, +24 % zoom | 9 138 of 639 856 (1.4 %) | 255 on high-contrast edges |
+
+The pan case is a pure translation and is pixel-identical apart from resampling.
+The zoom case differs only on antialiased item and label edges, which is the
+intended softness of an upscaled raster for the settle window; it is not a
+misalignment, and the settled frame is the full real redraw.
+
+### Run-to-run variance
+
+Each row above is the median of three runs. The probe reports its own spread for
+frames and edits (frame p95 0.6 % in both the before and the after session on
+each shape); it does not print a per-run span median, so the `draw-items` rows
+above carry no within-session figure. The phase 3 preparation session measured
+the untouched tree at 20.8 ms (CI) and 21.3 ms (reference) `draw-items` p95 with
+the phase 1 probe, which brackets the before rows and puts the after row far
+outside the run-to-run band. The after p95 sits on the 0.1 ms timer resolution,
+so it is stable by construction rather than by luck.
+
+### What phase 3 says
+
+- Reusing the content raster removes 76–78 % of `draw-items` p95 and 96 % of its
+  total during the scripted pan and zoom, on both project shapes. The 30 %
+  acceptance bar is met with a wide margin and no frame regression.
+- The resting canvas is unchanged: `test:visual` passes with zero differing
+  pixels and no baseline update, because the settle path is the unchanged real
+  draw.
+- The optimization covers the primary canvas only. The reference pane and the
+  split-view divider wheel stay on the real redraw path (F-147).
+

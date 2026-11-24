@@ -11,6 +11,7 @@ import type { LabelHit } from "../editors";
 import type { ToolId } from "../../state/store";
 import type { Draft } from "../draftRenderer";
 import type { LabelLayout } from "../../model/labelLayout";
+import type { GestureKind } from "../../features/gestureRender";
 import type { Viewport } from "../viewport";
 
 /**
@@ -32,6 +33,10 @@ export interface PointerHost {
   setHostCursor(cursor: string): void;
   drawContent(): void;
   drawInteraction(): void;
+  /** A pan or zoom started; the canvas may reuse its previous content raster. */
+  beginViewGesture(kind: GestureKind): void;
+  /** The gesture ended or was cancelled; the canvas redraws when it settles. */
+  endViewGesture(kind: GestureKind): void;
   clearHover(): void;
   snapPoint(point: Point, excludeItemId?: string): Point;
   snapPolylinePoint(point: Point): Point;

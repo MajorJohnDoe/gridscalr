@@ -500,6 +500,10 @@ src/features/sessionRecovery/ scoped autosave, byte-budgeted recovery store, rec
 src/features/perfMonitor/ opt-in performance recorder (frame sampling, long tasks, named spans), movable panel, support summary
 src/features/perfMonitor/model.ts pure sample buffers, window statistics and the path-free summary text
 src/features/perfMonitor/recorder.ts rAF sampling, long-task observer, span timing and heap reads
+src/features/gestureRender/ gesture-time content raster reuse: pure settle rule, gesture state, raster capture and transform
+src/features/gestureRender/index.ts public surface: controller, settle rule and transform types
+src/features/gestureRender/model.ts pure settle rule: the idle window before the real redraw
+src/features/gestureRender/controller.ts gesture state, raster transform, capture and paint
 src/features/schematics/   operation-card templates, sheet fields, symbol catalogue surface, fit and dialogs
 src/features/schematics/index.ts public surface for sheet templates, rendering, symbols and dialogs
 src/features/schematics/symbols/registry.ts localized symbol labels, search text and render-plan wrappers

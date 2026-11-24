@@ -56,6 +56,9 @@ src/
   features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners, shared drop line and rejection messages
   features/pageStatus/ pure page badges and status filters derived from project and source state
   features/pageMenu/ page card menu, insert/move targets and page keyboard commands
+  features/gestureRender/index.ts public surface for gesture-time content raster reuse
+  features/gestureRender/model.ts pure settle rule: the idle window before the real redraw
+  features/gestureRender/controller.ts gesture state, raster transform and content capture/paint
   features/saveIntegrity/index.ts public surface for conditional saves and backups
   features/saveIntegrity/stamp.ts runtime file stamp, version comparison and conflicted-copy names
   features/saveIntegrity/conflict.ts conflict classification and default action

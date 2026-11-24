@@ -38,6 +38,7 @@ const FOUNDATION_FEATURES = [
   "src/features/takeoffSettings",
   "src/features/dialogHost",
   "src/features/perfMonitor",
+  "src/features/gestureRender",
 ];
 
 const frontendErrors = [];

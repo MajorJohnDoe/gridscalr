@@ -54,6 +54,8 @@ export class PointerController {
       capturePointer: (pointerId) => capturePointer(this.element, pointerId),
       updateCursor: () => this.updateCursor(),
       drawInteraction: () => this.host.drawInteraction(),
+      beginViewGesture: (kind) => this.host.beginViewGesture(kind),
+      endViewGesture: (kind) => this.host.endViewGesture(kind),
     });
     this.touchInput = new TouchInput(element, {
       viewport: () => this.host.viewport(),
@@ -62,6 +64,8 @@ export class PointerController {
       releasePointer: (pointerId) => releasePointer(this.element, pointerId),
       cancelGesture: () => this.cancelGesture(),
       cancelDraft: () => this.host.cancelDraft(),
+      beginViewGesture: (kind) => this.host.beginViewGesture(kind),
+      endViewGesture: (kind) => this.host.endViewGesture(kind),
       openContextMenu: (clientX, clientY) =>
         openContextMenu(
           clientX,
@@ -466,10 +470,6 @@ export class PointerController {
 
   endPan(): boolean {
     return this.navigation.endPan();
-  }
-
-  cancelPan(): void {
-    this.navigation.cancelPan();
   }
 
   beginMarquee(page: Point, additive: boolean, pointerId: number): void {

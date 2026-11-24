@@ -1,5 +1,4 @@
-import { distance, itemBounds, type Bounds } from "../model/geometry";
-import { COUNT_SYMBOL_RADIUS } from "../model/countSymbols";
+import { distance, itemFocusBounds, type Bounds } from "../model/geometry";
 import { hitTest } from "../model/hitTest";
 import type { LabelBox, LabelMetrics } from "../model/label";
 
@@ -20,6 +19,7 @@ import {
 import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { deleteItems, translateItems } from "../model/commands";
 import { perfMark, perfSpan, perfSpanAsync } from "../features/perfMonitor";
+import { GestureRenderController, type GestureKind } from "../features/gestureRender";
 
 import { focusViewTransform, isCancellation, pointInBox } from "./geometry";
 import { CropController } from "./crop";
@@ -183,6 +183,7 @@ export class CanvasView {
   private imageFailed = new Set<string>();
   /** Depth of a nested draw stage; a stage inside another stage is not timed twice. */
   private drawSpanDepth = 0;
+  private readonly gestureRender: GestureRenderController;
 
   constructor(host: HTMLElement, hooks: CanvasHooks, options: CanvasViewOptions = {}) {
     this.host = host;
@@ -210,6 +211,13 @@ export class CanvasView {
     this.baseCtx = this.base.getContext("2d")!;
     this.contentCtx = this.content.getContext("2d")!;
     this.interactionCtx = this.interaction.getContext("2d")!;
+    this.gestureRender = new GestureRenderController({
+      canvas: this.content,
+      context: this.contentCtx,
+      dpr: () => this.dpr,
+      viewport: () => this.view,
+      onSettle: () => this.invalidate(),
+    });
 
     this.loading = document.createElement("div");
     this.loading.className = "canvas-loading";
@@ -283,6 +291,8 @@ export class CanvasView {
       },
       drawContent: () => this.drawContent(),
       drawInteraction: () => this.drawInteraction(),
+      beginViewGesture: (kind: GestureKind) => this.gestureRender.begin(kind),
+      endViewGesture: (kind: GestureKind) => this.gestureRender.end(kind),
       clearHover: () => this.pointers.clearHover(),
       snapPoint: (point, excludeItemId) => this.snapPoint(point, excludeItemId),
       snapPolylinePoint: (point) => this.snapPolylinePoint(point),
@@ -592,7 +602,7 @@ export class CanvasView {
   focusItem(item: MarkupItem): boolean {
     const size = this.ensurePageSize();
     if (!size || this.width < 1 || this.height < 1) return false;
-    const bounds = this.focusBoundsForItem(item);
+    const bounds = itemFocusBounds(item, this.pageLabelLayouts().get(item.id));
     if (this.isBoundsVisible(bounds)) return true;
     const view = focusViewTransform(bounds, size, {
       width: this.width,
@@ -613,25 +623,6 @@ export class CanvasView {
       Math.max(first.x, second.x) <= this.width - margin &&
       Math.max(first.y, second.y) <= this.height - margin
     );
-  }
-
-  private focusBoundsForItem(item: MarkupItem): Bounds {
-    const bounds = itemBounds(item);
-    if (item.kind === "count" && item.points[0]) {
-      const radius = COUNT_SYMBOL_RADIUS + 2;
-      bounds.min.x -= radius;
-      bounds.min.y -= radius;
-      bounds.max.x += radius;
-      bounds.max.y += radius;
-    }
-    const label = this.pageLabelLayouts().get(item.id);
-    if (label) {
-      bounds.min.x = Math.min(bounds.min.x, label.box.x);
-      bounds.min.y = Math.min(bounds.min.y, label.box.y);
-      bounds.max.x = Math.max(bounds.max.x, label.box.x + label.box.width);
-      bounds.max.y = Math.max(bounds.max.y, label.box.y + label.box.height);
-    }
-    return bounds;
   }
 
   /**
@@ -1214,6 +1205,7 @@ export class CanvasView {
   }
 
   private drawContentStage(): void {
+    if (this.gestureRender.paint()) return;
     const ctx = this.contentCtx;
     this.prepare(ctx);
     const project = this.sceneProject;
@@ -1540,6 +1532,7 @@ export class CanvasView {
 
   destroy(): void {
     this.unsubscribe();
+    this.gestureRender.dispose();
     this.crop.destroy();
     this.observer.disconnect();
     if (this.renderTimer !== null) window.clearTimeout(this.renderTimer);
