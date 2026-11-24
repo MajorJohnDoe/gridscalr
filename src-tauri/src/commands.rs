@@ -34,7 +34,7 @@ static FILE_COUNTER: AtomicU64 = AtomicU64::new(0);
 /// Flushes a finished temporary file and then swaps it into place. The previous
 /// file is never deleted: the replacement is a single rename, so a failure or a
 /// crash leaves either the old file or the new one at the destination.
-fn atomic_write(path: &Path, data: &[u8]) -> Result<(), CommandError> {
+pub(crate) fn atomic_write(path: &Path, data: &[u8]) -> Result<(), CommandError> {
     let file_name = path
         .file_name()
         .ok_or_else(|| CommandError::new("notAFile", ""))?;

@@ -1058,6 +1058,18 @@ You can also unzip the package yourself and open the `.gridscalr` file with **Fi
 
 Packages are not encrypted and are not cryptographically signed; the checksums detect corruption and accidental changes. Share project package and Open package require the desktop app and are disabled in the browser fallback.
 
+### Send by e-mail
+
+**File → Send & share → Send by e-mail…** opens the same drawing-export dialog as **Drawing PDF…**, then opens a new, unsent draft in your local mail client with `<project>-markups.pdf` attached. Page range, crop, visible layers, labels, the calibration line, the legend, optional reader layers and review annotations follow the same rules; hidden items and hidden layers are never attached.
+
+The PDF is written to an app-owned `mail-outbox` folder inside the app cache before the client is launched, and the attachment is always that copy, never a source drawing. The folder keeps the ten most recent attachments; older ones are pruned. Above 20 MB GridScalr warns and offers **Continue**, **Export to disk instead** or **Cancel**.
+
+- Windows uses Simple MAPI through the default MAPI client, usually Outlook, and falls back to `outlook.exe /a` when Simple MAPI is unavailable.
+- macOS creates a visible Mail.app draft. macOS may ask for permission to control Mail the first time.
+- Linux uses `xdg-email --attach` and falls back to `thunderbird -compose attachment=…`.
+
+If no client opens, GridScalr names the saved PDF and offers **Show file**, so a failed launch is never silent. Webmail in a browser is not supported because a `mailto:` link cannot attach a file. Send by e-mail is desktop-only and disabled in the browser fallback.
+
 ### Export
 
 **File → Export** contains:

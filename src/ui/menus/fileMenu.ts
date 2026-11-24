@@ -75,6 +75,9 @@ function fileMenuItems(actions: PanelActions): MenuItem[] {
       kind: "submenu",
       label: t("menu.file.shareGroup"),
       items: [
+        action(t("menu.file.sendByEmail"), actions.sendByEmail, {
+          disabled: !hasProject || !isTauri,
+        }),
         action(t("menu.file.package"), actions.packageProject, {
           disabled: !hasProject || !isTauri,
         }),
@@ -85,6 +88,9 @@ function fileMenuItems(actions: PanelActions): MenuItem[] {
           ? []
           : [
               action(t("menu.file.packageDesktopOnly"), () => undefined, {
+                disabled: true,
+              }),
+              action(t("menu.file.emailDesktopOnly"), () => undefined, {
                 disabled: true,
               }),
             ]),

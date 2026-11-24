@@ -158,13 +158,19 @@ try {
     "redo should start disabled on a freshly loaded project",
   );
 
-  // Package commands are visible but disabled in the browser fallback.
+  // Package and send-by-email commands are visible but disabled in the browser
+  // fallback, each with a desktop-only reason.
   await openFileSubmenu(page, "Send & share");
   const packageItem = page.getByRole("menuitem", { name: /Share project package/ });
   const openPackageItem = page.getByRole("menuitem", { name: /Open package/ });
+  const emailItem = page.getByRole("menuitem", { name: /Send by e-mail/ });
   assert.equal(await packageItem.isDisabled(), true, "package should be desktop-only");
   assert.equal(await openPackageItem.isDisabled(), true, "open package should be desktop-only");
+  assert.equal(await emailItem.isDisabled(), true, "send by e-mail should be desktop-only");
   await page.getByRole("menuitem", { name: "Project packages require the desktop app" }).waitFor();
+  await page
+    .getByRole("menuitem", { name: "Sending by e-mail requires the desktop app" })
+    .waitFor();
   await page.keyboard.press("Escape");
   await page.evaluate(() => window.__gridscalr.app.openPackageDialogForDocs());
   const packageDialog = page.getByRole("dialog", { name: "Package project" });

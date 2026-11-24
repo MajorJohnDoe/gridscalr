@@ -126,6 +126,36 @@ workers are also covered in a production build.
 `destroy()` after prompting. The dialog plugin's `message`, `ask` and `confirm`
 commands are not granted because those dialogs are app-drawn.
 
+## External process launches
+
+**File → Send & share → Send by e-mail…** is the only feature that starts a
+program outside GridScalr. It adds no CSP source and no Tauri capability: the
+frontend calls two commands in `src-tauri/src/mail_send.rs`, and the launch
+plans live in `src-tauri/src/mail_launch.rs`.
+
+- `compose_mail` writes the exported drawing PDF into the app-cache
+  `mail-outbox/` folder, prunes that folder to the ten most recent PDFs and then
+  launches a client. It never writes a user-chosen path and never touches a
+  source drawing or the project file.
+- `reveal_export` accepts a path only after `path_guard::ensure_inside_root`
+  proves the resolved file exists, ends in `.pdf` and lives inside the same
+  `mail-outbox` folder. A source drawing, an alternate spelling and a symlink
+  that escapes the folder are refused.
+- Every launch is `std::process::Command` with a fixed program and an argument
+  array. There is no `sh -c`, no shell string and no interpolation. The fixed
+  programs are `xdg-email`, `thunderbird`, `osascript`, `open`, `explorer.exe`
+  and `outlook.exe`.
+- Windows prefers Simple MAPI through `MAPISendMailW` in the system
+  `mapi32.dll`, using the reviewed `windows-sys` struct definitions and
+  `MAPI_LOGON_UI | MAPI_DIALOG`; `outlook.exe /a` is the fallback. macOS passes
+  the path, subject and body as `osascript` run arguments, never as AppleScript
+  source. Thunderbird's single `-compose` argument is stripped of quotes,
+  commas and line breaks so it cannot gain a second field.
+- The browser fallback shows the menu entry disabled. It never calls IPC.
+
+Changing a program, an argument shape or the outbox guard is a security change:
+update `security/policy.json`, this section and the Rust unit tests together.
+
 ## CSV import bounds
 
 The schedule CSV import is a controlled mutation of existing project data, not a

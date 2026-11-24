@@ -37,6 +37,10 @@
     "src-tauri/src/source_cleanup.rs": {
       "max": 2,
       "reason": "Managed-copy inventory and batch removal share the same fresh reference check."
+    },
+    "src-tauri/src/mail_send.rs": {
+      "max": 2,
+      "reason": "Compose and reveal share one app-owned mail-outbox path guard; no other command belongs in the module."
     }
   }
 }

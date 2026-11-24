@@ -29,6 +29,16 @@ export interface DrawingExportOptions {
   includeAnnotations?: boolean;
 }
 
+/** Safe file stem shared by every export writer and the mail attachment. */
+export function safeExportBaseName(name: string): string {
+  return name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") || "gridscalr";
+}
+
+/** The drawing PDF name used by File -> Export and the mail attachment. */
+export function drawingPdfFileName(projectName: string): string {
+  return `${safeExportBaseName(projectName)}-markups.pdf`;
+}
+
 export interface PageRect {
   x: number;
   y: number;
