@@ -567,6 +567,8 @@ src/model/richText.ts      rich text runs, wrapping, selection formatting and fa
 src/model/symbolPaths.ts   shared SVG path parsing and transforms for symbol artwork
 src/state/store.ts         immutable snapshots, undo/redo, multi-selection, autosave
 src/state/history.ts       adaptive undo-history limits from the serialized snapshot size
+src/state/snapshot.ts      undo-history text without image payloads, one plain stringify per snapshot
+src/state/snapshotHistory.ts undo/redo stacks, cached current text, gesture snapshot and payload cache
 src/state/autosave.ts      IndexedDB recovery store with legacy localStorage fallback
 src/pdf/pdfRenderer.ts     PDF.js lifecycle and progressive page rendering
 src/pdf/thumbnails.ts      on-demand, cached page previews for the Pages panel

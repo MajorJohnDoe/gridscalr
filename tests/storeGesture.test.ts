@@ -25,6 +25,7 @@ describe("canvas gesture revision", () => {
 
     store.beginGesture();
     store.project!.settings.snapTolerancePx = 12;
+    store.noteGestureChange();
     store.endGesture();
 
     expect(store.revision).toBe(before + 1);

@@ -3650,8 +3650,19 @@ remains the scheduling home.
   replacer only when a payload actually exists) and must keep the snapshot text
   byte-identical to today's. If it cannot, record the measured reason and stop
   at Phase 2 Scope A.
+- **Outcome (Performance 1 phase 2, #349, commit `f473b91`):** the replacer is
+  gone. `src/state/snapshot.ts` sets each asset's `data` to `undefined` for one
+  plain `JSON.stringify` and restores it in a `finally`. The text is
+  byte-identical to the replacer output, pinned by `tests/storeSnapshot.test.ts`
+  against the demo project, the schema-28 fixture and in-memory PNG/JPEG
+  payloads. `undefined` assignment, not `delete`, is what keeps the asset
+  objects in their fast path: `delete` moved them to dictionary mode and cost
+  4.9 ms against 2.3 ms on the phase 1 CI shape. Serialisation per edit fell
+  from 11.54 to 3.02 ms (CI) and 43.47 to 22.1 ms (reference), and edit p95 fell
+  33.6 % and 35.9 %; per-page sharding was not needed. The remaining cost is the
+  plain JSON text itself.
 - **Related:** #348, #349, [`docs/performance/history.md`](../performance/history.md),
-  `src/state/store.ts`.
+  `src/state/snapshot.ts`, `src/state/snapshotHistory.ts`.
 
 ### F-146 — rAF frame-time p95 is vsync-clamped and cannot show a render win
 

@@ -8,7 +8,7 @@ import {
   type DuplicatePageOptions,
   type DuplicatePageSummary,
 } from "../features/pageModel";
-import { perfMark, perfSpan } from "../features/perfMonitor";
+import { perfMark } from "../features/perfMonitor";
 import { includedLocalPages } from "../model/documents";
 import {
   currentPageId,
@@ -37,7 +37,7 @@ import {
 import type { RemoveCategoryResult } from "../model/categories";
 import { selectionKey, uniqueSelectionRefs } from "../model/selection";
 import { resolveViewOnlyTool } from "../features/viewOnly";
-import { pushHistory } from "./history";
+import { SnapshotHistory } from "./snapshotHistory";
 import type {
   AreaMode,
   PageId,
@@ -263,10 +263,9 @@ export class Store {
   /** Increments whenever project data changes, including undo and redo. */
   revision = 0;
   private listeners = new Set<Listener>();
-  private undoStack: string[] = [];
-  private redoStack: string[] = [];
-  private gestureSnapshot: string | null = null;
-  private assetPayloads = new Map<string, string>();
+  private history = new SnapshotHistory();
+  /** Project revision captured when the open gesture started. */
+  private gestureRevision = 0;
 
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
@@ -278,11 +277,11 @@ export class Store {
   }
 
   get canUndo(): boolean {
-    return this.undoStack.length > 0;
+    return this.history.canUndo;
   }
 
   get canRedo(): boolean {
-    return this.redoStack.length > 0;
+    return this.history.canRedo;
   }
 
   setProject(project: Project, projectPath: string | null, dirty = false): void {
@@ -293,12 +292,8 @@ export class Store {
     this.readOnly = false;
     this.autosaveError = null;
     this.revision += 1;
-    this.clearHistory();
-    this.assetPayloads.clear();
     if (!project.assets) project.assets = {};
-    for (const asset of Object.values(project.assets)) {
-      if (asset.data) this.assetPayloads.set(asset.id, asset.data);
-    }
+    this.clearHistory();
     this.ui.page = 1;
     this.ui.selection = [];
     this.ui.hover = null;
@@ -336,7 +331,6 @@ export class Store {
     this.autosaveError = null;
     this.revision += 1;
     this.clearHistory();
-    this.assetPayloads.clear();
     this.ui = defaultUI();
     this.emit("project");
   }
@@ -411,9 +405,7 @@ export class Store {
    * structure. Page reorder and page insert are undoable and never call this.
    */
   clearHistory(): void {
-    this.undoStack = [];
-    this.redoStack = [];
-    this.gestureSnapshot = null;
+    this.history.seed(this.project);
   }
 
   /**
@@ -427,9 +419,7 @@ export class Store {
     const result = deletePageRecord(this.project, pageId);
     if (!result) return null;
     this.clearHistory();
-    for (const assetId of [...this.assetPayloads.keys()]) {
-      if (!this.project.assets[assetId]) this.assetPayloads.delete(assetId);
-    }
+    this.history.prunePayloads(this.project);
     this.ui.page = result.nextPageId ? pageNumber(this.project, result.nextPageId) : 1;
     this.ui.selection = [];
     this.ui.hover = null;
@@ -447,11 +437,11 @@ export class Store {
    */
   private mutatePageList(change: (project: Project) => boolean): boolean {
     if (!this.project || this.readOnly) return false;
-    const before = this.snapshot();
+    const before = this.history.currentText(this.project);
     if (!before) return false;
     if (!change(this.project)) return false;
-    pushHistory(this.undoStack, before);
-    this.redoStack = [];
+    this.history.commit(before);
+    this.history.capture(this.project);
     this.dirty = true;
     this.revision += 1;
     this.emit("project");
@@ -484,7 +474,7 @@ export class Store {
     if (!this.project || this.readOnly) return null;
     const source = pageRecordById(this.project, pageId);
     if (!source) return null;
-    const before = this.snapshot();
+    const before = this.history.currentText(this.project);
     if (!before) return null;
     const record = insertPageRecord(this.project, {
       documentId: source.documentId,
@@ -492,8 +482,8 @@ export class Store {
       index,
     });
     if (!record) return null;
-    pushHistory(this.undoStack, before);
-    this.redoStack = [];
+    this.history.commit(before);
+    this.history.capture(this.project);
     this.ui.page = pageNumber(this.project, record.id);
     this.ui.selection = [];
     this.ui.hover = null;
@@ -858,43 +848,10 @@ export class Store {
     return true;
   }
 
-  private snapshot(): string | null {
-    const project = this.project;
-    if (!project) return null;
-    const imagePayloads = new Set<string>();
-    for (const asset of Object.values(project.assets ?? {})) {
-      if (!asset.data) continue;
-      this.assetPayloads.set(asset.id, asset.data);
-      imagePayloads.add(asset.data);
-    }
-    return perfSpan(
-      "serialize",
-      () =>
-        JSON.stringify(project, (_key, value) =>
-          typeof value === "string" && imagePayloads.has(value) ? undefined : value,
-        ),
-      (text) => text.length,
-    );
-  }
-
   /** Keeps embedded image payloads available across undo and redo. */
   registerImageAsset(asset: ImageAsset): void {
     if (this.readOnly) return;
-    this.assetPayloads.set(asset.id, asset.data);
-  }
-
-  private restoreSnapshot(snapshot: string): Project {
-    const project = JSON.parse(snapshot) as Project;
-    if (!project.assets) project.assets = {};
-    for (const asset of Object.values(project.assets)) {
-      if (asset.data) {
-        this.assetPayloads.set(asset.id, asset.data);
-      } else {
-        const data = this.assetPayloads.get(asset.id);
-        if (data) asset.data = data;
-      }
-    }
-    return project;
+    this.history.registerPayload(asset);
   }
 
   mutate(
@@ -904,12 +861,10 @@ export class Store {
   ): void {
     if (!this.project || this.readOnly) return;
     const history = options.history !== false;
-    if (history) {
-      const before = this.snapshot();
-      if (before) pushHistory(this.undoStack, before);
-      this.redoStack = [];
-    }
+    const before = history ? this.history.currentText(this.project) : null;
     mutator(this.project);
+    if (before) this.history.commit(before);
+    this.history.capture(this.project);
     this.revision += 1;
     if (options.dirty !== false) this.dirty = true;
     this.emit(reason);
@@ -917,53 +872,59 @@ export class Store {
 
   beginGesture(): void {
     if (!this.project || this.readOnly) return;
-    this.gestureSnapshot = this.snapshot();
+    this.history.beginGesture(this.project);
+    this.gestureRevision = this.revision;
+  }
+
+  /**
+   * Records a direct project edit made while a gesture is open. Drags change
+   * items in place, so this bumps the revision once and `endGesture()` compares
+   * that counter instead of serialising the project a second time.
+   */
+  noteGestureChange(): void {
+    if (!this.history.gestureOpen) return;
+    if (this.revision === this.gestureRevision) this.revision += 1;
   }
 
   endGesture(reason: ChangeReason = "change"): void {
-    if (!this.gestureSnapshot || !this.project) {
-      this.gestureSnapshot = null;
-      return;
-    }
-    const after = this.snapshot();
-    if (after && after !== this.gestureSnapshot) {
-      pushHistory(this.undoStack, this.gestureSnapshot);
-      this.redoStack = [];
+    if (!this.history.gestureOpen) return;
+    if (this.revision !== this.gestureRevision && this.project) {
+      // The direct edit already bumped the revision when the pointer moved, so
+      // committing the gesture does not bump it again.
+      this.history.commitGesture(this.project);
       this.dirty = true;
-      this.revision += 1;
       this.emit(reason);
+    } else {
+      this.history.discardGesture();
     }
-    this.gestureSnapshot = null;
   }
 
   cancelGesture(): void {
-    if (this.gestureSnapshot && this.project) {
-      this.project = this.restoreSnapshot(this.gestureSnapshot);
+    const restored = this.history.cancelGesture(this.project);
+    if (restored) {
+      this.project = restored;
       this.revision += 1;
     }
-    this.gestureSnapshot = null;
   }
 
   undo(): void {
-    if (this.readOnly) return;
-    const previous = this.undoStack.pop();
-    if (!previous || !this.project) return;
+    if (this.readOnly || !this.project || !this.history.canUndo) return;
     perfMark("undo");
     const visiblePageId = currentPageId(this.project, this.ui.page);
-    pushHistory(this.redoStack, this.snapshot() ?? JSON.stringify(this.project));
-    this.project = this.restoreSnapshot(previous);
+    const previous = this.history.undo(this.project);
+    if (!previous) return;
+    this.project = this.history.restore(previous);
     this.afterHistoryRestore(visiblePageId);
     this.emit("undo");
   }
 
   redo(): void {
-    if (this.readOnly) return;
-    const next = this.redoStack.pop();
-    if (!next || !this.project) return;
+    if (this.readOnly || !this.project || !this.history.canRedo) return;
     perfMark("redo");
     const visiblePageId = currentPageId(this.project, this.ui.page);
-    pushHistory(this.undoStack, this.snapshot() ?? JSON.stringify(this.project));
-    this.project = this.restoreSnapshot(next);
+    const next = this.history.redo(this.project);
+    if (!next) return;
+    this.project = this.history.restore(next);
     this.afterHistoryRestore(visiblePageId);
     this.emit("undo");
   }

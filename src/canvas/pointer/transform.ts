@@ -192,13 +192,14 @@ export function applyTransformState(
 ): TransformApplyResult {
   if (drag.mode === "scale-selection") {
     applyGroupScale(drag, page);
-    return "handled";
+  } else {
+    if (!store.project) return "noop";
+    const found = findItem(store.project, drag.itemId);
+    if (!found || itemIsLocked(found.item, found.layer)) return "end";
+    const item = found.item;
+    if (drag.mode === "resize") applyResize(drag, item, page, shiftKey);
+    else applyRotation(drag, item, page, shiftKey);
   }
-  if (!store.project) return "noop";
-  const found = findItem(store.project, drag.itemId);
-  if (!found || itemIsLocked(found.item, found.layer)) return "end";
-  const item = found.item;
-  if (drag.mode === "resize") applyResize(drag, item, page, shiftKey);
-  else applyRotation(drag, item, page, shiftKey);
+  if (drag.moved) store.noteGestureChange();
   return "handled";
 }

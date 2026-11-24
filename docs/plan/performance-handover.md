@@ -104,3 +104,102 @@ authoritative for the full suite.
 
 - Phase 2, #349 — remove the redundant snapshot per gesture and evaluate the
   serializer replacer cost; compare against the phase 1 rows.
+
+## Phase 2 — Snapshot cost per edit
+
+- Issue: [#349](https://github.com/MajorJohnDoe/gridscalr/issues/349)
+- PR: [#354](https://github.com/MajorJohnDoe/gridscalr/pull/354), opened from
+  `perf/2-snapshot-cost`, base `main` (`9ec19b3`). Not merged.
+- Commit: `f473b91` (implementation and tests) plus a documentation-only commit
+  that records this entry.
+- Schema: unchanged (28)
+
+### Completed
+
+- History bookkeeping: the state now in memory is serialised once and cached
+  (`SnapshotHistory.currentText`). `mutate()`, page reorder and page insert push
+  the cached pre-state and serialise the post-state once. Undo and redo move
+  cached text between the two stacks without serialising; `cancelGesture()`
+  restores cached text. `clearHistory()` seeds the new baseline at a structural
+  boundary.
+- `endGesture()` compares the revision captured in `beginGesture()` instead of
+  comparing snapshot strings. Drags change items in place without touching the
+  revision, so `Store.noteGestureChange()` bumps it once per gesture from
+  `drag.ts` / `transform.ts`. A completed drag pays one serialisation (the new
+  state); a gesture that changed nothing, or was cancelled, pushes nothing.
+- Serializer: embedded image payloads are set to `undefined` for one plain
+  `JSON.stringify` and restored in a `finally`. The text is byte-identical to the
+  old replacer output; the payload-registration side effect is preserved.
+- Tests: `tests/storeSnapshot.test.ts` proves byte identity (demo project,
+  `fixtures/legacy/schema-28` with an embedded PNG, in-memory PNG + JPEG), one
+  serialise per edit, one per completed gesture, none for an unchanged or
+  cancelled gesture, none on undo/redo, image payload restore across undo/redo
+  and one undo step for a page reorder. `tests/storeGesture.test.ts` now calls
+  `noteGestureChange()` for its direct gesture mutation.
+
+### Modules
+
+- `src/state/snapshot.ts` (new) — payload-free history text.
+- `src/state/snapshotHistory.ts` (new) — stacks, cached current text, gesture
+  snapshot and payload cache.
+- `src/state/store.ts` — call sites only; 1002 → 962 lines.
+- `src/canvas/pointer/drag.ts` and `src/canvas/pointer/transform.ts` — one
+  `noteGestureChange()` call when a drag moved. `CanvasView.ts` and the render
+  path are untouched.
+- `docs/performance/history.md`, `docs/plan/foundation-findings.md` (F-145),
+  `docs/architecture.md`, `AGENTS.md` architecture map.
+
+### Decisions
+
+- Scope B is the replacer removal, not per-page sharding. It measured well
+  enough that the sharded fallback was not started: edit p95 fell 33.6 % (CI)
+  and 35.9 % (reference) in the first probe session, 26.9 % and 33.8 % in the
+  repeat. `docs/limits` and budgets are unchanged.
+- `undefined` assignment beats `delete` for the payload fields: `delete` moves
+  the asset objects to dictionary mode and cost 4.9 ms vs 2.3 ms on the CI
+  shape in a direct measurement, while both produce the same text. This is the
+  difference between the first probe result (serialize 6.0 ms) and the shipped
+  one (3.0 ms).
+- Project open now includes one seed serialisation. It rose from 9.1 to 13.0 ms
+  (CI) and 27.8 to 38.3 ms (reference), still far inside the 10 s budget.
+- The cache is refreshed on every store commit. Direct view writes between
+  commits (`setActiveLayer`) and the rebuildable OCR index (`setPageOcr`) can be
+  missing from the pre-state entry until the next commit; neither is undoable
+  user data, and both are re-derived. This mirrors the old behaviour for the
+  undo direction and only widens the redo text slightly.
+- History text remains the same string format. No new persisted field, no
+  export change, no UI text change.
+
+### Findings
+
+- F-145 — updated with the outcome: the replacer is gone, the snapshot text is
+  byte-identical, and the remaining serialize cost is the plain JSON text
+  (3.0 ms CI / 22 ms reference per edit).
+- No new finding. F-146 is unchanged and still applies to phase 3.
+
+### Checks
+
+Run locally on the branch:
+
+- `check:versions`, `check:file-budgets`, `check:modules`, `check:i18n`,
+  `check:docs`, `check:themes`, `format:check`, `lint`, `npx tsc --noEmit`;
+- `npm run test:robustness` (104 tests) and focused `vitest` over
+  `storeSnapshot`, `storeGesture`, `pageHistory`, `rendererPageOrder`,
+  `projectImportHistory`, `saveIntegrity`, `autosave`, `viewOnly`,
+  `demoProject` and `images`;
+- `npm run perf:probe` with `GRIDSCALR_PERF_PROBE_SHAPE=ci` and `=reference`,
+  two sessions of three runs each;
+- `npm run bench:large` on the default reference profile and
+  `GRIDSCALR_BENCH_PROFILE=ci`;
+- `GRIDSCALR_PERF_PROFILE=reference npm run check:performance` — every budget
+  passes.
+- `npm run test:canvas` for the gesture change.
+
+No visual baseline or `docs:capture` run: no pixel or UI text change. CI remains
+authoritative for the full suite.
+
+### Next
+
+- Phase 3, #350 — reuse the gesture-time content raster; compare `draw-items`
+  p95/total and the frame distribution (F-146).
+
