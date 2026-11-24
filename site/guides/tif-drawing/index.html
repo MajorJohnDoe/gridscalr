@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Measure a scanned TIF drawing without conversion</title>
+    <meta
+      name="description"
+      content="Import a scanned TIF as pages, keep CCITT G3/G4 scans lossless, calibrate the sheet and understand the derived colour cache. The source is never modified."
+    />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/guides/tif-drawing/" />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/tif-drawing/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/tif-ritning/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/tif-drawing/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Measure a scanned TIF drawing without conversion" />
+    <meta
+      property="og:description"
+      content="Import a scanned TIF as pages, keep CCITT G3/G4 scans lossless, calibrate the sheet and understand the derived colour cache. The source is never modified."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/guides/tif-drawing/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Measure a scanned TIF drawing without conversion" />
+    <meta
+      name="twitter:description"
+      content="Import a scanned TIF as pages, keep CCITT G3/G4 scans lossless, calibrate the sheet and understand the derived colour cache. The source is never modified."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Measure a scanned TIF drawing without conversion",
+        "url": "https://majorjohndoe.github.io/gridscalr/guides/tif-drawing/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Measure a scanned TIF drawing without conversion",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/tif-drawing/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is a TIF converted to PDF?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, internally. The converted PDF is a rebuildable cache beside the project; the original scan is never changed."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are CCITT scans recompressed?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. CCITT Group 3 and Group 4 scans are embedded losslessly, and JPEG-in-TIFF keeps its original JPEG stream."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens if the cache is missing?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "GridScalr rebuilds it from the original scan when the scan is reachable. If both are gone, it asks you to locate the scan."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a href="{{ROOT}}guides/tif-drawing/" hreflang="en" lang="en" aria-current="page"
+            >English</a
+          >
+          <a href="{{ROOT}}sv/guider/tif-ritning/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>Measure a scanned TIF drawing without conversion</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Measure a scanned TIF drawing without conversion</h1>
+          <p class="lede">
+            A scan is a drawing too. Import it as pages, calibrate it and keep the original file
+            untouched.
+          </p>
+          <p class="guide-meta">
+            Updated 24 November 2026 · 5 min read · Checked against GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#import">Import the scan as pages</a></li>
+            <li><a href="#lossless">Lossless CCITT and JPEG-in-TIFF</a></li>
+            <li><a href="#calibrate">Calibrate and measure like a PDF</a></li>
+            <li><a href="#cache">The colour-scan cache</a></li>
+            <li><a href="#source">The source is never modified</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              Import the TIF with File → Open drawing… and choose the pages you need. GridScalr
+              embeds CCITT Group 3 and Group 4 scans losslessly, calibrates the page like a PDF, and
+              keeps a colour scan in a rebuildable cache beside the project. The original TIF is
+              never modified.
+            </p>
+          </div>
+
+          <h2 id="import">Import the scan as pages</h2>
+          <p>
+            Use <b>File → Open drawing…</b> or drop the TIF on the Pages panel. A multi-page TIFF
+            becomes several pages, each with its own paper size and scale. The format is detected
+            from the file contents, not the extension, and reduced-resolution preview images are
+            skipped. A single-page scan skips the page picker; a multi-page file shows previews so
+            you can clear the sheets you do not need.
+          </p>
+          <h2 id="lossless">Lossless CCITT and JPEG-in-TIFF</h2>
+          <p>
+            A 1-bit CCITT Group 3 or Group 4 scan is embedded without re-encoding, so the lines stay
+            as sharp as the scan. JPEG-in-TIFF scans keep their original JPEG data, with a shared
+            JPEGTables set joined to each strip. Greyscale, RGB and CMYK JPEG scans are supported;
+            YCCK, JPEG 2000, tiled JPEG and tiled CCITT are rejected with a message that names the
+            reason rather than producing a partial page.
+          </p>
+          <h2 id="calibrate">Calibrate and measure like a PDF</h2>
+          <p>
+            A scan has no text layer and no reliable page scale, so calibration matters more than on
+            a digital PDF. Measure a known dimension on the sheet, check it against a second
+            dimension and lock the scale. After that, length, area, count and volume work exactly as
+            on a PDF. Snapping helps on clean line work; on a skewed or noisy scan, compare the
+            result with a printed dimension before you trust it.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Calibrate and measure like a PDF</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/hero.webp"
+              data-lightbox
+              aria-label="Click to enlarge: The calibrated demo plan. A scanned TIF is imported as a page and calibrated the same way."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The calibrated demo plan. A scanned TIF is imported as a page and calibrated the same way."
+              />
+            </a>
+            <figcaption>
+              <span
+                >The calibrated demo plan. A scanned TIF is imported as a page and calibrated the
+                same way.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="cache">The colour-scan cache</h2>
+          <p>
+            A decoded colour scan is the largest thing a project can contain, so it is kept out of
+            the project JSON. The converted PDF lives in the sibling folder
+            <b>&lt;project&gt;.derived/</b>, named by the scan's checksum, the converter version and
+            the page count; the project file carries only a marker. Keep that folder beside the
+            project when you move or copy it. If the cache is missing and the original scan is still
+            where the project expects it, GridScalr rebuilds the page silently. If both are gone, a
+            dialog names the page and offers <b>Locate the scan…</b>.
+          </p>
+          <p>
+            A measured six-sheet A2 colour set took about 59 MB in the cache and only 10 kB of
+            project JSON. GridScalr warns once when the cache reaches 160 MB or when the file plus
+            its cache approaches the 256 MB project limit, but the warning never blocks a save.
+            Split a large colour set into one project per building or floor.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>The colour-scan cache</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/calibration.webp"
+              data-lightbox
+              aria-label="Click to enlarge: Calibration against a known 10 m dimension, with the scale stored per page."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/calibration.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Calibration against a known 10 m dimension, with the scale stored per page."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Calibration against a known 10 m dimension, with the scale stored per page.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="source">The source is never modified</h2>
+          <p>
+            GridScalr reads the TIF and writes a derived PDF beside the project; it never writes to
+            the scan. A save or export that resolves to a source document is refused, including
+            through a symlink or an alternate spelling. If the scan is reissued, use
+            <b>Replace source…</b> on the page card: the new TIF is converted and compared against
+            the raw-file checksum, and pages are remapped rather than guessed. A scan that does not
+            match the project's checksum is refused, because a different revision would change what
+            the project measures.
+          </p>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>
+              Moving the project without the <b>.derived</b> folder, then deleting the original
+              scan.
+            </li>
+            <li>Calibrating on a dimension that belongs to another view on the same sheet.</li>
+            <li>Assuming a colour scan stays small because the project JSON is small.</li>
+            <li>
+              Replacing a scan with a different revision and expecting the measurements to follow.
+            </li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Is a TIF converted to PDF?</summary>
+              <p>
+                Yes, internally. The converted PDF is a rebuildable cache beside the project; the
+                original scan is never changed.
+              </p>
+            </details>
+            <details>
+              <summary>Are CCITT scans recompressed?</summary>
+              <p>
+                No. CCITT Group 3 and Group 4 scans are embedded losslessly, and JPEG-in-TIFF keeps
+                its original JPEG stream.
+              </p>
+            </details>
+            <details>
+              <summary>What happens if the cache is missing?</summary>
+              <p>
+                GridScalr rebuilds it from the original scan when the scan is reachable. If both are
+                gone, it asks you to locate the scan.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}guides/calibrate-drawing/"
+              ><b>Calibrate a drawing</b
+              ><span>Known dimension, printed scale and the per-page lock.</span></a
+            >
+            <a href="{{ROOT}}guides/area-pdf/"
+              ><b>Measure area in a PDF</b
+              ><span>The same workflow once the scan is calibrated.</span></a
+            >
+            <a href="{{ROOT}}area-takeoff/"
+              ><b>Measure area on a drawing</b
+              ><span>The task page for calibrated measurements and rooms.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Try a scan in the demo</h2>
+            <p>
+              Open the demo project, then import your own scanned sheet and repeat the calibration
+              on a page of your own.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Get the demo project</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,8 +1,10 @@
 # Webbplatsen: innehåll, guider och organisk trafik
 
 Status: fas 0 och 1 klara (tema, `site:capture`, startsida, tre uppgiftssidor). Guideindex
-och tre av tolv guider publicerade. Roll-, metod- och installationssidor samt resterande
-guider återstår.
+och nio guider publicerade, inklusive de två definitionerna och Bluebeam-jämförelsen.
+Funktionssidan är ombyggd med skärmbilder per språk. Guideomgången är klar förutom fem
+kvarvarande ämnen: bruttoarea/nettoarea, driftkortsmall, driftkort ventilation, rumsarea och
+Excel-jämförelse. Roll-, metod- och installationssidor samt resterande guider återstår.
 Godkänd visuell riktning (skiss 4): ljus yta, Slate-paletten från appen, stora skärmbilder i
 full bredd, riktig appikon, svenska först.
 
@@ -74,7 +76,7 @@ trackingpixlar, cookie-banner.
 "rita driftkort", "area ritning". De vet ofta inte att ett verktyg finns. De är praktiska,
 letar efter en arbetsgång med bilder och vill kunna göra jobbet i dag.
 
-**Teknisk förvaltare** söker på underlaget: "mängdning", "mängdberäkning", "dörrlista
+**Teknisk förvaltare** söker på underlaget: "mängdning", "mängdberäkning", "rumsarea
 ritning", "bruttoarea nettoarea", "area takeoff". De jämför verktyg, ifrågasätter
 spårbarhet och behöver kunna visa varför en mängd ser ut som den gör.
 
@@ -110,7 +112,7 @@ lär ut arbetsgången, uppgiftssidan säljer att programmet gör den.
 | `/guider/<slug>/` | `/en/guides/<slug>/` | En arbetsuppgift per guide | Ny, 12–14 st |
 | `/guider/vad-ar-mangdning/` | `/en/guides/what-is-takeoff/` | Definition, topp-funnel | Ny |
 | `/guider/vad-ar-ett-driftkort/` | `/en/guides/what-is-an-operation-card/` | Definition, topp-funnel | Ny |
-| `/jamfor/bluebeam/` | `/en/compare/bluebeam/` | Ärlig jämförelse | Senare |
+| `/jamfor/bluebeam/` | `/compare/bluebeam/` | Ärlig jämförelse | Publicerad |
 | `/jamfor/excel/` | `/en/compare/excel/` | När kalkylark räcker | Senare |
 | `/nyheter/` | `/en/changelog/` | Release notes som HTML | Ny, genereras |
 | `/funktioner/` | `/en/features/` | Full funktionskatalog | Behålls, uppdateras |
@@ -142,7 +144,6 @@ sekundära och används främst för jämförelser och internationella verktygss
 | 1 | `/guider/driftkort-mall/` | driftkort mall | driftkort fält, driftkort exempel | Lära |
 | 2 | `/guider/bruttoarea-nettoarea/` | bruttoarea nettoarea | BTA BOA skillnad, area avdrag | Förstå |
 | 2 | `/guider/mangdning-spill/` | spill och avrundning mängdning | beställningsmängd, påslag material | Lära |
-| 2 | `/guider/dorr-fonsterlista/` | dörrlista ritning | fönsterlista, antalstabell dörrar | Göra |
 | 2 | `/guider/driftkort-ventilation/` | driftkort ventilation | ventilationsaggregat schema, symboler | Göra |
 | 2 | `/guider/tif-ritning/` | mäta i skannad ritning | tif ritning, skanna ritning pdf | Göra |
 | 2 | `/guider/jamfora-ritningar/` | jämföra ritningar | revisionsjämförelse, ändringar ritning | Göra |
@@ -180,7 +181,6 @@ exempel från demoprojektet.
 
 | Slug | H1 | Primärt sökord | Innehåll (kort) |
 | --- | --- | --- | --- |
-| `dorr-fonsterlista` | Dörr- och fönsterlista från ritning | dörrlista ritning | Räkna per typ, styck per objekt, antalstabell, export till Excel. |
 | `tif-ritning` | Mäta i en skannad TIF-ritning | mäta skannad ritning | Import, kalibrering, cache, vad som händer om originalet flyttas. |
 | `jamfora-ritningar` | Jämför två ritningsrevisioner | jämföra ritningar | Sida vid sida, överlagring, skillnadslista, innan beställning. |
 | `markera-avvikelse` | Markera en avvikelse på rätt sida | markera avvikelse ritning | Lager för markeringar, moln, hänvisning, stämpel, export till entreprenör. |

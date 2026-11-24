@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Compare two drawing revisions before ordering</title>
+    <meta
+      name="description"
+      content="Open a previous revision as a read-only reference, compare side by side or overlaid, read the difference list and export a comparison PDF. Nothing is merged."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/guides/compare-revisions/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/compare-revisions/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/jamfora-ritningar/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/compare-revisions/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Compare two drawing revisions before ordering" />
+    <meta
+      property="og:description"
+      content="Open a previous revision as a read-only reference, compare side by side or overlaid, read the difference list and export a comparison PDF. Nothing is merged."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/guides/compare-revisions/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Compare two drawing revisions before ordering" />
+    <meta
+      name="twitter:description"
+      content="Open a previous revision as a read-only reference, compare side by side or overlaid, read the difference list and export a comparison PDF. Nothing is merged."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Compare two drawing revisions before ordering",
+        "url": "https://majorjohndoe.github.io/gridscalr/guides/compare-revisions/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Compare two drawing revisions before ordering",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/compare-revisions/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does comparison merge the two projects?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The reference is read-only and neither file is modified. Nothing is merged or written back."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I compare a raw PDF instead of a project?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. File → Compare with drawing… supports side by side, overlay, opacity and the comparison PDF, but it has no markup list or difference table."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What does the comparison actually compare?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Measurements, drawings, symbols and their properties, plus the rendered source pages. It is not a semantic diff of the PDF's raw vector operators."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a href="{{ROOT}}guides/compare-revisions/" hreflang="en" lang="en" aria-current="page"
+            >English</a
+          >
+          <a href="{{ROOT}}sv/guider/jamfora-ritningar/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>Compare two drawing revisions before ordering</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Compare two drawing revisions before ordering</h1>
+          <p class="lede">
+            Check what changed between two revisions without touching the takeoff you are about to
+            order from.
+          </p>
+          <p class="guide-meta">
+            Updated 24 November 2026 · 5 min read · Checked against GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#open">Open the reference</a></li>
+            <li><a href="#modes">Side by side or overlay</a></li>
+            <li><a href="#diff">The difference list and warnings</a></li>
+            <li><a href="#export">Export the comparison PDF</a></li>
+            <li><a href="#merge">Nothing is merged</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              Open the previous file as a read-only reference with File → Compare with revision… and
+              review it side by side or as an overlay. The panel lists changed, added and removed
+              markups, warns about page-count and scale differences, and can export a comparison
+              PDF. Neither project is merged or modified.
+            </p>
+          </div>
+
+          <h2 id="open">Open the reference</h2>
+          <p>
+            Keep the current takeoff open and choose <b>File → Compare with revision…</b>. Pick the
+            previous <b>.gridscalr</b> file. The reference opens as a read-only session beside the
+            current project. You can also press <b>Ctrl/Cmd+Shift+2</b> to open
+            <b>View → Reference view (same page)</b>, choose <b>Revision</b> in the pane toolbar and
+            use <b>Open…</b>. For a raw PDF revision, choose
+            <b>File → Compare with drawing…</b> instead.
+          </p>
+          <h2 id="modes">Side by side or overlay</h2>
+          <p>
+            <b>Side by side</b> puts the two pages next to each other, which is best for checking
+            geometry, room names and sheet layout. <b>Overlay</b> stacks the reference over the
+            current drawing and gives you an opacity slider; white page areas become transparent, so
+            moved walls and equipment stand out. The reference pane has its own page controls and
+            <b>Follow primary</b>, so you can keep a detail sheet beside the sheet you are
+            measuring.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Side by side or overlay</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/hero.webp"
+              data-lightbox
+              aria-label="Click to enlarge: The current project on the calibrated plan. The reference opens beside it in a read-only pane."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The current project on the calibrated plan. The reference opens beside it in a read-only pane."
+              />
+            </a>
+            <figcaption>
+              <span
+                >The current project on the calibrated plan. The reference opens beside it in a
+                read-only pane.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="diff">The difference list and warnings</h2>
+          <p>
+            For a revision, the panel lists <b>Changed</b>, <b>Added</b> and
+            <b>Removed</b> measurements, drawings, symbols and their properties. Click a row to jump
+            to the page and item; added and removed items open their page in the reference pane.
+            Read the warnings for page-count, drawing-name and scale differences before you trust
+            the comparison. It is a comparison of measurement and markup data plus the rendered
+            source pages, not a semantic diff of the PDF's vector operators.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>The difference list and warnings</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/layers.webp"
+              data-lightbox
+              aria-label="Click to enlarge: The layer panel belongs to the editable project. The reference pane does not change its layers or items."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The layer panel belongs to the editable project. The reference pane does not change its layers or items."
+              />
+            </a>
+            <figcaption>
+              <span
+                >The layer panel belongs to the editable project. The reference pane does not change
+                its layers or items.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="export">Export the comparison PDF</h2>
+          <p>
+            <b>Export PDF</b> writes <b>&lt;project&gt;-comparison.pdf</b> with a summary and
+            page-by-page visuals. For a revision it also includes the warnings and the difference
+            table. The export refuses to overwrite any source drawing, so the review file can be
+            shared without risk to the originals.
+          </p>
+          <h2 id="merge">Nothing is merged</h2>
+          <p>
+            The reference is for comparison only. Selection, editing, layers and undo belong to the
+            primary canvas, and closing the pane does not change the drawing, the project or the
+            undo history. The reference state is not stored in the project file. When the review is
+            done, either close the comparison or save the current project as the new working
+            revision; the previous file stays untouched.
+          </p>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>
+              Comparing two projects that use different page scales without reading the warning.
+            </li>
+            <li>Deleting the previous revision before the comparison PDF is exported.</li>
+            <li>Expecting the reference pane to be editable; it is read-only by design.</li>
+            <li>
+              Treating the difference list as a proof that quantities are commercially correct.
+            </li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Does comparison merge the two projects?</summary>
+              <p>
+                No. The reference is read-only and neither file is modified. Nothing is merged or
+                written back.
+              </p>
+            </details>
+            <details>
+              <summary>Can I compare a raw PDF instead of a project?</summary>
+              <p>
+                Yes. File → Compare with drawing… supports side by side, overlay, opacity and the
+                comparison PDF, but it has no markup list or difference table.
+              </p>
+            </details>
+            <details>
+              <summary>What does the comparison actually compare?</summary>
+              <p>
+                Measurements, drawings, symbols and their properties, plus the rendered source
+                pages. It is not a semantic diff of the PDF's raw vector operators.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}quantity-takeoff/"
+              ><b>Quantity takeoff</b
+              ><span>The order built on the revision you just checked.</span></a
+            >
+            <a href="{{ROOT}}guides/area-pdf/"
+              ><b>Measure area in a PDF</b
+              ><span>The measurement workflow behind the difference list.</span></a
+            >
+            <a href="{{ROOT}}guides/what-is-takeoff/"
+              ><b>What is quantity takeoff?</b
+              ><span>Why every quantity needs a traceable source.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Compare the demo with your takeoff</h2>
+            <p>
+              Open the demo project as a reference and compare it with your own project to see the
+              difference list and the comparison PDF.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Get the demo project</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>
