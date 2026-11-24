@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rumsarea: uppmätt, manuell och kopplad</title>
+    <meta
+      name="description"
+      content="Mät rumsarea, koppla mätningarna till rummet och läs registret per byggnad och våning. Så fungerar varningen för saknad area före export."
+    />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/sv/guider/rumsarea/" />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/room-areas/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/rumsarea/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/room-areas/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Rumsarea: uppmätt, manuell och kopplad" />
+    <meta
+      property="og:description"
+      content="Mät rumsarea, koppla mätningarna till rummet och läs registret per byggnad och våning. Så fungerar varningen för saknad area före export."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/sv/guider/rumsarea/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Rumsarea: uppmätt, manuell och kopplad" />
+    <meta
+      name="twitter:description"
+      content="Mät rumsarea, koppla mätningarna till rummet och läs registret per byggnad och våning. Så fungerar varningen för saknad area före export."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Rumsarea: uppmätt, manuell och kopplad",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/guider/rumsarea/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Mät rumsarea och koppla den till rummet",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/rumsarea/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Uppdaterar en kopplad mätning rumsarean?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Rummet summerar sina synliga kopplade areamätningar, tillägg minus avdrag, och räknas om när en kopplad mätning ändras."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Vad betyder Saknas?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Rummet har ingen användbar area: inget är kopplat, eller en kopplad mätning saknar skala. GridScalr visar varningen i stället för en halv summa."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Kan jag skriva in en area i stället för att mäta?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja, som manuell area. Den är en reserv medan inget är kopplat; så snart en areamätning kopplas vinner det uppmätta värdet."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}guides/room-areas/" hreflang="en" lang="en">English</a>
+          <a href="{{ROOT}}sv/guider/rumsarea/" hreflang="sv" lang="sv" aria-current="page"
+            >Svenska</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}sv/guider/">Guider</a
+            ><span>/</span>
+            <span>Mät rumsarea och koppla den till rummet</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Mät rumsarea och koppla den till rummet</h1>
+          <p class="lede">
+            Ritningen håller mätningen. Registret håller rummet. Kopplingen är det som gör arean
+            granskningsbar.
+          </p>
+          <p class="guide-meta">
+            Uppdaterad 24 november 2026 · 5 min läsning · Granskad mot GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>På den här sidan</p>
+          <ol>
+            <li><a href="#register">Bygg registret först</a></li>
+            <li><a href="#measured-manual">Uppmätt eller manuell area</a></li>
+            <li><a href="#link">Koppla mätningarna</a></li>
+            <li><a href="#warnings">Läs varningarna</a></li>
+            <li><a href="#check">Kontrollera per våning och byggnad</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Ladda ner GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Kort svar</h2>
+            <p>
+              Rita rummet som en areamätning, öppna Visa → Utrymmen… och koppla mätningen till
+              rummet. Ett uppmätt rum summerar sina synliga kopplade areor minus avdrag, medan ett
+              manuellt värde bara är en reserv. Ett rum utan användbar area visar Saknas i stället
+              för en halv summa.
+            </p>
+          </div>
+
+          <h2 id="register">Bygg registret först</h2>
+          <p>
+            Utrymmesregistret på <b>Visa → Utrymmen…</b> är ett träd: en byggnad innehåller
+            våningar, och en våning innehåller rum eller zoner. Varje rum har rumsnummer, namn,
+            våning, användning och status och kan kopplas till en ritningssida. Strukturen är det
+            som gör att areor kan läsas per våning och byggnad i stället för som en platt lista.
+          </p>
+          <p>
+            <b>Skapa rum från rumstexten</b> utgår från rumsnamnen som redan finns på mätningarna.
+            Det skapar rum på rotnivå och kopplar aldrig en mätning, så flytta dem under rätt
+            byggnad och våning som ett eget, medvetet steg.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Bygg registret först</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/spaces.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/spaces.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Utrymmesregistret visar en saknad area på en våning och en uppmätt lagerlokal på 484 m² bredvid ett manuellt kontor på 24,5 m²."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+          <h2 id="measured-manual">Uppmätt eller manuell area</h2>
+          <p>
+            <b>Mätt från kopplade areamätningar</b> summerar de synliga areamätningar som är
+            kopplade till utrymmet: tillägg minus avdrag, omräknat till m².
+            <b>Manuell area</b> sparar ett värde du skriver in. Arean sparas aldrig två gånger, och
+            en kopplad mätning vinner alltid över ett manuellt värde.
+          </p>
+          <p>
+            Det manuella värdet är en reserv för ett rum som inte går att mäta, till exempel en
+            korridor utanför ritningspaketet. När en mätning är kopplad rapporterar raden att det
+            manuella värdet inte används, så ingen behöver gissa vilken siffra som gäller.
+          </p>
+          <h2 id="link">Koppla mätningarna</h2>
+          <p>
+            Markera en eller flera areamätningar på ritningen, öppna <b>Visa → Utrymmen…</b> och
+            använd kopplingsåtgärden på rumsraden. Hjälptexten under knapparna anger hur många
+            areamätningar som är markerade. Bara areamätningar kan kopplas, och en låst mätning kan
+            inte kopplas.
+          </p>
+          <p>
+            En koppling flyttar mätningen till rummet; kopplas den till ett annat rum flyttas den
+            igen. Sökåtgärden på en rumsrad markerar den första synliga kopplade mätningen och
+            zoomar till den, vilket är snabbaste sättet att kontrollera att rätt polygon hör till
+            rätt rum.
+          </p>
+          <h2 id="warnings">Läs varningarna</h2>
+          <p>
+            <b>Saknas</b> betyder att rummet inte har någon användbar area: inget är kopplat, eller
+            en kopplad mätning saknar skala. GridScalr faller aldrig tillbaka på ett manuellt värde
+            av sig själv och visar aldrig en halv summa som om den vore komplett. En saknad area är
+            en uppmaning att mäta, koppla eller sätta en manuell reserv, inte en siffra att
+            ignorera.
+          </p>
+          <p>
+            Dolda mätningar och dolda lager utesluts från summan, medan låsta mätningar ingår. Det
+            motsvarar mängdrapporten och varje export. Ett avdrag gäller inom sin egen kategori och
+            sitt eget rum, så ett schakt som kopplats till fel rum gör båda rummen fel. Registret
+            redovisar alltid m², även när projektet använder en annan areaenhet för mätningarna.
+          </p>
+          <h2 id="check">Kontrollera per våning och byggnad</h2>
+          <p>
+            Korten <b>Rum</b> och <b>Area</b> läser utrymmesregistret, så en våning med ett saknat
+            rum syns som en namngiven varning i stället för en nolla. Arbeta uppifrån och ned: varje
+            våning ska ha sina rum, varje uppmätt rum ska ha minst en kopplad area, och varje
+            manuellt värde ska ha en anledning.
+          </p>
+          <p>
+            Registret är en dialog som öppnas från <b>Visa → Utrymmen…</b>, inte en dockad panel.
+            Koppla mätningarna först och öppna registret igen efter ett urvalsbyte, eftersom
+            dialogen inte byggs om när urvalet bakom den ändras.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Kontrollera per våning och byggnad</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/layers.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Lagerpanelen håller mätningarna sidbundna; rumsarean läses från de synliga kopplade mätningarna på sidan."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+
+          <h2 id="mistakes">Vanliga fel</h2>
+          <ul class="checklist">
+            <li>Koppla ett avdrag till ett annat rum än dess bruttoyta.</li>
+            <li>
+              Sätta en manuell area och räkna med att den uppdateras när en mätning kopplas senare.
+            </li>
+            <li>Lämna ett rum som Saknas och behandla det som noll i summan.</li>
+            <li>Skapa rum från rumstexten och anta att mätningarna kopplas automatiskt.</li>
+          </ul>
+
+          <h2 id="faq">Frågor</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Uppdaterar en kopplad mätning rumsarean?</summary>
+              <p>
+                Ja. Rummet summerar sina synliga kopplade areamätningar, tillägg minus avdrag, och
+                räknas om när en kopplad mätning ändras.
+              </p>
+            </details>
+            <details>
+              <summary>Vad betyder Saknas?</summary>
+              <p>
+                Rummet har ingen användbar area: inget är kopplat, eller en kopplad mätning saknar
+                skala. GridScalr visar varningen i stället för en halv summa.
+              </p>
+            </details>
+            <details>
+              <summary>Kan jag skriva in en area i stället för att mäta?</summary>
+              <p>
+                Ja, som manuell area. Den är en reserv medan inget är kopplat; så snart en
+                areamätning kopplas vinner det uppmätta värdet.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Relaterat</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}sv/mata-area/"
+              ><b>Mäta area på ritning</b
+              ><span>Uppgiftssidan för kalibrering, avdrag och rum.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/mata-area-pdf/"
+              ><b>Mäta area i en PDF</b><span>Hur den kopplade mätningen ritas.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/bruttoarea-nettoarea/"
+              ><b>Bruttoarea och nettoarea</b
+              ><span>Varför avdraget ändrar rummets nettoarea.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Koppla demorummen</h2>
+            <p>
+              Demoprojektet har en byggnad, en våning, en uppmätt lagerlokal och ett manuellt
+              kontor, så registret kan kontrolleras mot planen.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Hämta demoprojektet</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Driftkort ventilation: aggregat, kanaler och givare</title>
+    <meta
+      name="description"
+      content="Rita ett driftkort för ventilation: aggregat, kanaler, don, givare, schemasymboler, sidbundna lager och export som vektor-PDF."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/driftkort-ventilation/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/operation-card-ventilation/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/driftkort-ventilation/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/operation-card-ventilation/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Driftkort ventilation: aggregat, kanaler och givare" />
+    <meta
+      property="og:description"
+      content="Rita ett driftkort för ventilation: aggregat, kanaler, don, givare, schemasymboler, sidbundna lager och export som vektor-PDF."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/sv/guider/driftkort-ventilation/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Driftkort ventilation: aggregat, kanaler och givare" />
+    <meta
+      name="twitter:description"
+      content="Rita ett driftkort för ventilation: aggregat, kanaler, don, givare, schemasymboler, sidbundna lager och export som vektor-PDF."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Driftkort ventilation: aggregat, kanaler och givare",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/guider/driftkort-ventilation/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Rita ett driftkort för ventilation",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/driftkort-ventilation/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Ritar schemasymbolerna kanalen åt mig?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nej. Rita kanalen eller röret som en linje och fäst den på en port i symbolkroppen. Symbolerna markerar komponenten; linjen visar anslutningen."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Numreras symbolerna automatiskt?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nej. Varje symbol har ett föreslaget taggprefix, men taggen är fritext och inget numreras åt dig."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Kan jag dölja anteckningarna utan att dölja titelblocket?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Anteckningar på ett eget ritlager kan döljas, medan titelblock, revisionstabell och bladfält fortfarande ritas in i PDF:en."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}guides/operation-card-ventilation/" hreflang="en" lang="en">English</a>
+          <a
+            href="{{ROOT}}sv/guider/driftkort-ventilation/"
+            hreflang="sv"
+            lang="sv"
+            aria-current="page"
+            >Svenska</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}sv/guider/">Guider</a
+            ><span>/</span>
+            <span>Rita ett driftkort för ventilation</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Rita ett driftkort för ventilation</h1>
+          <p class="lede">
+            Ett luftbehandlingsaggregat, dess kanaler, spjäll, givare och styrpunkter på ett
+            schemablad.
+          </p>
+          <p class="guide-meta">
+            Uppdaterad 24 november 2026 · 5 min läsning · Granskad mot GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>På den här sidan</p>
+          <ol>
+            <li><a href="#unit">Placera luftbehandlingsaggregatet</a></li>
+            <li><a href="#ducts">Rita kanaler och komponenter</a></li>
+            <li><a href="#sensors">Givare och styrpunkter</a></li>
+            <li><a href="#layers">Håll lagren sidbundna</a></li>
+            <li><a href="#export">Exportera en läsbar PDF</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Ladda ner GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Kort svar</h2>
+            <p>
+              Börja från ett driftkortsblad, sätt aggregatet i centrum och rita till- och
+              frånluftskanaler som tydliga linjer. Lägg till spjäll, ljuddämpare, don och givare
+              från schemabiblioteket, fäst dem på kanalen, tagga dem och håll anteckningar på ett
+              eget ritlager före exporten.
+            </p>
+          </div>
+
+          <h2 id="unit">Placera luftbehandlingsaggregatet</h2>
+          <p>
+            Börja med aggregatet: fläktar, filter, värme- och kylbatterier, värmeväxlare och de
+            spjäll som hör till. Schemabiblioteket har kategorier för <b>Ventilation</b>,
+            <b>Värmeväxlare</b>, <b>Pumpar</b> och <b>Styr &amp; el</b>, och demobladt LB01 visar
+            ett komplett till- och frånluftssystem.
+          </p>
+          <p>
+            Ett mallblad är <b>ej skalenligt</b>, så placeringen betyder mindre än sambandet. Håll
+            tilluftsvägen på ena sidan och frånlufts vägen på den andra, och lämna plats för
+            styrrader och taggar under ritningen.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Placera luftbehandlingsaggregatet</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/operation-card.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/operation-card.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="LB01-driftkortet med uteluft, frånluft, tilluft och avluft, aggregatet och givare taggade i schemat."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+          <h2 id="ducts">Rita kanaler och komponenter</h2>
+          <p>
+            Välj <b>Rör / kanal</b> och rita sträckan hörn för hörn. Segmenten hålls horisontella
+            eller vertikala om du inte håller <code>Shift</code> för fri vinkel eller börjar på ett
+            uttalat fästmål. Schemasymboler ritar inte egna anslutningsstumpar, så rita kanalen
+            först och fäst den på en port i symbolkroppen.
+          </p>
+          <p>
+            Lägg spjäll och ventiler på sträckan, ljuddämpare där ritningen kräver det och till-
+            eller frånluftsdon i ändarna. Använd <b>Flödespil</b> för riktning. Varje symbol
+            behåller sitt ritlager, sin rotation och sin synlighet och exporteras som vektorgrafik i
+            PDF:en.
+          </p>
+          <h2 id="sensors">Givare och styrpunkter</h2>
+          <p>
+            Placera temperatur-, tryck- och flödesgivare där styrstrategin läser dem, och ge varje
+            givare en tag i <b>Egenskaper → Tag</b>. Inget numreras automatiskt: taggen är fritext,
+            så använd fastighetens eget prefix och nummerserie. Ett kort vars taggar inte stämmer
+            med styrsystemet är svårare att använda än ett kort med färre symboler.
+          </p>
+          <p>
+            Placera <b>I/O-skenan</b> från fliken Special längst ner på bladet, med de ingångsrader
+            styrenheten använder, och koppla styrkablar till den. Namnge analoga och digitala
+            ingångar som styrenheten gör. Poängen är inte att återge styrprogrammet, utan att en
+            tekniker ska kunna följa vilken givare som går till vilken ingång utan att öppna ett
+            andra dokument.
+          </p>
+          <h2 id="layers">Håll lagren sidbundna</h2>
+          <p>
+            Rita schemat på ritlager, ett lager per funktion eller systemdel, och lägg
+            platsanteckningar på ett eget lager. Lager är sidbundna: samma lagernamn finns över
+            sidorna, medan synlighet, lås och objektlista hör till den öppna sidan. Lagerpanelen
+            visar bara den aktuella sidans lager.
+          </p>
+          <p>
+            Det är det som gör en ren export möjlig. Dölj anteckningslagret för att ge entreprenören
+            ett rent schema, eller dölj en framtida etapp för att visa bara det som är installerat i
+            dag. Dolda lager renderas, träffas och exporteras aldrig, och en dold grupp döljer allt
+            under sig.
+          </p>
+          <h2 id="export">Exportera en läsbar PDF</h2>
+          <p>
+            Välj <b>Arkiv → Exportera → Ritning PDF…</b>. Välj bladet eller sidorna du behöver, ta
+            med de synliga lagren och lämna <b>Valfria lager (OCG)</b> av om inte mottagarens
+            PDF-läsare ska kunna växla dem. Titelblock, revisionstabell och bladfält ritas alltid
+            in, även när alla lager är dolda, och texten förblir sökbar.
+          </p>
+          <p>
+            Kontrollera exporten innan den lämnar huset: taggarna stämmer med styrsystemet,
+            flödespilarna pekar rätt, revisionsraden namnger ändringen och inget lager som
+            mottagaren behöver är dolt.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Exportera en läsbar PDF</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/export.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/export.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Exportdialogen listar driftkortets lager och löser dem per sida; valfria lager är av som standard."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+
+          <h2 id="mistakes">Vanliga fel</h2>
+          <ul class="checklist">
+            <li>
+              Placera symboler först och hoppas att kanalen ansluter, i stället för att rita kanalen
+              och fästa den på symbolens port.
+            </li>
+            <li>
+              Låta appen numrera utrustningen; taggar är fritext och ska följa fastighetens serie.
+            </li>
+            <li>Blanda platsanteckningar i schemalagret, så en ren export blir omöjlig.</li>
+            <li>Exportera med ett lager dolt som mottagaren behöver och upptäcka det i PDF:en.</li>
+          </ul>
+
+          <h2 id="faq">Frågor</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Ritar schemasymbolerna kanalen åt mig?</summary>
+              <p>
+                Nej. Rita kanalen eller röret som en linje och fäst den på en port i symbolkroppen.
+                Symbolerna markerar komponenten; linjen visar anslutningen.
+              </p>
+            </details>
+            <details>
+              <summary>Numreras symbolerna automatiskt?</summary>
+              <p>
+                Nej. Varje symbol har ett föreslaget taggprefix, men taggen är fritext och inget
+                numreras åt dig.
+              </p>
+            </details>
+            <details>
+              <summary>Kan jag dölja anteckningarna utan att dölja titelblocket?</summary>
+              <p>
+                Ja. Anteckningar på ett eget ritlager kan döljas, medan titelblock, revisionstabell
+                och bladfält fortfarande ritas in i PDF:en.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Relaterat</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}sv/driftkort/"
+              ><b>Driftkort</b><span>Uppgiftssidan för mallar, symboler och export.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/driftkort-mall/"
+              ><b>Driftkortsmall</b><span>Titelblock, revision och referens till planen.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/markera-avvikelse/"
+              ><b>Markera en avvikelse</b
+              ><span>När kortet och installationen inte stämmer.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Öppna LB01-bladet</h2>
+            <p>
+              Demoprojektet innehåller ett komplett driftkort för ventilation med aggregat, kanaler,
+              givare och taggar.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Hämta demoprojektet</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>

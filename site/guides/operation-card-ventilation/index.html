@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ventilation operation card: units, ducts and sensors</title>
+    <meta
+      name="description"
+      content="Draw a ventilation operation card: air handling unit, ducts, valves, silencers, sensors, schematic symbols, page-scoped layers and a vector PDF export."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/guides/operation-card-ventilation/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/operation-card-ventilation/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/driftkort-ventilation/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/operation-card-ventilation/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Ventilation operation card: units, ducts and sensors" />
+    <meta
+      property="og:description"
+      content="Draw a ventilation operation card: air handling unit, ducts, valves, silencers, sensors, schematic symbols, page-scoped layers and a vector PDF export."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/guides/operation-card-ventilation/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Ventilation operation card: units, ducts and sensors" />
+    <meta
+      name="twitter:description"
+      content="Draw a ventilation operation card: air handling unit, ducts, valves, silencers, sensors, schematic symbols, page-scoped layers and a vector PDF export."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Ventilation operation card: units, ducts and sensors",
+        "url": "https://majorjohndoe.github.io/gridscalr/guides/operation-card-ventilation/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Draw a ventilation operation card",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/operation-card-ventilation/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Do schematic symbols draw the duct for me?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Draw the duct or pipe as a line and snap it to a port on the symbol body. The symbols mark the component; the line shows the connection."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are the symbols numbered automatically?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Each symbol has a suggested tag prefix, but the tag is free text and nothing is numbered for you."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I hide the notes without hiding the title block?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Notes on their own drawing layer can be hidden, while the title block, revision table and sheet fields are still drawn into the PDF."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a
+            href="{{ROOT}}guides/operation-card-ventilation/"
+            hreflang="en"
+            lang="en"
+            aria-current="page"
+            >English</a
+          >
+          <a href="{{ROOT}}sv/guider/driftkort-ventilation/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>Draw a ventilation operation card</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Draw a ventilation operation card</h1>
+          <p class="lede">
+            One air handling unit, its ducts, dampers, sensors and control points on one schematic
+            sheet.
+          </p>
+          <p class="guide-meta">
+            Updated 24 November 2026 · 5 min read · Checked against GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#unit">Place the air handling unit</a></li>
+            <li><a href="#ducts">Draw the ducts and the components</a></li>
+            <li><a href="#sensors">Sensors and control points</a></li>
+            <li><a href="#layers">Keep the layers page-scoped</a></li>
+            <li><a href="#export">Export a readable PDF</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              Start from an operation card sheet, put the air handling unit at the centre and draw
+              supply and extract ducts as lines. Add valves, silencers, terminals and sensors from
+              the schematic library, snap them to the duct, tag them, and keep notes on their own
+              drawing layer before exporting a vector PDF.
+            </p>
+          </div>
+
+          <h2 id="unit">Place the air handling unit</h2>
+          <p>
+            Begin with the unit: fans, filters, heating and cooling coils, the heat exchanger and
+            the dampers that belong to it. The schematic library has categories for
+            <b>Ventilation</b>, <b>Heat exchangers</b>, <b>Pumps</b> and
+            <b>Control &amp; electrical</b>, and the demo sheet LB01 shows a complete supply and
+            extract system.
+          </p>
+          <p>
+            A template sheet is <b>not to scale</b>, so position matters less than relationship.
+            Keep the supply path on one side and the extract path on the other, and leave room for
+            the control rows and tags below the drawing.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Place the air handling unit</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/operation-card.webp"
+              data-lightbox
+              aria-label="Click to enlarge: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/operation-card.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The LB01 ventilation sheet with supply and extract air, the air handling unit and sensors tagged on the schematic."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+          <h2 id="ducts">Draw the ducts and the components</h2>
+          <p>
+            Choose <b>Pipe / duct</b> and draw the run vertex by vertex. Segments stay horizontal or
+            vertical unless you hold <code>Shift</code> for a free angle or start on an explicit
+            snap target. Schematic symbols do not draw their own connection stubs, so draw the duct
+            first and snap it to a port on the symbol body.
+          </p>
+          <p>
+            Add valves and dampers on the run, silencers where the drawing calls for them, and
+            supply or extract terminals at the ends. Use <b>Flow arrow</b> to show direction. Each
+            symbol keeps its drawing layer, rotation and visibility, and exports as vector artwork
+            in the PDF.
+          </p>
+          <h2 id="sensors">Sensors and control points</h2>
+          <p>
+            Place temperature, pressure and flow sensors where the control strategy reads them, and
+            give each one a tag in <b>Properties → Tag</b>. Nothing is numbered automatically: the
+            tag is free text, so use the property's own prefix and number series. A card whose tags
+            do not match the control system is harder to use than a card with fewer symbols.
+          </p>
+          <p>
+            Place the <b>I/O rail</b> from the Special symbol tab in the lower part of the sheet,
+            with the input rows the controller uses, and connect control cables to it. Name the
+            analogue and digital inputs the way the controller does. The point is not to reproduce
+            the control program, but to let a technician trace which sensor feeds which input
+            without opening a second document.
+          </p>
+          <h2 id="layers">Keep the layers page-scoped</h2>
+          <p>
+            Draw the schematic on drawing layers, one layer per function or system part, and put
+            site notes on a separate layer. Layers are page-scoped: the same layer name exists
+            across pages, while visibility, lock and the item list belong to the open page. The
+            Layers panel shows only the current page's layers.
+          </p>
+          <p>
+            That is what makes a clean export possible. Hide the notes layer to give the contractor
+            a clean schematic, or hide a future phase to show only what is installed today. Hidden
+            layers never render, hit-test or export, and a hidden group hides everything beneath it.
+          </p>
+          <h2 id="export">Export a readable PDF</h2>
+          <p>
+            Choose <b>File → Export → Drawing PDF…</b>. Select the sheet or the pages you need,
+            include the visible layers, and leave <b>Optional layers (OCG)</b> off unless the
+            recipient's PDF reader should be able to toggle them. The title block, revision table
+            and sheet fields are always drawn, even when every layer is hidden, and the text stays
+            searchable.
+          </p>
+          <p>
+            Check the export before it leaves the building: the tags match the control system, the
+            flow arrows point the right way, the revision row names the change, and no layer that
+            the recipient needs is hidden.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Export a readable PDF</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/export.webp"
+              data-lightbox
+              aria-label="Click to enlarge: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/export.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The drawing export lists the operation-card layers and resolves them per page; optional layers are off by default."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>
+              Placing symbols first and hoping the duct will connect, instead of drawing the duct
+              and snapping to the symbol port.
+            </li>
+            <li>
+              Letting the app number the equipment; tags are free text and must follow the
+              property's series.
+            </li>
+            <li>Mixing site notes into the schematic layer, so a clean export is impossible.</li>
+            <li>
+              Exporting with a layer hidden that the recipient needs, then discovering it in the
+              PDF.
+            </li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Do schematic symbols draw the duct for me?</summary>
+              <p>
+                No. Draw the duct or pipe as a line and snap it to a port on the symbol body. The
+                symbols mark the component; the line shows the connection.
+              </p>
+            </details>
+            <details>
+              <summary>Are the symbols numbered automatically?</summary>
+              <p>
+                No. Each symbol has a suggested tag prefix, but the tag is free text and nothing is
+                numbered for you.
+              </p>
+            </details>
+            <details>
+              <summary>Can I hide the notes without hiding the title block?</summary>
+              <p>
+                Yes. Notes on their own drawing layer can be hidden, while the title block, revision
+                table and sheet fields are still drawn into the PDF.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}operation-cards/"
+              ><b>Operation cards</b
+              ><span>The task page for templates, symbols and export.</span></a
+            >
+            <a href="{{ROOT}}guides/operation-card-fields/"
+              ><b>Operation card fields</b
+              ><span>The title block, revision and plan reference.</span></a
+            >
+            <a href="{{ROOT}}guides/mark-a-deviation/"
+              ><b>Mark a deviation</b><span>When the card and the installation disagree.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Open the LB01 sheet</h2>
+            <p>
+              The demo project contains a complete ventilation operation card with an air handling
+              unit, ducts, sensors and tags.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Get the demo project</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>
