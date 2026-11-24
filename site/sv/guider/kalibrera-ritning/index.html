@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kalibrera en ritning – skala 1:50, 1:100 och 1:400</title>
+    <meta
+      name="description"
+      content="Kalibrera en PDF- eller TIF-ritning mot ett känt mått eller utskriven skala, kontrollera mot ett andra mått och lås skalan per sida."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/kalibrera-ritning/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/calibrate-drawing/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/kalibrera-ritning/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/calibrate-drawing/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Kalibrera en ritning – skala 1:50, 1:100 och 1:400" />
+    <meta
+      property="og:description"
+      content="Kalibrera en PDF- eller TIF-ritning mot ett känt mått eller utskriven skala, kontrollera mot ett andra mått och lås skalan per sida."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/sv/guider/kalibrera-ritning/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Kalibrera en ritning – skala 1:50, 1:100 och 1:400" />
+    <meta
+      name="twitter:description"
+      content="Kalibrera en PDF- eller TIF-ritning mot ett känt mått eller utskriven skala, kontrollera mot ett andra mått och lås skalan per sida."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Kalibrera en ritning – skala 1:50, 1:100 och 1:400",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/guider/kalibrera-ritning/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Kalibrera en ritning: 1:50, 1:100 och 1:400",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/kalibrera-ritning/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Vad betyder 1:100?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "En millimeter på ritningen motsvarar 100 millimeter i byggnaden. I 1:50 täcker samma linje halva den verkliga längden."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Kan olika blad ha olika skala?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Skalan sparas per sida, vilket är vanligt i paket med detaljer och situationsplaner."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Vad händer med befintliga mätningar vid omkalibrering?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "De behåller skalan de skapades med. Att uppdatera dem är en egen, medveten åtgärd."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}guides/calibrate-drawing/" hreflang="en" lang="en">English</a>
+          <a href="{{ROOT}}sv/guider/kalibrera-ritning/" hreflang="sv" lang="sv" aria-current="page"
+            >Svenska</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}sv/guider/">Guider</a
+            ><span>/</span>
+            <span>Kalibrera en ritning: 1:50, 1:100 och 1:400</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Kalibrera en ritning: 1:50, 1:100 och 1:400</h1>
+          <p class="lede">
+            Skalan avgör varje längd, area och volym. Kalibrera en gång, kontrollera två och lås
+            sidan.
+          </p>
+          <p class="guide-meta">
+            Uppdaterad 24 november 2026 · 5 min läsning · Granskad mot GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>På den här sidan</p>
+          <ol>
+            <li><a href="#reference">Välj referens</a></li>
+            <li><a href="#measure">Mät det kända måttet</a></li>
+            <li><a href="#scale">Ange eller räkna fram skalan</a></li>
+            <li><a href="#check">Kontrollera och lås</a></li>
+            <li><a href="#wrong">När skalan inte stämmer</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Ladda ner GridScalr {RELEASE_VERSION} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Kort svar</h2>
+            <p>
+              Mät ett känt mått på ritningen eller ange den utskrivna skalan. Kontrollera resultatet
+              mot ett andra mått och lås skalan när den stämmer. Skalan hör till en sida, och varje
+              mätning behåller den skala den skapades med.
+            </p>
+          </div>
+
+          <h2 id="reference">Välj referens</h2>
+          <p>
+            En dimensionslinje på ritningen är den säkraste referensen, eftersom den speglar hur
+            bladet togs fram. Den utskrivna skalan är snabbare men förutsätter att PDF:en inte har
+            skrivits ut eller skalats om. När båda finns: använd dimensionslinjen och behåll skalan
+            som kontroll.
+          </p>
+          <h2 id="measure">Mät det kända måttet</h2>
+          <p>
+            Zooma in och sätt de två punkterna på dimensionslinjens ändar. Fästpunkterna hjälper,
+            men en linje som ritats om eller skalats kan ligga något fel; jämför med en vägg eller
+            en dörr innan du litar på den.
+          </p>
+          <h2 id="scale">Ange eller räkna fram skalan</h2>
+          <p>
+            Ange den kända längden och enheten, så räknar appen fram millimeter per punkt. Du kan
+            också skriva in den utskrivna skalan direkt. Ett blad med flera skalor kräver en
+            kalibrering per vy, eftersom skalan sparas per sida och per mätning.
+          </p>
+          <h2 id="check">Kontrollera och lås</h2>
+          <p>
+            Mät ett andra känt mått. Om de två inte stämmer är referensen fel eller bladet
+            förvrängt. När de stämmer, lås skalan så att ett misstag inte kan ändra den.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Kontrollera och lås</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/calibration.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Kalibrering mot ett känt mått på 10 m, med möjlighet att låsa per sida."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/calibration.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Kalibrering mot ett känt mått på 10 m, med möjlighet att låsa per sida."
+              />
+            </a>
+            <figcaption>
+              <span>Kalibrering mot ett känt mått på 10 m, med möjlighet att låsa per sida.</span>
+            </figcaption>
+          </figure>
+          <h2 id="wrong">När skalan inte stämmer</h2>
+          <p>
+            Tre orsaker täcker de flesta fall: PDF:en skrevs ut med "anpassa till sida", skanningen
+            skalades om, eller måttet hör till en annan vy på samma blad. Kontrollera ritningens
+            egen uppgift, kalibrera om, och kom ihåg att befintliga mätningar behåller sin
+            ursprungliga skala.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>När skalan inte stämmer</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/hero.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Varje mätning behåller skalan den skapades med, även efter en omkalibrering."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Varje mätning behåller skalan den skapades med, även efter en omkalibrering."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Varje mätning behåller skalan den skapades med, även efter en omkalibrering.</span
+              >
+            </figcaption>
+          </figure>
+
+          <h2 id="mistakes">Vanliga fel</h2>
+          <ul class="checklist">
+            <li>Kalibrera på ett blad som skrivits ut med anpassa-till-sida.</li>
+            <li>Lita på en dimensionslinje som ritats om i annan skala.</li>
+            <li>Anta att en kalibrering gäller alla blad i paketet.</li>
+            <li>Kalibrera om utan att bestämma om befintliga mätningar ska följa med.</li>
+          </ul>
+
+          <h2 id="faq">Frågor</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Vad betyder 1:100?</summary>
+              <p>
+                En millimeter på ritningen motsvarar 100 millimeter i byggnaden. I 1:50 täcker samma
+                linje halva den verkliga längden.
+              </p>
+            </details>
+            <details>
+              <summary>Kan olika blad ha olika skala?</summary>
+              <p>
+                Ja. Skalan sparas per sida, vilket är vanligt i paket med detaljer och
+                situationsplaner.
+              </p>
+            </details>
+            <details>
+              <summary>Vad händer med befintliga mätningar vid omkalibrering?</summary>
+              <p>
+                De behåller skalan de skapades med. Att uppdatera dem är en egen, medveten åtgärd.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Relaterat</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}sv/guider/mata-area-pdf/"
+              ><b>Mäta area i en PDF</b
+              ><span>Använd den kalibrerade skalan för rumsareor och avdrag.</span></a
+            >
+            <a href="{{ROOT}}sv/mata-area/"
+              ><b>Mäta area på ritning</b><span>Uppgiftssidan för areor och rum.</span></a
+            >
+            <a href="{{ROOT}}sv/mangdning/"
+              ><b>Mängdning</b><span>Vad de kalibrerade mätningarna blir.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Kalibrera demoplanen</h2>
+            <p>
+              Demoplanen har en kalibreringslinje på 10 m, så du kan prova kontrollen och låset på
+              ett riktigt blad.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Hämta demoprojektet</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>

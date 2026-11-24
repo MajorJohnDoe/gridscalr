@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Measure area in a PDF drawing — step by step</title>
+    <meta
+      name="description"
+      content="How to measure area in a PDF drawing: calibrate the scale, draw a rectangle or polygon, subtract shafts and openings, and check the net area before export."
+    />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/guides/area-pdf/" />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/area-pdf/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/mata-area-pdf/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/area-pdf/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Measure area in a PDF drawing — step by step" />
+    <meta
+      property="og:description"
+      content="How to measure area in a PDF drawing: calibrate the scale, draw a rectangle or polygon, subtract shafts and openings, and check the net area before export."
+    />
+    <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/guides/area-pdf/" />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Measure area in a PDF drawing — step by step" />
+    <meta
+      name="twitter:description"
+      content="How to measure area in a PDF drawing: calibrate the scale, draw a rectangle or polygon, subtract shafts and openings, and check the net area before export."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Measure area in a PDF drawing — step by step",
+        "url": "https://majorjohndoe.github.io/gridscalr/guides/area-pdf/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "How to measure area in a PDF drawing",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/area-pdf/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Do I need to calibrate to measure area?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Use a known dimension or the printed scale. Counts do not need a scale, but areas do."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I measure a scanned drawing?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. TIF scans import as pages and are calibrated the same way as a PDF."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does the room area update automatically?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The room sums its linked measurements, and deductions are subtracted from the net."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a href="{{ROOT}}guides/area-pdf/" hreflang="en" lang="en" aria-current="page">English</a>
+          <a href="{{ROOT}}sv/guider/mata-area-pdf/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>How to measure area in a PDF drawing</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>How to measure area in a PDF drawing</h1>
+          <p class="lede">
+            From calibration to net area and quantity — the workflow that gives the same answer
+            twice.
+          </p>
+          <p class="guide-meta">
+            Updated 24 November 2026 · 5 min read · Checked against GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#prepare">Prepare the drawing</a></li>
+            <li><a href="#calibrate">Calibrate the page</a></li>
+            <li><a href="#draw">Draw the area</a></li>
+            <li><a href="#subtract">Subtract and link to the room</a></li>
+            <li><a href="#check">Check the net and export</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {RELEASE_VERSION} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              Calibrate the page against a known dimension or the printed scale, draw the area as a
+              rectangle or polygon, mark shafts and openings as deductions, and link the measurement
+              to the room. The net area recalculates automatically and follows into the quantity.
+            </p>
+          </div>
+
+          <h2 id="prepare">Prepare the drawing</h2>
+          <p>
+            You need the drawing as a PDF or a scanned TIF, a known dimension, and a decision on
+            which rooms to measure. A scan needs enough resolution to read the dimensions and wall
+            lines. GridScalr imports a TIF as pages, so it does not have to be converted first.
+          </p>
+          <h2 id="calibrate">Calibrate the page</h2>
+          <p>
+            Calibrate before you measure anything. The calibration is the only step that affects
+            every measurement on the page.
+          </p>
+          <ol>
+            <li>Measure a known dimension, such as the 10 m calibration line on the demo plan.</li>
+            <li>Check the result against a second dimension.</li>
+            <li>Lock the scale so it cannot change by accident.</li>
+          </ol>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Calibrate the page</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/calibration.webp"
+              data-lightbox
+              aria-label="Click to enlarge: Calibration against a known 10 m dimension, with the scale stored per page."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/calibration.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Calibration against a known 10 m dimension, with the scale stored per page."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Calibration against a known 10 m dimension, with the scale stored per page.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="draw">Draw the area</h2>
+          <p>
+            Use a rectangle for square rooms and a polygon for L-shapes, angled walls and shafts.
+            With snapping on, the corners land on the drawing's lines, so the same room measures the
+            same on two attempts.
+          </p>
+          <p>
+            The label shows the area and unit. Drag it clear of nearby geometry, or lock it inside a
+            small room so it stays readable.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Draw the area</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/hero.webp"
+              data-lightbox
+              aria-label="Click to enlarge: A 484 m² area selected on the calibrated plan, with the room and category in the panel."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="A 484 m² area selected on the calibrated plan, with the room and category in the panel."
+              />
+            </a>
+            <figcaption>
+              <span
+                >A 484 m² area selected on the calibrated plan, with the room and category in the
+                panel.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="subtract">Subtract and link to the room</h2>
+          <p>
+            Shafts, openings and other areas that should not be ordered are marked as deductions. A
+            deduction is a separate measurement that is subtracted from the net, so the gross area
+            stays visible.
+          </p>
+          <p>
+            Link the measurement to the room in the space register. The room then sums its linked
+            measurements, and a changed measurement updates the room area.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Subtract and link to the room</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/spaces.webp"
+              data-lightbox
+              aria-label="Click to enlarge: The space register shows the measured 484 m² warehouse and a manual office area."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/spaces.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The space register shows the measured 484 m² warehouse and a manual office area."
+              />
+            </a>
+            <figcaption>
+              <span
+                >The space register shows the measured 484 m² warehouse and a manual office
+                area.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="check">Check the net and export</h2>
+          <p>
+            Before exporting, check that every room has an area, that deductions sit in the right
+            room, and that waste and rounding apply to the right material. The order dialog shows
+            gross, deduction, net, waste and order quantity per room. The same numbers appear in the
+            schedule and the report.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Check the net and export</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/table.webp"
+              data-lightbox
+              aria-label="Click to enlarge: The schedule groups the measured objects by category, beside the plan."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/table.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The schedule groups the measured objects by category, beside the plan."
+              />
+            </a>
+            <figcaption>
+              <span>The schedule groups the measured objects by category, beside the plan.</span>
+            </figcaption>
+          </figure>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>Calibrating one sheet and assuming the rest follow. The scale is per page.</li>
+            <li>Putting the deduction in another room, so the gross stays too high.</li>
+            <li>
+              Measuring before a recalibration. Each measurement keeps the scale it was created
+              with.
+            </li>
+            <li>Leaving a room without an area. It is flagged instead of showing a partial sum.</li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Do I need to calibrate to measure area?</summary>
+              <p>
+                Yes. Use a known dimension or the printed scale. Counts do not need a scale, but
+                areas do.
+              </p>
+            </details>
+            <details>
+              <summary>Can I measure a scanned drawing?</summary>
+              <p>Yes. TIF scans import as pages and are calibrated the same way as a PDF.</p>
+            </details>
+            <details>
+              <summary>Does the room area update automatically?</summary>
+              <p>
+                Yes. The room sums its linked measurements, and deductions are subtracted from the
+                net.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}area-takeoff/"
+              ><b>Measure area on a drawing</b
+              ><span>The task page for calibration, deductions and rooms.</span></a
+            >
+            <a href="{{ROOT}}guides/calibrate-drawing/"
+              ><b>Calibrate a drawing</b
+              ><span>Known dimension or printed scale, and how to check it.</span></a
+            >
+            <a href="{{ROOT}}guides/waste-and-rounding/"
+              ><b>Waste and rounding</b><span>From net area to an order quantity.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Measure the demo room</h2>
+            <p>Open the demo project and repeat the six steps on the calibrated industrial plan.</p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Get the demo project</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>

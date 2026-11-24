@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Guider för area, driftkort och mängdning</title>
+    <meta
+      name="description"
+      content="Steg-för-steg-guider för att mäta area i PDF-ritningar, kalibrera en ritning, rita driftkort och ta fram mängder med spill och avrundning."
+    />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/sv/guider/" />
+    <link rel="alternate" hreflang="en" href="https://majorjohndoe.github.io/gridscalr/guides/" />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Guider för area, driftkort och mängdning" />
+    <meta
+      property="og:description"
+      content="Steg-för-steg-guider för att mäta area i PDF-ritningar, kalibrera en ritning, rita driftkort och ta fram mängder med spill och avrundning."
+    />
+    <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/sv/guider/" />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Guider för area, driftkort och mängdning" />
+    <meta
+      name="twitter:description"
+      content="Steg-för-steg-guider för att mäta area i PDF-ritningar, kalibrera en ritning, rita driftkort och ta fram mängder med spill och avrundning."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Guider för area, driftkort och mängdning",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/guider/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Guider för arbetet i ritningen",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}guides/" hreflang="en" lang="en">English</a>
+          <a href="{{ROOT}}sv/guider/" hreflang="sv" lang="sv" aria-current="page">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span><span>Guider</span>
+          </nav>
+          <p class="eyebrow">Guider</p>
+          <h1>Guider för arbetet i ritningen</h1>
+          <p class="lede">
+            Korta, praktiska guider för de tre jobben: mäta area, rita driftkort och ta fram
+            beställningsmängder. Alla exempel använder samma demoprojekt som följer med appen.
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap">
+          <div class="guide-grid">
+            <a class="guide-card" href="{{ROOT}}sv/guider/mata-area-pdf/">
+              <span class="guide-card-time">6 min</span>
+              <b>Mäta area i en PDF-ritning</b>
+              <span>Kalibrera, rita, dra av och kontrollera nettoarean.</span>
+            </a>
+            <a class="guide-card" href="{{ROOT}}sv/guider/kalibrera-ritning/">
+              <span class="guide-card-time">5 min</span>
+              <b>Kalibrera en ritning: 1:50, 1:100 och 1:400</b>
+              <span>Känt mått eller utskriven skala, och hur du kontrollerar den.</span>
+            </a>
+            <a class="guide-card" href="{{ROOT}}sv/guider/spill-och-avrundning/">
+              <span class="guide-card-time">5 min</span>
+              <b>Mängdning med spill och avrundning</b>
+              <span>Från nettoarea till beställningsmängd, per objekt.</span>
+            </a>
+          </div>
+          <div class="two-shots guide-shots">
+            <figure class="big-shot">
+              <div class="big-shot-bar">
+                <span
+                  >The demo project: a calibrated plan, a measured area and the operation card in
+                  the page list.</span
+                >
+              </div>
+              <a
+                class="shot-link"
+                href="{{ROOT}}screenshots/site/sv/hero.webp"
+                data-lightbox
+                aria-label="Klicka för full storlek: The demo project: a calibrated plan, a measured area and the operation card in the page list."
+              >
+                <img
+                  src="{{ROOT}}screenshots/site/sv/hero.webp"
+                  width="1920"
+                  height="1080"
+                  loading="lazy"
+                  alt="GridScalr with a calibrated industrial plan and a 484 m² area selected."
+                />
+              </a>
+              <figcaption>
+                <span
+                  >The demo project: a calibrated plan, a measured area and the operation card in
+                  the page list.</span
+                >
+              </figcaption>
+            </figure>
+            <figure class="big-shot">
+              <div class="big-shot-bar">
+                <span>The quantity schedule and the report read the same measured objects.</span>
+              </div>
+              <a
+                class="shot-link"
+                href="{{ROOT}}screenshots/site/sv/table.webp"
+                data-lightbox
+                aria-label="Klicka för full storlek: The quantity schedule and the report read the same measured objects."
+              >
+                <img
+                  src="{{ROOT}}screenshots/site/sv/table.webp"
+                  width="1920"
+                  height="1080"
+                  loading="lazy"
+                  alt="Quantity schedule in GridScalr with category groups beside a mezzanine plan."
+                />
+              </a>
+              <figcaption>
+                <span>The quantity schedule and the report read the same measured objects.</span>
+              </figcaption>
+            </figure>
+          </div>
+          <div class="guide-more">
+            <h2>Fler guider är på väg</h2>
+            <ul class="checklist">
+              <li>Dörrar och fönster: antalstabell från ritningen</li>
+              <li>Skannade TIF-ritningar utan konvertering</li>
+              <li>Jämför två ritningsrevisioner före beställning</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Börja med demoprojektet</h2>
+            <p>
+              Demot innehåller en kalibrerad plan, ett avdrag, ett driftkort och färdiga mängder, så
+              varje exempel går att kontrollera.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Hämta demoprojektet</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>

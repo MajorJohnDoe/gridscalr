@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mängdning med spill och avrundning – rätt beställning</title>
+    <meta
+      name="description"
+      content="Så räknar du spill, avrundning och beställningsmängd från nettoarean: per objekt, inte per rapport. Räkneexempel och checklista före export."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/spill-och-avrundning/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/waste-and-rounding/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/spill-och-avrundning/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/waste-and-rounding/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Mängdning med spill och avrundning – rätt beställning" />
+    <meta
+      property="og:description"
+      content="Så räknar du spill, avrundning och beställningsmängd från nettoarean: per objekt, inte per rapport. Räkneexempel och checklista före export."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/sv/guider/spill-och-avrundning/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Mängdning med spill och avrundning – rätt beställning" />
+    <meta
+      name="twitter:description"
+      content="Så räknar du spill, avrundning och beställningsmängd från nettoarean: per objekt, inte per rapport. Räkneexempel och checklista före export."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Mängdning med spill och avrundning – rätt beställning",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/guider/spill-och-avrundning/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Mängdning med spill och avrundning",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/spill-och-avrundning/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Ska spill läggas på brutto eller netto?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "På netto. Brutto innehåller avdrag som inte ska beställas; spelet gäller det som faktiskt beställs."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Var sätter jag spill och avrundning?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Per objekt eller kategori i mängdinställningarna, så att olika material kan följa olika regler i samma projekt."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Kan jag se beställningsmängden före export?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Beställningsdialogen visar brutto, avdrag, netto, spill och beställningsmängd per rum."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}guides/waste-and-rounding/" hreflang="en" lang="en">English</a>
+          <a
+            href="{{ROOT}}sv/guider/spill-och-avrundning/"
+            hreflang="sv"
+            lang="sv"
+            aria-current="page"
+            >Svenska</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}sv/guider/">Guider</a
+            ><span>/</span>
+            <span>Mängdning med spill och avrundning</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Mängdning med spill och avrundning</h1>
+          <p class="lede">
+            Beställningsmängden är inte arean. Den är nettoarean plus reglerna du sätter per objekt,
+            avrundade en gång.
+          </p>
+          <p class="guide-meta">
+            Uppdaterad 24 november 2026 · 5 min läsning · Granskad mot GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>På den här sidan</p>
+          <ol>
+            <li><a href="#net">Netto först</a></li>
+            <li><a href="#waste">Spill per objekt</a></li>
+            <li><a href="#round">Avrunda sist</a></li>
+            <li><a href="#order">Beställningsmängden</a></li>
+            <li><a href="#checklist">Checklista före export</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Ladda ner GridScalr {RELEASE_VERSION} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Kort svar</h2>
+            <p>
+              Räkna på nettoarean, lägg spill per objekt och avrunda sist. Då blir
+              beställningsmängden spårbar: 484 m² netto med 10 % spill ger 532,5 m² att beställa.
+              Spill och avrundning hör till objektet eller kategorin, inte till rapporten.
+            </p>
+          </div>
+
+          <h2 id="net">Netto först</h2>
+          <p>
+            Börja från nettot: brutto minus avdrag. Ett schakt som mättes som golv ska inte
+            beställas som golv, och avdraget är det som håller bruttoarean synlig medan nettot blir
+            rätt.
+          </p>
+          <h2 id="waste">Spill per objekt</h2>
+          <p>
+            Spill är en procent på nettot, satt per objekt eller kategori. Golv, väggskivor och
+            ytmaterial delar sällan samma regel, och en enda procentsats för hela projektet döljer
+            skillnaden. Sätt den där materialet väljs.
+          </p>
+          <h2 id="round">Avrunda sist</h2>
+          <p>
+            Avrundningen sker efter spill, per objekt, så att små poster inte försvinner i en
+            rapportsumma. En dörrräkning på 14 blir 14; en längd på 3,4 m med 10 % spill blir 3,74 m
+            och avrundas en gång, inte två.
+          </p>
+          <h2 id="order">Beställningsmängden</h2>
+          <p>
+            Dialogen visar brutto, avdrag, netto, spill och beställningsmängd per rum. Samma tal
+            finns i schemat, Excel-arbetsboken och den utskriftsvänliga PDF:en, eftersom allt
+            härleds från objekten.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Beställningsmängden</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/order.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Lager: 484 m² brutto, 0 avdrag, 48,4 m² spill och 532,5 m² att beställa."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/order.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Lager: 484 m² brutto, 0 avdrag, 48,4 m² spill och 532,5 m² att beställa."
+              />
+            </a>
+            <figcaption>
+              <span>Lager: 484 m² brutto, 0 avdrag, 48,4 m² spill och 532,5 m² att beställa.</span>
+            </figcaption>
+          </figure>
+          <h2 id="checklist">Checklista före export</h2>
+          <ul>
+            <li>Varje rum har en area eller ett antal.</li>
+            <li>Avdragen ligger i rätt rum.</li>
+            <li>Spelet matchar materialet, inte rapporten.</li>
+            <li>Avrundningen är satt per objekt.</li>
+            <li>Revisionen matchar planen du mätte.</li>
+            <li>Dolda objekt och lager är medvetna.</li>
+          </ul>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Checklista före export</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/table.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Schemat och beställningsdialogen läser samma uppmätta objekt."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/table.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Schemat och beställningsdialogen läser samma uppmätta objekt."
+              />
+            </a>
+            <figcaption>
+              <span>Schemat och beställningsdialogen läser samma uppmätta objekt.</span>
+            </figcaption>
+          </figure>
+
+          <h2 id="mistakes">Vanliga fel</h2>
+          <ul class="checklist">
+            <li>Lägga spill på brutto i stället för netto, vilket överbeställer varje öppning.</li>
+            <li>Använda en spillprocent för material med olika regler.</li>
+            <li>Avrunda per rapport i stället för per objekt, så att små poster försvinner.</li>
+            <li>
+              Exportera före revisionskontrollen, så att beställningen bygger på en gammal plan.
+            </li>
+          </ul>
+
+          <h2 id="faq">Frågor</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Ska spill läggas på brutto eller netto?</summary>
+              <p>
+                På netto. Brutto innehåller avdrag som inte ska beställas; spelet gäller det som
+                faktiskt beställs.
+              </p>
+            </details>
+            <details>
+              <summary>Var sätter jag spill och avrundning?</summary>
+              <p>
+                Per objekt eller kategori i mängdinställningarna, så att olika material kan följa
+                olika regler i samma projekt.
+              </p>
+            </details>
+            <details>
+              <summary>Kan jag se beställningsmängden före export?</summary>
+              <p>
+                Ja. Beställningsdialogen visar brutto, avdrag, netto, spill och beställningsmängd
+                per rum.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Relaterat</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}sv/mangdning/"
+              ><b>Mängdning</b><span>Uppgiftssidan för netto, spill och export.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/mata-area-pdf/"
+              ><b>Mäta area i en PDF</b><span>Där nettoarean kommer från.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/kalibrera-ritning/"
+              ><b>Kalibrera en ritning</b><span>Skalan bakom varje mätning.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Kontrollera de fyra talen</h2>
+            <p>
+              Öppna demoprojektet och jämför beställningsdialogen med schemat och PDF-rapporten.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Hämta demoprojektet</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>
