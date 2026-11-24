@@ -348,6 +348,18 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/mark-a-deviation/" />
   </url>
   <url>
+    <loc>${baseUrl}/guides/send-by-email/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/send-by-email/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/skicka-ritning-mejl/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/send-by-email/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/skicka-ritning-mejl/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/send-by-email/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/skicka-ritning-mejl/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/send-by-email/" />
+  </url>
+  <url>
     <loc>${baseUrl}/compare/bluebeam/</loc>
     <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/compare/bluebeam/" />
     <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/jamfor/bluebeam/" />

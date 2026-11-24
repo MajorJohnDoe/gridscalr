@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Skicka en ritning med e-post från GridScalr</title>
+    <meta
+      name="description"
+      content="Exportera den markerade ritnings-PDF:en och öppna ett nytt, oskickat utkast i din lokala e-postklient – Outlook, Mail eller Thunderbird. Webbmail stöds inte."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/skicka-ritning-mejl/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/send-by-email/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/skicka-ritning-mejl/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/send-by-email/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Skicka en ritning med e-post från GridScalr" />
+    <meta
+      property="og:description"
+      content="Exportera den markerade ritnings-PDF:en och öppna ett nytt, oskickat utkast i din lokala e-postklient – Outlook, Mail eller Thunderbird. Webbmail stöds inte."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/sv/guider/skicka-ritning-mejl/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Skicka en ritning med e-post från GridScalr" />
+    <meta
+      name="twitter:description"
+      content="Exportera den markerade ritnings-PDF:en och öppna ett nytt, oskickat utkast i din lokala e-postklient – Outlook, Mail eller Thunderbird. Webbmail stöds inte."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Skicka en ritning med e-post från GridScalr",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/guider/skicka-ritning-mejl/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Skicka en ritning med e-post från GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/skicka-ritning-mejl/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Skickar GridScalr e-postmeddelandet?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nej. Det öppnar ett oskickat utkast i din lokala e-postklient och lämnar sändning, mottagare och eventuella klientfrågor till dig. Inget lämnar datorn automatiskt."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Kan jag använda webbmail som Gmail i en webbläsare?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nej. En mailto:-länk kan inte bära en bilaga, så webbmail i en webbläsare stöds inte. Använd en lokal e-postklient, eller exportera PDF:en och bifoga den själv."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Var kommer den bifogade PDF:en ifrån?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Från exportdialogen för ritningen, skriven till appens cache-mapp mail-outbox. De tio senaste bilagorna behålls och äldre tas bort vid nästa start eller export. Projektfilen och källritningen bifogas eller ändras aldrig."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}guides/send-by-email/" hreflang="en" lang="en">English</a>
+          <a
+            href="{{ROOT}}sv/guider/skicka-ritning-mejl/"
+            hreflang="sv"
+            lang="sv"
+            aria-current="page"
+            >Svenska</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}sv/guider/">Guider</a
+            ><span>/</span>
+            <span>Skicka en ritning med e-post från GridScalr</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Skicka en ritning med e-post från GridScalr</h1>
+          <p class="lede">
+            Öppna den markerade ritningen som ett oskickat utkast i din lokala e-postklient, med
+            PDF:en redan bifogad.
+          </p>
+          <p class="guide-meta">Uppdaterad 24 november 2026 · 4 min läsning</p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>På den här sidan</p>
+          <ol>
+            <li><a href="#export">Välj ritning och exportera</a></li>
+            <li><a href="#draft">Vad e-postklienten får</a></li>
+            <li><a href="#fallback">När inget utkast öppnas</a></li>
+            <li><a href="#limits">Webbmail och webbversionen</a></li>
+            <li><a href="#mistakes">Vanliga misstag</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Ladda ner GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Kort svar</h2>
+            <p>
+              Välj <b>Arkiv → Skicka &amp; dela → Skicka med e-post…</b>. GridScalr öppnar samma
+              exportdialog som <b>Ritnings-PDF…</b> och startar sedan ett nytt, oskickat utkast i
+              din lokala e-postklient med <b>&lt;project&gt;-markups.pdf</b> bifogad. Inget skickas
+              automatiskt och källritningen ändras aldrig.
+            </p>
+          </div>
+
+          <h2 id="export">Välj ritning och exportera</h2>
+          <p>
+            E-poståtgärden tar ingen genväg förbi exportinställningarna. Sidintervall, beskärning,
+            synliga lager, etiketter, kalibreringslinjen, teckenförklaringen, valfria läsarlager och
+            granskningsanteckningar följer samma regler som alla andra ritnings-PDF:er. Dolda objekt
+            och dolda lager bifogas aldrig. När exporten är klar öppnas e-postklienten med filen
+            redan i utkastet.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>En exportdialog, två mål</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/export.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Exportdialogen väljer sidor, beskärning, synliga lager och teckenförklaring innan PDF:en bifogas."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/export.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Exportdialogen i GridScalr med val av sidor, beskärning, lager och teckenförklaring."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Exportdialogen väljer sidor, beskärning, synliga lager och teckenförklaring innan
+                PDF:en bifogas.</span
+              >
+            </figcaption>
+          </figure>
+
+          <h2 id="draft">Vad e-postklienten får</h2>
+          <p>
+            Utkastet har ingen mottagare förrän du lägger till en. Ämne och meddelande skriver du i
+            din vanliga klient och skickar därifrån. På Windows föredrar GridScalr Simple MAPI via
+            den förvalda MAPI-klienten, oftast <b>Outlook</b>, och faller tillbaka på
+            <b>outlook.exe /a</b>. På macOS öppnas <b>Mail</b> via <b>osascript</b>, vilket kan
+            kräva Automation-behörighet första gången. På Linux föredras
+            <b>xdg-email --attach</b> med <b>Thunderbird</b> som reserv. Din klient kan fortfarande
+            visa en egen profil-, säkerhets- eller bilagefråga; den frågan kommer från klienten.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Ritningen bakom bilagan</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/hero.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Den uppmätta ritningen exporteras från det aktuella projektet, så mottagaren ser samma synliga innehåll."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="En kalibrerad industriplan i GridScalr med sidlistan, mätningarna och egenskapspanelen."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Den uppmätta ritningen exporteras från det aktuella projektet, så mottagaren ser
+                samma synliga innehåll.</span
+              >
+            </figcaption>
+          </figure>
+
+          <h2 id="fallback">När inget utkast öppnas</h2>
+          <p>
+            Om ingen e-postklient öppnas namnger GridScalr den sparade PDF:en och erbjuder
+            <b>Visa fil</b>, så ett misslyckat startförsök blir aldrig tyst. Du kan då bifoga filen
+            själv i den e-postklient du använder. Bilagan skrivs till appens cache-mapp
+            <b>mail-outbox</b>, som behåller de tio senaste bilagorna och tar bort äldre vid nästa
+            start eller export.
+          </p>
+
+          <h2 id="limits">Webbmail och webbversionen</h2>
+          <p>
+            Webbmail i en webbläsare stöds inte, eftersom en <b>mailto:</b>-länk inte kan bära en
+            bilaga. Skicka med e-post är en skrivbordsåtgärd och är inaktiverad i webbversionen.
+            Inget skickas automatiskt, projektfilen bifogas aldrig och att stänga utkastet utan att
+            skicka är ditt val, inte ett appfel.
+          </p>
+
+          <h2 id="mistakes">Vanliga misstag</h2>
+          <ul class="checklist">
+            <li>Att vänta sig att utkastet har en mottagare; mottagaren lägger alltid du till.</li>
+            <li>Att välja webbmail och vänta sig att en mailto:-länk bifogar PDF:en.</li>
+            <li>
+              Att tro att en klientfråga betyder att exporten misslyckades; läs frågan och bekräfta
+              den i e-postklienten.
+            </li>
+            <li>
+              Att skicka innan sidintervall, beskärning och synliga lager är kontrollerade i
+              exportdialogen.
+            </li>
+          </ul>
+
+          <h2 id="faq">Frågor</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Skickar GridScalr e-postmeddelandet?</summary>
+              <p>
+                Nej. Det öppnar ett oskickat utkast i din lokala e-postklient och lämnar sändning,
+                mottagare och eventuella klientfrågor till dig. Inget lämnar datorn automatiskt.
+              </p>
+            </details>
+            <details>
+              <summary>Kan jag använda webbmail som Gmail i en webbläsare?</summary>
+              <p>
+                Nej. En mailto:-länk kan inte bära en bilaga, så webbmail i en webbläsare stöds
+                inte. Använd en lokal e-postklient, eller exportera PDF:en och bifoga den själv.
+              </p>
+            </details>
+            <details>
+              <summary>Var kommer den bifogade PDF:en ifrån?</summary>
+              <p>
+                Från exportdialogen för ritningen, skriven till appens cache-mapp mail-outbox. De tio
+                senaste bilagorna behålls och äldre tas bort vid nästa start eller export.
+                Projektfilen och källritningen bifogas eller ändras aldrig.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Relaterat</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}sv/guider/markera-avvikelse/"
+              ><b>Markera en avvikelse på ritningen</b
+              ><span>Anteckningen du kan vilja ha med i ritningen du skickar.</span></a
+            >
+            <a href="{{ROOT}}sv/funktioner/"
+              ><b>Alla funktioner</b
+              ><span>Varje export och rapport, inklusive ritnings-PDF:en.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/jamfora-ritningar/"
+              ><b>Jämför två ritningsrevisioner</b
+              ><span>Kontrollera ändringen innan ritningen lämnar skrivbordet.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova</p>
+            <h2>Skicka nästa ritning från projektet</h2>
+            <p>
+              Öppna demoprojektet, exportera den markerade planen och se utkastet dyka upp i den
+              e-postklient du redan använder.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a class="button secondary" data-release-page href="{{RELEASE_URL}}"
+              >Versionssida och kontrollsummor</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Lokal areamätning, driftkort och mängdning för PDF- och TIF-ritningar.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguiden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Versionsanteckningar</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installerare är inte kodsignerade. Kontrollera SHA-256-kontrollsummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>

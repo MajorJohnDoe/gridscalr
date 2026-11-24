@@ -83,6 +83,11 @@ const pairUrls = {
     sv: `${baseUrl}/sv/guider/markera-avvikelse/`,
     "x-default": `${baseUrl}/guides/mark-a-deviation/`,
   },
+  guideEmail: {
+    en: `${baseUrl}/guides/send-by-email/`,
+    sv: `${baseUrl}/sv/guider/skicka-ritning-mejl/`,
+    "x-default": `${baseUrl}/guides/send-by-email/`,
+  },
   compareBluebeam: {
     en: `${baseUrl}/compare/bluebeam/`,
     sv: `${baseUrl}/sv/jamfor/bluebeam/`,
@@ -159,7 +164,7 @@ const pages = [
     canonical: pairUrls.features.en,
     title: "GridScalr features — PDF takeoff, counts and exports",
     description:
-      "Explore GridScalr features: calibration, measurement, custom counts, count schedules, revision comparison, local OCR and CSV, Excel and PDF exports.",
+      "Explore GridScalr features: calibration, measurement, custom counts, count schedules, revision comparison, local OCR, CSV, Excel, PDF and e-mail exports.",
     titleTerms: ["pdf", "takeoff", "counts", "exports"],
     h1Terms: ["pdf takeoff", "tif", "feature"],
     metaTerms: ["calibration", "count schedule", "revision comparison", "ocr", "pdf"],
@@ -173,7 +178,7 @@ const pages = [
     canonical: pairUrls.features.sv,
     title: "Funktioner i GridScalr — mängdning av PDF och TIF",
     description:
-      "Utforska GridScalr: kalibrering, längd- och areamätning, egna antalstyper, antalstabell, revisionsjämförelse, lokal OCR samt export till CSV, Excel och PDF.",
+      "Utforska GridScalr: kalibrering, mätning, egna antalstyper, antalstabell, revisionsjämförelse, lokal OCR samt export till CSV, Excel, PDF och e-post.",
     titleTerms: ["funktioner", "mängdning", "pdf", "tif"],
     h1Terms: ["funktioner", "mängdning", "pdf", "tif"],
     metaTerms: ["kalibrering", "antalstabell", "revisionsjämförelse", "ocr", "pdf"],
@@ -514,6 +519,34 @@ const pages = [
     h1Terms: ["avvikelse", "ritningen", "exportera"],
     metaTerms: ["avvikelse", "ritlager", "moln", "hänvisning", "stämpel", "entreprenören"],
     bodyTerms: ["avvikelse", "ritlager", "revideringsmoln", "hänvisning", "stämpel", "export"],
+  },
+  {
+    file: "guides/send-by-email/index.html",
+    lang: "en",
+    kind: "guide",
+    pair: "guideEmail",
+    canonical: pairUrls.guideEmail.en,
+    title: "Send a drawing by e-mail from GridScalr",
+    description:
+      "Export the marked-up drawing PDF and open a new, unsent draft in your local mail client — Outlook, Mail or Thunderbird. Webmail is not supported.",
+    titleTerms: ["drawing", "e-mail"],
+    h1Terms: ["drawing", "e-mail"],
+    metaTerms: ["drawing", "mail client", "outlook", "webmail"],
+    bodyTerms: ["unsent", "attachment", "mail client", "webmail"],
+  },
+  {
+    file: "sv/guider/skicka-ritning-mejl/index.html",
+    lang: "sv",
+    kind: "guide",
+    pair: "guideEmail",
+    canonical: pairUrls.guideEmail.sv,
+    title: "Skicka en ritning med e-post från GridScalr",
+    description:
+      "Exportera den markerade ritnings-PDF:en och öppna ett nytt, oskickat utkast i din lokala e-postklient – Outlook, Mail eller Thunderbird. Webbmail stöds inte.",
+    titleTerms: ["ritning", "e-post"],
+    h1Terms: ["ritning", "e-post"],
+    metaTerms: ["ritning", "e-postklient", "outlook", "webbmail"],
+    bodyTerms: ["oskickat", "bilaga", "e-postklient", "webbmail"],
   },
   {
     file: "compare/bluebeam/index.html",
