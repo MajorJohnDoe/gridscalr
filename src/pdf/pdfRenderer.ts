@@ -343,7 +343,7 @@ export class PdfRenderer {
     });
     this.activeTasks.add(task);
     try {
-      await task.promise;
+      await perfSpanAsync("pdf-render", () => task.promise);
     } finally {
       this.activeTasks.delete(task);
     }
@@ -388,7 +388,7 @@ export async function renderPagePreview(
     background: "#ffffff",
     intent: "display",
   });
-  await task.promise;
+  await perfSpanAsync("pdf-render", () => task.promise);
   if (!trimMargins) return canvas;
 
   let bounds: ReturnType<typeof contentBoundsFromPixels>;

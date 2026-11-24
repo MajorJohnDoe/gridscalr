@@ -3,6 +3,7 @@ import {
   BLOCKED_WINDOW_MS,
   FRAME_WINDOW_MS,
   RingBuffer,
+  SPAN_NAMES,
   blockedWindow,
   clampPanelPosition,
   formatBytes,
@@ -41,6 +42,12 @@ function snapshot(patch: Partial<PerfSnapshot> = {}): PerfSnapshot {
 }
 
 describe("performance sample buffer", () => {
+  it("keeps the draw and PDF spans the canvas and renderer record", () => {
+    for (const name of ["draw-base", "draw-items", "pdf-render"] as const) {
+      expect(SPAN_NAMES).toContain(name);
+    }
+  });
+
   it("drops the oldest sample at capacity", () => {
     const buffer = new RingBuffer<number>(3);
     for (const value of [1, 2, 3, 4]) buffer.push(value);

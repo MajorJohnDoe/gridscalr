@@ -3628,3 +3628,47 @@ remains the scheduling home.
   confirm none of them relies on 700.
 - **Related:** #345, ADR [0013](../adr/0013-module-first-foundation.md),
   `scripts/file-budget-rules.mjs`, `file-budgets.json`.
+
+### F-145 — The snapshot's image-exclusion replacer costs about 4× a plain stringify
+
+- **Problem:** `Store.snapshot()` serialises the project through
+  `JSON.stringify(project, replacer)` where the replacer walks every string to
+  drop embedded image payloads. A replacer disables V8's fast stringify path, so
+  the cost is paid even when the project has no embedded assets.
+- **Evidence:** Performance 1 phase 1 probe, browser fallback, 40 pages /
+  4 162 items (1.9 MB): the `serialize` span is 10.9 ms p50, while a plain
+  `JSON.stringify(store.project)` of the same object is 2.6 ms p50. On the
+  150-page / 15 000-item shape the probe reports 43.5 ms per edit against the
+  benchmark's plain 20.4 ms p50. `serialize` is 1 span per discrete edit and
+  43.0 % of p95 edit latency at the default profile and 53.8 % at the reference
+  profile.
+- **Impact:** More than half of a large-project edit is history serialisation,
+  and most of that is the replacer rather than the JSON text. Phase 2 Scope B
+  as scoped (sharding unchanged pages) would still pay this per-shard cost.
+- **Next step:** Phase 2 measures a snapshot without the replacer (for example
+  a clone whose asset `data` fields are removed before stringify, or passing a
+  replacer only when a payload actually exists) and must keep the snapshot text
+  byte-identical to today's. If it cannot, record the measured reason and stop
+  at Phase 2 Scope A.
+- **Related:** #348, #349, [`docs/performance/history.md`](../performance/history.md),
+  `src/state/store.ts`.
+
+### F-146 — rAF frame-time p95 is vsync-clamped and cannot show a render win
+
+- **Problem:** The performance recorder samples the gap between
+  `requestAnimationFrame` callbacks. On a healthy 60 Hz page that gap is 16.7 ms
+  whether a frame spent 2 ms or 19 ms of main-thread work, as long as the work
+  fits before the next vsync. The p95 frame metric therefore saturates.
+- **Evidence:** Performance 1 phase 1 probe reports frame p50 16.7 ms and p95
+  16.7–16.8 ms on the demo, 40-page and 150-page shapes while `draw-items` p95
+  is 3.8, 21.0 and 21.4 ms and `draw-items` totals 320, 2 018 and 2 068 ms over
+  the same 124 redraws.
+- **Impact:** Phase 3's acceptance criterion ("p95 frame time during the pan
+  improves at least 30 %") would pass or fail on scheduler noise, not on the
+  redraw work the phase removes. A wrong metric also invites a change that
+  optimises idle time instead of drawing.
+- **Next step:** Phase 3 compares `draw-items` p95 and total per gesture, the
+  frame max/p99 distribution, and frames over 20 ms. Keep frame p50/p95 in the
+  history as a health row, not as the pass/fail metric.
+- **Related:** #348, #350, [`docs/performance/history.md`](../performance/history.md),
+  `src/features/perfMonitor/model.ts`, `src/canvas/CanvasView.ts`.
