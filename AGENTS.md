@@ -636,7 +636,9 @@ src/ui/comparePanel.ts     revision summary, filters, difference list and contro
 src/ui/searchPanel.ts      floating full-text search field, progress and result list
 src/ui/welcome.ts          empty-project welcome screen and recent files
 src/ui/pageImportDialog.ts page picker with previews for PDF/TIF import
-src/ui/topMenu.ts          File/Edit/View/Settings/Help menu and keyboard navigation
+src/ui/topMenu.ts          menu-bar assembly, open/close state and keyboard navigation
+src/ui/menus/fileMenu.ts   grouped File menu: project, import, compare, share, export, maintenance
+src/ui/menus/menuItems.ts  shared menu item types and action/separator factories
 src/ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
 src/ui/settingsDialog.ts   settings dialog orchestrator
 src/ui/settings/           project, storage, metadata, scale, units, labels, display and stamps sections

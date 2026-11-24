@@ -256,7 +256,9 @@ src/
   ui/searchPanel.ts      floating full-text search field, progress and result list
   ui/welcome.ts          empty-project welcome screen and recent files
   ui/pageImportDialog.ts page picker with previews for PDF/TIF import
-  ui/topMenu.ts          File/Edit/View/Settings/Help menu model and keyboard navigation
+  ui/topMenu.ts          menu-bar assembly, open/close state and keyboard navigation
+  ui/menus/fileMenu.ts   grouped File menu: project, import, compare, share, export and maintenance
+  ui/menus/menuItems.ts  shared menu item types and the action and separator factories
   ui/windowChrome.ts     minimize, maximize and close controls for the custom title row
   ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
   ui/settingsDialog.ts   settings dialog orchestrator

@@ -135,7 +135,7 @@ Reports always cover every page and every category. Dialog filters only affect t
 
 ### 6. Compare the revision before ordering
 
-When the consultant sends a revised drawing, keep the current takeoff open and choose **File → Compare with revision…**. Select the previous `.gridscalr` file. The reference opens as a read-only session next to the current project. You can also press `Ctrl/Cmd+Shift+2` to open **View → Reference view (same page)**, choose **Revision** in the pane toolbar and use **Open…**.
+When the consultant sends a revised drawing, keep the current takeoff open and choose **File → Compare → Compare with revision…**. Select the previous `.gridscalr` file. The reference opens as a read-only session next to the current project. You can also press `Ctrl/Cmd+Shift+2` to open **View → Reference view (same page)**, choose **Revision** in the pane toolbar and use **Open…**.
 
 - Use **Side by side** to check the geometry, or **Overlay** and the opacity slider to line up the revisions.
 - Keep a detail sheet in the reference pane with its page controls while measuring on another sheet. **Follow primary** returns the reference pane to the current page; zoom and pan stay linked either way.
@@ -143,7 +143,7 @@ When the consultant sends a revised drawing, keep the current takeoff open and c
 - Read the warnings for page-count, drawing-name and scale differences before trusting the comparison.
 - Choose **Export PDF** for a review file with page visuals, warnings and the difference table.
 
-If only a new PDF drawing arrived, choose **File → Compare with drawing…** instead. A raw PDF reference still supports side-by-side, overlay, opacity and the comparison PDF with page visuals, but it has no markup list or difference table.
+If only a new PDF drawing arrived, choose **File → Compare → Compare with drawing…** instead. A raw PDF reference still supports side-by-side, overlay, opacity and the comparison PDF with page visuals, but it has no markup list or difference table.
 
 The reference is not merged and neither drawing is modified. Close the comparison when the review is done, or save the current project as the new working revision.
 
@@ -175,9 +175,9 @@ If the project file changes outside the app while it is open, a non-blocking ban
 
 GridScalr also keeps scoped recovery snapshots, one per project and app instance, plus labelled checkpoints before page deletion, duplication, page import and paper changes. Open **Recovery center** on the welcome screen or **Settings → Preferences… → Data → Open recovery center…** to see every record grouped by project and instance, with its save time, size and base-version state. A snapshot labelled **based on an older file version** was taken from a different disk version; it opens only after a second confirmation. Use that path after a crash instead of copying a cloud file over a newer one.
 
-GridScalr keeps between 2 and 10 rolling backups per project in the local app data folder (default 3, set in **Preferences → Data**); the limit applies from the next successful save. **File → Back up now…** writes one immediately. **File → Backup manager…** lists them with time, size and origin path: **Restore as copy** opens a backup as unsaved work, **Replace open project** binds it to the current path after a second confirmation and writes nothing until you save, and **Delete selected** / **Delete all** remove only the app-data copies. Backups are local to this computer and are never added to recent files or packages. Use **File → Save a copy…** or **Share project package…** when the backup must travel.
+GridScalr keeps between 2 and 10 rolling backups per project in the local app data folder (default 3, set in **Preferences → Data**); the limit applies from the next successful save. **File → Maintenance → Back up now…** writes one immediately. **File → Maintenance → Backup manager…** lists them with time, size and origin path: **Restore as copy** opens a backup as unsaved work, **Replace open project** binds it to the current path after a second confirmation and writes nothing until you save, and **Delete selected** / **Delete all** remove only the app-data copies. Backups are local to this computer and are never added to recent files or packages. Use **File → Save a copy…** or **Share project package…** when the backup must travel.
 
-**File → Conflicted copies…** lists the copies written beside the project by **Save as conflicted copy**. **Open as project** loads one without touching the original, **Compare with open project** shows the read-only revision difference, and **Delete selected** removes one file after confirmation. The same manager is reachable from the project status popover.
+**File → Maintenance → Conflicted copies…** lists the copies written beside the project by **Save as conflicted copy**. **Open as project** loads one without touching the original, **Compare with open project** shows the read-only revision difference, and **Delete selected** removes one file after confirmation. The same manager is reachable from the project status popover.
 
 Saving with no unsaved changes does not rewrite the file. In the browser fallback, Save downloads a file instead and cannot check the disk version.
 
@@ -186,12 +186,12 @@ Saving with no unsaved changes does not rewrite the file. In the browser fallbac
 A drawing on a network share or in a cloud-synced folder can be replaced or moved by someone else. Keep the working geometry stable before you start measuring.
 
 1. When GridScalr recommends **Copy drawing into project** during import, accept it for a shared or cloud source. Save the project first if GridScalr asks; the managed copy lives in `<project>.drawings/` next to the project file.
-2. For an existing project, right-click the page and choose **Use managed copy**, or run **File → Consolidate drawings…** to copy every remaining referenced PDF in one checkpointed action.
+2. For an existing project, right-click the page and choose **Use managed copy**, or run **File → Import → Consolidate drawings…** to copy every remaining referenced PDF in one checkpointed action.
 3. If the original changes while the project is open, the source-changed banner offers **Reload**, **Use current**, **Relink** and **Copy into project**. Nothing is accepted automatically. **Use current** accepts the checksum without changing the working drawing; **Reload** re-reads the file; **Relink** finds a moved file and verifies its checksum.
 4. If the page count changed, use **Replace source…** and map the pages. Do not relink and hope the pages still line up.
 5. A managed copy protects against the original changing or moving, not against someone editing the copy. The checksum remains authoritative and a changed copy is reported the same way.
 6. Use **Detach from source** when the copy is now the master and the original path no longer matters.
-7. Share the project when it must travel: **File → Share project package…** writes one `.gridscalr.zip` with managed drawings included once and sender paths cleared. Sharing does not change the live source mode.
+7. Share the project when it must travel: **File → Send & share → Share project package…** writes one `.gridscalr.zip` with managed drawings included once and sender paths cleared. Sharing does not change the live source mode.
 
 ### Review checklist
 
@@ -319,7 +319,7 @@ Use this when the same drawing set was edited in two `.gridscalr` files by mista
 
 1. Open the project that should keep its page order and settings.
 2. Save a copy before changing anything.
-3. Choose **File → Import pages from project…** and pick the other file.
+3. Choose **File → Import → Import pages from project…** and pick the other file.
 4. In the picker, select the corrected sheet. A page whose PDF has moved stays selectable and is marked **File missing**; check its page name and item count, then import it.
 5. Review the **Import preflight** counts and the **Source files** list. Relink a missing PDF with **Relink…**; the replacement's page count and SHA-256 checksum are verified. If you want the other pages anyway, **Skip these pages** drops that document's selected pages explicitly. If a file differs, choose **Use anyway** for that file or relink the correct copy — **Import pages** stays disabled until every missing file is relinked or skipped and every change is confirmed. If the imported measurements reference rooms, takeoff tables or custom fields that only exist in the source project, the preflight names the counts; leave **Clear unresolved links** off to keep the links and let the project doctor report them, or switch it on to clear the room links, remove placed tables with a missing takeoff table and drop the custom values. Registers are never merged or remapped, and the source file is unchanged. The summary beside the button shows the current missing and changed state. Cancel leaves both projects and the source files untouched.
 6. If the old, incorrect version is still in the project, delete that page from the Pages tab. The other pages keep their stable IDs and measurements, so the corrected sheet takes the old position and the later displayed numbers move down by one.
