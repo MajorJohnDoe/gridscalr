@@ -39,6 +39,7 @@ const FOUNDATION_FEATURES = [
   "src/features/dialogHost",
   "src/features/perfMonitor",
   "src/features/gestureRender",
+  "src/features/tileCache",
 ];
 
 const frontendErrors = [];

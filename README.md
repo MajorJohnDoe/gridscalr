@@ -414,18 +414,25 @@ unused managed-copy cleanup, load-report presentation and path-free diagnostics;
 `src/model/integrity.ts` holds the pure rules.
 `src/features/perfMonitor/` owns the opt-in performance recorder — frame
 sampling, long-task observation and the named spans `serialize`, `shell-render`,
-`canvas-redraw`, `pdf-raster`, `pdf-operator-list`, `thumbnail`,
-`autosave-write` and `project-open` — the movable panel with its 30 s sparkline,
-and the support summary that **Copy diagnostics** appends. It is off until
-enabled in **Preferences → Diagnostics**, reads the same budget functions the
-app already enforces, and reports counts, durations and sizes only, never a
-project name, item label or path.
+`canvas-redraw`, `pdf-raster`, `pdf-render`, `tile-render`, `tile-cache-hit`,
+`pdf-operator-list`, `thumbnail`, `autosave-write` and `project-open` — the
+movable panel with its 30 s sparkline, and the support summary that **Copy
+diagnostics** appends. It is off until enabled in **Preferences →
+Diagnostics**, reads the same budget functions the app already enforces, and
+reports counts, durations and sizes only, never a project name, item label or
+path.
 `src/features/gestureRender/` reuses the previous content raster while a pan or a
 wheel zoom is in flight, transforming it with the gesture instead of redrawing
 every item, and redraws for real once the gesture settles (pointerup, or 120 ms
 after the last wheel event). The `interaction` canvas stays live throughout, so
 selection handles, the marquee, snapping and the draft overlay never lag. At rest
 the output is unchanged.
+`src/features/tileCache/` rasterises the primary canvas crop as 512 CSS px tiles
+in visible-first order, paints the first tile as soon as it exists and keeps a
+64 MiB RGBA cache evicted by distance from the viewport. The reference pane,
+split view, comparison and every read-only canvas stay on the full-page path,
+which is also the fallback when `createImageBitmap` or `OffscreenCanvas` is
+missing.
 The fields and spaces features in `src/features/fields/` and
 `src/features/spaces/` own typed property definitions, field sets, the room
 register and derived room areas; `src/features/schedules/` reads `spaceAreas()`

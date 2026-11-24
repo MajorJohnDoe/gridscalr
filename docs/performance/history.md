@@ -393,3 +393,135 @@ so it is stable by construction rather than by luck.
 - The optimization covers the primary canvas only. The reference pane and the
   split-view divider wheel stay on the real redraw path (F-147).
 
+## Phase 4 — Tile cache for the primary canvas (2026-11-24)
+
+- Code measured: `perf/4-tile-cache`, cut from `main` `f44a213` (phase 3
+  merged). Schema: unchanged (28). No export, UI text or snapshot change.
+- Both the before and the after rows come from the same updated probe on this
+  machine, five runs each and median reported. The "before" tree is the phase 3
+  commit (`f44a213`) with only the probe script updated, so the raster metric is
+  measured the same way on both sides.
+- Viewport: 1440 × 900, DPR 1, browser fallback, Medium Grey. The reference
+  shape reshapes markup items and pages, not the source PDF, so the raster
+  numbers are the same drawing on both shapes.
+
+### What changed
+
+- `src/features/tileCache/` renders the primary canvas crop as 512 CSS px tiles
+  in visible-first order. `model.ts` owns the device-pixel grid, the zoom bucket,
+  the 64 MiB RGBA budget and the distance-from-viewport eviction; `controller.ts`
+  owns the queue, cancellation and `createImageBitmap` with a canvas fallback;
+  `render.ts` is the adapter over the unchanged clipped-viewport math.
+- A tile is composed into a full-size composition canvas at its integer device
+  origin. The first completed tile is painted immediately; later tiles fill in.
+  The raster controller keeps the previous composition until the first new tile
+  exists, so a zoom stream never flashes a blank page.
+- `src/canvas/raster.ts` now owns scheduling, the generation guard and the
+  full-page fallback. `CanvasView` forwards its viewport and draws
+  `raster.current`; the read-only reference and comparison canvases stay on the
+  full-page path.
+- `createImageBitmap` or `OffscreenCanvas` missing → the full-page path is used
+  for the life of the page, so WebKitGTK stays on the safe path. A tile render
+  error also falls back to the full-page path.
+- `perfMonitor` gained `tile-render` and `tile-cache-hit`, and `perf:probe` now
+  reports `raster.firstVisibleMs`, `raster.firstRenderMs`, cache bytes, tiles,
+  hits and misses. Existing JSON keys are unchanged.
+
+### Raster: before and after
+
+The raster step changes the zoom once by +25 %, waits for the first raster
+completion and paints it. `firstVisibleMs` is measured from the view change, so
+it includes the canvas's 90 ms coalescing window. `firstRenderMs` is the first
+`pdf-render`/`tile-render` span itself. Five runs, median.
+
+| Measure | CI before | CI after | Reference before | Reference after |
+| --- | --- | --- | --- | --- |
+| Time to first visible raster | 122.7 ms | 132.3 ms (+7.8 %) | 130.0 ms | 126.9 ms (−2.4 %) |
+| First render span | 19.8 ms | 22.5 ms | 20.3 ms | 17.7 ms |
+| `pdf-render` p95 (pan/zoom window, 6 spans) | 21.8 ms | **20.9 ms (−4.1 %)** | 22.6 ms | **20.6 ms (−8.8 %)** |
+| `pdf-render` total (same window) | 98.7 ms | **69.5 ms (−29.6 %)** | 114.5 ms | **70.9 ms (−38.1 %)** |
+| `tile-render` p95 / total | — | 21.4 / 71.1 ms | — | 20.0 / 71.9 ms |
+| `tile-cache-hit` spans | — | 6 | — | 6 |
+| Steady-state cache bytes | 0 (no cache) | **10 645 864 (10.2 MiB)** | 0 | **10 645 864 (10.2 MiB)** |
+| Cached tiles / budget | — | 18 / 64 MiB | — | 18 / 64 MiB |
+| Cache hits / misses in the measured window | — | 6 / 4 | — | 6 / 4 |
+| Frame p95 | 16.8 ms | 16.7 ms | 16.7 ms | 16.7 ms |
+| Edit p95 | 18.2 ms | 19.1 ms | 54.3 ms | 51.9 ms |
+
+The time-to-first-visible number is **not** a reliable win on this probe: the
+90 ms coalescing window dominates, the crop at the scripted view is only about
+2 × 2 tiles, and PDF.js re-traverses the page operator list for every tile. The
+run-to-run spread was 4.8–13.4 % across the four rows, so the +7.8 % CI change is
+inside the noise band and the −2.4 % reference change is smaller than it. The
+repeatable signals are the per-tile raster p95 (−4 to −9 %) and the total raster
+work during the zoom stream (−30 to −38 %): each intermediate zoom view renders
+its first visible tile and the next view cancels the rest before they run.
+
+### Resting output
+
+`npm run test:visual`: 4 screens, 0 differing pixels, **no baseline change**.
+The screenshots mask the canvas, so the raster itself was compared separately
+against the phase 3 tree at the same viewport and view (demo project, 1440 × 900):
+
+| View | Differing pixels | Max channel delta |
+| --- | --- | --- |
+| Zoom 1 | 1 075 of 639 856 (0.17 %) | 10 |
+| Zoom 3 | 73 of 639 856 (0.01 %) | 3 |
+| Zoom 6 | 185 of 639 856 (0.03 %) | 27 |
+
+The differences are confined to antialiased drawing and label edges: per-tile
+PDF.js rasterisation is deterministic within a tile but not bit-identical to one
+crop over the same geometry. No seam, offset or blank region was observed. This
+is the same class of resampling difference phase 3 recorded for a held zoom
+(9 138 pixels, max 255 on high-contrast edges), but here it is at rest and two
+orders of magnitude smaller.
+
+### Run-to-run variance
+
+`firstVisibleMs` per run, five runs per row:
+
+| Row | Runs | Spread |
+| --- | --- | --- |
+| CI before | 122.7, 117.9, 134.4, 118.9, 122.9 ms | 13.4 % |
+| CI after | 130.6, 132.3, 132.9, 133.0, 126.6 ms | 4.8 % |
+| Reference before | 134.0, 124.9, 121.8, 130.0, 130.9 ms | 9.4 % |
+| Reference after | 130.0, 123.2, 126.9, 125.6, 134.9 ms | 9.2 % |
+
+The first-tile render itself varied more (5.7–24.5 ms on the CI after runs),
+because the first tile's position and the PDF.js worker schedule decide how much
+raster work lands in that one span. The per-tile p95 and the total are the stable
+rows.
+
+### Budget benchmark
+
+`check:performance` on both profiles on the phase branch:
+
+| Measure | ci (40 p / 4 000 i) | reference (150 p / 15 000 i) | Budget |
+| --- | --- | --- | --- |
+| Project open | 11.9 ms | 39.4 ms | under 10 s |
+| p95 edit latency | 17.8 ms | 49.5 ms | under 100 ms |
+| Page switch p95 | 6.1 ms | 31.6 ms | under 100 ms |
+| Autosave | 927.4 ms | 994.2 ms | under 2 s |
+| UI freeze | 96.3 ms | 215.9 ms | under 2 s |
+| JS heap | 55.6 MB | 97.9 MB | 2 GB (desktop, manual) |
+
+### What phase 4 says
+
+- The primary canvas now paints the visible drawing tile by tile and keeps a
+  **64 MiB** cache (measured steady state 10.2 MiB on both shapes). The cache is
+  bounded, the reference pane and split view are untouched, and the safe
+  full-page path remains the default without the two bitmap APIs.
+- Tiles reduce the total raster work during a continuous zoom by 30–38 % because
+  a new view cancels the previous view's unfinished queue, and they lower the
+  per-tile `pdf-render` p95 by 4–9 %. They do **not** make the first tile faster
+  on this probe's small crop: PDF.js walks the whole operator list for each tile,
+  so the first visible tile can cost about as much as the monolith. That is F-148.
+- The resting screen is unchanged and the visual baseline was not touched. The
+  canvas raster differs only on antialiased edges (≤ 0.17 %, max delta 10 at the
+  fit view), with no seam or offset.
+- The tile path was exercised in Chromium only. WebKitGTK was not available in
+  the development environment; a runtime without `createImageBitmap` or
+  `OffscreenCanvas` uses the full-page path, and the tile path there is an
+  unverified limitation (F-149).
+
+

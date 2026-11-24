@@ -189,6 +189,35 @@ skips items outside the visible viewport, and autosave stores one serialized
 snapshot with a skip when nothing changed since the previous write. These are
 the tested 1.0 limits; there is no promise of unlimited project size.
 
+### Primary canvas tile cache
+
+The primary canvas rasterises its page crop as 512 CSS px tiles in visible-first
+order and paints the first completed tile immediately. The tile cache is capped
+at **64 MiB of RGBA pixels** (`TILE_CACHE_BUDGET_BYTES` in
+`src/features/tileCache/model.ts`). At 1440 × 900 that is about ten views at
+DPR 1 or two to three at DPR 2; the phase 4 probe measured 10.2 MiB steady state
+on both performance shapes. When the cap is reached, tiles farthest from the
+current viewport are evicted first, and the tiles of the current view are never
+evicted.
+
+The full-page crop remains the fallback and the only path for the reference
+pane, split view, comparison and every read-only canvas. It is also used for the
+life of the page when `createImageBitmap` or `OffscreenCanvas` is missing, so a
+WebKit runtime without both APIs never attempts a tile; a tile render error
+falls back to the full-page path. The tile path has not been manually verified on
+WebKitGTK in this development environment, so the fallback is the safe default
+there (F-149).
+
+Tiles trade one monolithic raster for several smaller rasters. On a small crop
+the first tile can cost about as much as the monolith because PDF.js walks the
+whole page operator list for every render; the measured win is the lower total
+raster work during a zoom stream (30–38 % in the phase 4 probe) and the bounded
+transient cache, not a lower first-tile latency (F-148). The composed tile raster
+is not bit-identical to one crop: a small number of antialiased edge pixels
+differ (≤ 0.17 %, max channel delta 10 at the fit view), with no seam or offset.
+`npm run test:visual` passes with no baseline change.
+
+
 ### Drift Slice 1 measured profile
 
 Measured on the development container with Chromium, Node 24 and the browser

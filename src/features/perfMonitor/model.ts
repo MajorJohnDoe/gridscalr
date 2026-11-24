@@ -41,6 +41,8 @@ export const SPAN_NAMES = [
   "draw-items",
   "pdf-raster",
   "pdf-render",
+  "tile-render",
+  "tile-cache-hit",
   "pdf-operator-list",
   "thumbnail",
   "autosave-write",

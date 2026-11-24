@@ -3718,5 +3718,56 @@ remains the scheduling home.
   transform (the same gesture delta) so the reference pane reuses its own raster
   for the duration of the gesture, or give the reference pane a reader-only
   gesture signal. Decide with the tile-cache work, not before it.
+- **Outcome (Performance 1 phase 4, #351):** the tile cache is primary-only, as
+  scoped. The reference pane, split view, comparison and every read-only canvas
+  still use the full-page `renderCrop()` path, so split-view pan cost is
+  unchanged. No follow signal was added; this remains the next renderer-seam
+  decision.
 - **Related:** #350, [`docs/adr/0001-feature-modules.md`](../adr/0001-feature-modules.md),
   `src/features/gestureRender/`.
+
+### F-148 — PDF.js walks the page operator list for every tile
+
+- **Problem:** `page.render()` processes the page's operator list on every call,
+  even when the viewport covers a fraction of the page. Tiling the crop therefore
+  multiplies operator-list traversal by the tile count while it divides only the
+  rasterisation work.
+- **Evidence:** Performance 1 phase 4 probe, browser fallback, 1440 × 900 at
+  DPR 1: the full-page first render was 19.8 ms (CI) and 20.3 ms (reference) over
+  five runs, while the first visible 512 CSS px tile was 22.5 ms and 17.7 ms.
+  Time to first visible raster moved +7.8 % (CI) and −2.4 % (reference), inside
+  the 5–13 % run-to-run spread. The repeatable wins were the per-tile
+  `pdf-render` p95 (−4.1 % / −8.8 %) and the total raster work during a zoom
+  stream (−29.6 % / −38.1 %), because an intermediate view renders its first
+  tile and the next view cancels the rest.
+- **Impact:** The tile cache does not lower first-tile latency on a small crop,
+  and its total raster work can be higher when every tile completes. Its value is
+  the bounded transient cache and the earlier first paint when a single crop is
+  capped or expensive, not a general raster speedup. The issue's premise that a
+  monolithic render is always the high-zoom bottleneck is only true when the
+  render is capped (for example high DPR) or the operator list is cheap relative
+  to rasterisation.
+- **Next step:** Evaluate a renderer seam that can share one operator list across
+  visible tiles, or gate the tile path on the planned raster pixel count / DPR so
+  a small crop keeps the full-page path. Do this with a renderer or PDF.js
+  change; do not grow the tile controller into an operator-list cache.
+- **Related:** #351, [`docs/performance/history.md`](../performance/history.md),
+  `src/features/tileCache/`, `src/pdf/pdfRenderer.ts`.
+
+### F-149 — The WebKitGTK tile path is feature-detected, not verified
+
+- **Problem:** The development environment has Chromium only. The tile cache
+  uses `createImageBitmap` and `OffscreenCanvas` feature detection, but a WebKit
+  runtime that reports both APIs has not been exercised.
+- **Evidence:** `supportsTileCache()` returns false when either API is missing
+  and `tests/tileCache.test.ts` pins that rule. Phase 4's probe and browser
+  suites are Chromium. No WebKitGTK build was available to run the demo project.
+- **Impact:** The safe full-page path is the default where an API is missing,
+  but the tiled path's pixel output on WebKitGTK is an open verification gap.
+  The issue's stop condition for a blank WebKit tile cannot be tested here.
+- **Next step:** Before 1.0, run the packaged Linux build on WebKitGTK and
+  compare the primary canvas at rest with the full-page path. If a tile is blank
+  or offset, force the full-page path for that platform and record why.
+- **Related:** #351, [`docs/limitations.md`](../limitations.md),
+  `src/features/tileCache/model.ts`.
+

@@ -8,6 +8,7 @@ import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { pageOrderSignature, type DocumentPageOrderEntry } from "../model/pages";
 import type { PageSize, Point } from "../model/types";
 import { perfSpanAsync } from "../features/perfMonitor";
+import { renderPageRaster, type TileRenderTask } from "../features/tileCache";
 import { contentBoundsFromPixels } from "./thumbnails";
 import { t } from "../i18n";
 
@@ -305,53 +306,57 @@ export class PdfRenderer {
     requestedScale: number,
   ): Promise<RenderResult> {
     const page = await this.getPage(pageNumber);
-    const base = page.getViewport({ scale: 1 });
-    const pageWidth = base.width;
-    const pageHeight = base.height;
-
-    const x = Math.max(0, Math.min(pageWidth - 0.5, rect.x));
-    const y = Math.max(0, Math.min(pageHeight - 0.5, rect.y));
-    const width = Math.max(0.5, Math.min(pageWidth - x, rect.width));
-    const height = Math.max(0.5, Math.min(pageHeight - y, rect.height));
-
-    const maxDimension = 4096;
-    const maxPixels = 8_000_000;
-    let scale = Math.min(
-      requestedScale,
-      maxDimension / Math.max(width, 1),
-      maxDimension / Math.max(height, 1),
-    );
-    if (width * height * scale * scale > maxPixels) {
-      scale = Math.sqrt(maxPixels / (width * height));
-    }
-    scale = Math.max(0.05, scale);
-
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.ceil(width * scale));
-    canvas.height = Math.max(1, Math.ceil(height * scale));
-
-    const viewport = base.clone({
-      scale,
-      offsetX: -x * scale,
-      offsetY: -y * scale,
-    });
-    const task = page.render({
-      canvas,
-      viewport,
-      background: "#ffffff",
-      intent: "display",
-    });
-    this.activeTasks.add(task);
+    const raster = renderPageRaster(page, rect, requestedScale);
+    this.activeTasks.add(raster.task);
     try {
-      await perfSpanAsync("pdf-render", () => task.promise);
+      await perfSpanAsync("pdf-render", () => raster.task.promise);
     } finally {
-      this.activeTasks.delete(task);
+      this.activeTasks.delete(raster.task);
     }
     return {
       pageNumber,
-      rect: { x, y, width, height },
-      canvas,
-      renderScale: scale,
+      rect: raster.rect,
+      canvas: raster.canvas,
+      renderScale: raster.scale,
+    };
+  }
+
+  /**
+   * Renders one tile with the same clipped viewport as `renderCrop()`. The tile
+   * cache calls this through its render source; cancelling the returned task
+   * stops the PDF.js render without cancelling an unrelated pane.
+   */
+  renderTileCanvas(
+    pageNumber: number,
+    rect: { x: number; y: number; width: number; height: number },
+    requestedScale: number,
+  ): TileRenderTask {
+    let cancelled = false;
+    let active: { cancel: () => void } | null = null;
+    const promise = (async () => {
+      const page = await this.getPage(pageNumber);
+      if (cancelled) throw new DOMException("cancelled", "AbortError");
+      const raster = renderPageRaster(page, rect, requestedScale);
+      active = raster.task;
+      this.activeTasks.add(raster.task);
+      try {
+        await perfSpanAsync("pdf-render", () => raster.task.promise);
+      } finally {
+        this.activeTasks.delete(raster.task);
+        active = null;
+      }
+      return raster.canvas;
+    })();
+    return {
+      promise,
+      cancel: () => {
+        cancelled = true;
+        try {
+          active?.cancel();
+        } catch {
+          // The render may already have settled.
+        }
+      },
     };
   }
 
