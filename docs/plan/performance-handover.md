@@ -10,8 +10,10 @@ Schema 28 stays the current development schema. No persisted field changes.
 ## Phase 1 — Baseline and a repeatable probe
 
 - Issue: [#348](https://github.com/MajorJohnDoe/gridscalr/issues/348)
-- PR: `pending` (branch `perf/1-baseline`, base `main` `2e1df8d`)
-- Commit: `pending`
+- PR: [#352](https://github.com/MajorJohnDoe/gridscalr/pull/352), opened from
+  `perf/1-baseline`, base `main` (`2e1df8d`). Not merged.
+- Commit: `21c1bd8` (implementation and baseline) plus a handover-only commit
+  that records this entry.
 - Schema: unchanged (28)
 
 ### Completed

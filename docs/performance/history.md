@@ -46,7 +46,7 @@ absolute limit.
 ## Phase 1 — Baseline and a repeatable probe (2026-11-24)
 
 - Code measured: `perf/1-baseline` from `main` `2e1df8d`, phase commit
-  `PHASE_COMMIT` (the added spans and the probe).
+  `21c1bd8` (the added spans and the probe).
 - Command: `npm run perf:probe`, `GRIDSCALR_PERF_PROBE_SHAPE=ci`.
 - Runs: 3, median reported. Shape: 40 pages, 4 162 items, 2 documents
   (4 000 shaped measurements plus the demo's remaining layers).
