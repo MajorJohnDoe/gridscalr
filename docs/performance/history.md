@@ -300,8 +300,8 @@ clear the 20 % improvement bar. Frame p95 is still vsync-clamped (F-146).
 - Code measured: `perf/3-gesture-reuse`, cut from `main` `e56fa71` (phase 2
   merged). Schema: unchanged (28). No snapshot, export or UI change.
 - Shape and viewport: identical to phases 1–2. Both the before and the after rows
-  come from the same probe script on this machine, in one session, with the
-  default three runs and the median reported.
+  come from the same probe script on this machine — two three-run probes with
+  only the application change between them, median reported.
 
 ### What changed
 
@@ -347,10 +347,10 @@ cleared after the edit loop, so they cover only the pan and zoom.
 The four extra `draw-items` spans are the settle redraws (pointerup plus three
 zoom settles); they carry the 21.4 ms / 16.9 ms max, while the per-frame paint is
 below the 0.1 ms timer resolution at p50 and under 5 ms at p95. `draw-base` is
-unchanged within noise. `pdf-render` runs twice more because each settle
-schedules the existing 90 ms PDF debounce; its p95 and total stay in the same
-band, and the PDF raster is now refreshed after the zoom settles rather than
-only on the wheel event.
+unchanged within noise. `pdf-render` records two more spans in the same window
+because the settles re-arm the existing 90 ms PDF debounce (the first frames
+coalesce); its p95 and total stay in the same band, and the PDF raster is now
+refreshed after the zoom settles rather than only on the wheel event.
 
 Frames over 20 ms did not regress. Frame p95 stayed vsync-clamped at 16.7–16.8 ms
 in every row, exactly as F-146 predicted, which is why the phase compares

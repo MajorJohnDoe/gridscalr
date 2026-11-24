@@ -241,7 +241,7 @@ authoritative for the full suite.
 
 ### Modules
 
-- `src/features/gestureRender/{index,model,controller}.ts` (new, 263 lines
+- `src/features/gestureRender/{index,model,controller}.ts` (new, 254 lines
   total).
 - `src/canvas/CanvasView.ts` — one adapter call in `drawContentStage`, one
   controller field and construction, two pointer-host delegates and
