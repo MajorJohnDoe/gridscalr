@@ -359,6 +359,66 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/jamfor/bluebeam/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/compare/bluebeam/" />
   </url>
+  <url>
+    <loc>${baseUrl}/guides/gross-and-net-area/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/gross-and-net-area/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/bruttoarea-nettoarea/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/gross-and-net-area/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/bruttoarea-nettoarea/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/gross-and-net-area/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/bruttoarea-nettoarea/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/gross-and-net-area/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/guides/operation-card-fields/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/operation-card-fields/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/driftkort-mall/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/operation-card-fields/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/driftkort-mall/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/operation-card-fields/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/driftkort-mall/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/operation-card-fields/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/guides/operation-card-ventilation/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/operation-card-ventilation/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/driftkort-ventilation/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/operation-card-ventilation/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/driftkort-ventilation/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/operation-card-ventilation/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/driftkort-ventilation/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/operation-card-ventilation/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/guides/room-areas/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/room-areas/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/rumsarea/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/room-areas/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/rumsarea/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/room-areas/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/rumsarea/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/room-areas/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/compare/excel/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/compare/excel/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/jamfor/excel/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/compare/excel/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/jamfor/excel/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/compare/excel/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/jamfor/excel/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/compare/excel/" />
+  </url>
 </urlset>
 `;
 

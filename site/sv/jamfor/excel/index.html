@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GridScalr och Excel: när räcker kalkylarket?</title>
+    <meta
+      name="description"
+      content="En ärlig jämförelse av GridScalr och kalkylark för mängdning: spårbarhet, avdrag, revisioner och CSV-rundtur, utan överdrifter."
+    />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/sv/jamfor/excel/" />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/compare/excel/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/jamfor/excel/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/compare/excel/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="GridScalr och Excel: när räcker kalkylarket?" />
+    <meta
+      property="og:description"
+      content="En ärlig jämförelse av GridScalr och kalkylark för mängdning: spårbarhet, avdrag, revisioner och CSV-rundtur, utan överdrifter."
+    />
+    <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/sv/jamfor/excel/" />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="GridScalr och Excel: när räcker kalkylarket?" />
+    <meta
+      name="twitter:description"
+      content="En ärlig jämförelse av GridScalr och kalkylark för mängdning: spårbarhet, avdrag, revisioner och CSV-rundtur, utan överdrifter."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "GridScalr och Excel: när räcker kalkylarket?",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/jamfor/excel/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "GridScalr och Excel: när räcker kalkylarket?",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/jamfor/excel/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Kan jag exportera mängder till Excel?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Beställning Excel skriver en arbetsbok med blad för sammanställning, kategori, rum, sida och markeringar, alla härledda från de uppmätta objekten. Beställning CSV och Beställning PDF exporterar samma data."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Kan jag redigera i Excel och importera tillbaka?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja, via en CSV för en mängdtabell. Förhandsgranskningen visar ändrade och avvisade rader, och bara befintliga mätningar och utrymmen uppdateras via stabila ID."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Ersätter GridScalr ett kalkylark?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nej. Det ersätter steget där mängder läses från en ritning. Priser, rabatter och kommersiella villkor hör fortfarande i kalkylarket eller upphandlingssystemet."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}compare/excel/" hreflang="en" lang="en">English</a>
+          <a href="{{ROOT}}sv/jamfor/excel/" hreflang="sv" lang="sv" aria-current="page">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}sv/guider/">Guider</a
+            ><span>/</span>
+            <span>GridScalr och Excel: när räcker kalkylarket?</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>GridScalr och Excel: när räcker kalkylarket?</h1>
+          <p class="lede">
+            Ett kalkylark är utmärkt på att räkna och dåligt på att komma ihåg var en siffra kom
+            ifrån. Frågan är vilket jobbet behöver.
+          </p>
+          <p class="guide-meta">
+            Uppdaterad 24 november 2026 · 5 min läsning · Granskad mot GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>På den här sidan</p>
+          <ol>
+            <li><a href="#question">Frågan bakom jämförelsen</a></li>
+            <li><a href="#table">Kriterier i korthet</a></li>
+            <li><a href="#when-excel">När kalkylarket räcker</a></li>
+            <li><a href="#when-gridscalr">När ritningen är källan</a></li>
+            <li><a href="#handover">Flytta mellan dem</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Ladda ner GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Kort svar</h2>
+            <p>
+              Ett kalkylark räcker för en engångslista vars mängder du redan litar på. GridScalr är
+              för mängder som ska gå att spåra till en sida, en mätning och en revision. Båda kan
+              exportera CSV, och GridScalr kan importera redigerade värden tillbaka via stabila ID.
+            </p>
+          </div>
+
+          <h2 id="question">Frågan bakom jämförelsen</h2>
+          <p>
+            ”Excel eller GridScalr” är egentligen två frågor: var kommer mängderna ifrån, och vad
+            händer när ritningen ändras? Ett kalkylark kan hålla vilken lista och vilken formel som
+            helst. Det som det inte klarar på egen hand är att visa att en rad fortfarande stämmer
+            med ritningen den kopierades från.
+          </p>
+          <p>
+            Skillnaden betyder mer i återkommande arbete än i en enskild beställning. Jämförelsen
+            nedan tittar på spårbarhet, avdrag, revisionshantering och överlämningen mellan
+            verktygen, inte på vilken produkt som har flest funktioner.
+          </p>
+          <h2 id="table">Kriterier i korthet</h2>
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>Kriterium</th>
+                  <th>GridScalr</th>
+                  <th>Kalkylark</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Huvuduppgift</td>
+                  <td>Mäta och ta fram mängder i PDF- och TIF-ritningar</td>
+                  <td>Räkna och organisera värden du redan har</td>
+                </tr>
+                <tr>
+                  <td>Spårbarhet</td>
+                  <td>Varje mängd härleds från ett mätt objekt på en sida</td>
+                  <td>Beror på hur arket fylldes i</td>
+                </tr>
+                <tr>
+                  <td>Avdrag</td>
+                  <td>Egna mätningar som dras från inom kategori och rum</td>
+                  <td>En formel eller en manuellt justerad cell</td>
+                </tr>
+                <tr>
+                  <td>Revisionsändring</td>
+                  <td>Mätningar behåller sida och skala; en ny revision kan jämföras</td>
+                  <td>Celler måste uppdateras för hand</td>
+                </tr>
+                <tr>
+                  <td>Omräkning</td>
+                  <td>Beställning, tabell, CSV och PDF läser samma objekt</td>
+                  <td>Varje formel och kopia måste hållas i takt</td>
+                </tr>
+                <tr>
+                  <td>Överlämning</td>
+                  <td>CSV- och Excel-exporter härledda från objekten</td>
+                  <td>Inbyggt format, välkänt för de flesta inköpare</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">
+            GridScalr importerar inte XLSX. CSV-rundturen uppdaterar befintliga rader via stabila ID
+            och skapar inte nya mätningar från kalkylarksrader.
+          </p>
+          <h2 id="when-excel">När kalkylarket räcker</h2>
+          <p>
+            Ett kalkylark är bättre när mängderna redan är bestämda, jobbet görs en gång och ingen
+            kommer att fråga var en siffra kom ifrån sex månader senare. En kort materiallista för
+            en enstaka reparation, en budget byggd på priser du underhåller någon annanstans, eller
+            en mall som upphandlingsteamet redan äger är alla rimliga kalkylarksjobb.
+          </p>
+          <p>
+            Det är också rätt plats för priser, rabatter och kommersiella villkor. GridScalr
+            registrerar mängder och enheter; det är inte ett kalkyl- eller ekonomisystem och ska
+            inte låtsas vara ett.
+          </p>
+          <h2 id="when-gridscalr">När ritningen är källan</h2>
+          <p>
+            GridScalr gör nytta när mängden måste tåla en fråga. Mätningen är kopplad till en sida,
+            en kategori och ett rum; avdraget är ett eget objekt; beställningsdialogen visar brutto,
+            avdrag, netto, spill och beställningsmängd från samma objekt som matar tabellen och
+            rapporten. När en ritning revideras behåller sidan sin identitet och ändringen kan
+            granskas.
+          </p>
+          <p>
+            Det är också därför appen vägrar gissa. En saknad skala, ett dolt lager eller ett rum
+            utan area rapporteras i stället för att tyst bli en trovärdig siffra.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>När ritningen är källan</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/order.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/order.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Beställningsdialogen visar brutto, avdrag, netto, spill och beställningsmängd per rad, härledda från de uppmätta objekten."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+          <h2 id="handover">Flytta mellan dem</h2>
+          <p>
+            Överlämningen är medveten i båda riktningarna. <b>Beställning CSV</b>,
+            <b>Beställning Excel</b> och <b>Beställning PDF</b> är exporter av samma objektdata;
+            Excel-arbetsboken lägger till blad för sammanställning, kategori, rum, sida och
+            markeringar. En mängdtabell kan också exportera CSV för redigering och importera
+            tillbaka den: GridScalr visar en förhandsgranskning, uppdaterar bara befintliga rader
+            via stabila ID och behandlar referens- och härledda kolumner som skrivskyddade.
+          </p>
+          <p>
+            Den praktiska uppdelningen är alltså: mät och ta fram mängder i GridScalr, låt sedan
+            inköparen sortera, filtrera och prissätta i kalkylarket. Behåll projektet som källa och
+            underhåll inte en andra mängdlista som ingen kan spåra.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Flytta mellan dem</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/table.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/table.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Schemat grupperar de uppmätta objekten per kategori, bredvid planen."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+
+          <h2 id="mistakes">Vanliga fel</h2>
+          <ul class="checklist">
+            <li>
+              Kopiera mängder till ett kalkylark och sedan bara redigera kalkylarket, så att de två
+              glider isär.
+            </li>
+            <li>Använda en formel för avdrag som ingen kan härleda till ett mätt schakt.</li>
+            <li>
+              Räkna med att en XLSX-fil kan importeras tillbaka till GridScalr; bara CSV-rundturen
+              för mängdtabeller stöds.
+            </li>
+            <li>Behandla GridScalr som ett kalkylvarktyg för priser och kommersiella villkor.</li>
+          </ul>
+
+          <h2 id="faq">Frågor</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Kan jag exportera mängder till Excel?</summary>
+              <p>
+                Ja. Beställning Excel skriver en arbetsbok med blad för sammanställning, kategori,
+                rum, sida och markeringar, alla härledda från de uppmätta objekten. Beställning CSV
+                och Beställning PDF exporterar samma data.
+              </p>
+            </details>
+            <details>
+              <summary>Kan jag redigera i Excel och importera tillbaka?</summary>
+              <p>
+                Ja, via en CSV för en mängdtabell. Förhandsgranskningen visar ändrade och avvisade
+                rader, och bara befintliga mätningar och utrymmen uppdateras via stabila ID.
+              </p>
+            </details>
+            <details>
+              <summary>Ersätter GridScalr ett kalkylark?</summary>
+              <p>
+                Nej. Det ersätter steget där mängder läses från en ritning. Priser, rabatter och
+                kommersiella villkor hör fortfarande i kalkylarket eller upphandlingssystemet.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Relaterat</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}sv/mangdning/"
+              ><b>Mängdning</b><span>Uppgiftssidan för netto, spill och export.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/spill-och-avrundning/"
+              ><b>Spill och avrundning</b><span>Från nettoarea till beställningsmängd.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/vad-ar-mangdning/"
+              ><b>Vad är mängdning?</b><span>Steget mellan ritning och beställning.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Prova exporten i demot</h2>
+            <p>
+              Demoprojektet har en färdig mängdning, så beställningsdialogen, arbetsboken och CSV:n
+              kan jämföras med samma objekt.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Hämta demoprojektet</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>

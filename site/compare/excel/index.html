@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GridScalr and Excel: when is a spreadsheet enough?</title>
+    <meta
+      name="description"
+      content="An honest comparison of GridScalr and a spreadsheet for quantity takeoff: traceability, deductions, revisions and the CSV round trip, with no hype."
+    />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/compare/excel/" />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/compare/excel/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/jamfor/excel/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/compare/excel/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="GridScalr and Excel: when is a spreadsheet enough?" />
+    <meta
+      property="og:description"
+      content="An honest comparison of GridScalr and a spreadsheet for quantity takeoff: traceability, deductions, revisions and the CSV round trip, with no hype."
+    />
+    <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/compare/excel/" />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="GridScalr and Excel: when is a spreadsheet enough?" />
+    <meta
+      name="twitter:description"
+      content="An honest comparison of GridScalr and a spreadsheet for quantity takeoff: traceability, deductions, revisions and the CSV round trip, with no hype."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "GridScalr and Excel: when is a spreadsheet enough?",
+        "url": "https://majorjohndoe.github.io/gridscalr/compare/excel/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "GridScalr and Excel: when is a spreadsheet enough?",
+            "item": "https://majorjohndoe.github.io/gridscalr/compare/excel/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can I export quantities to Excel?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Order Excel writes a workbook with summary, category, room, page and markup sheets, all derived from the measured items. Order CSV and Order PDF export the same data."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I edit in Excel and import the result?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, through a takeoff table CSV. The dry run shows changed and rejected rows, and only existing measurements and spaces are updated by stable ID."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does GridScalr replace a spreadsheet?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. It replaces the part where quantities are read from a drawing. Prices, rates and commercial terms still belong in the spreadsheet or the procurement system."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a href="{{ROOT}}compare/excel/" hreflang="en" lang="en" aria-current="page">English</a>
+          <a href="{{ROOT}}sv/jamfor/excel/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>GridScalr and Excel: when is a spreadsheet enough?</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>GridScalr and Excel: when is a spreadsheet enough?</h1>
+          <p class="lede">
+            A spreadsheet is excellent at arithmetic and poor at remembering where a number came
+            from. The question is which of those your job needs.
+          </p>
+          <p class="guide-meta">
+            Updated 24 November 2026 · 5 min read · Checked against GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#question">The question behind the comparison</a></li>
+            <li><a href="#table">Criteria in brief</a></li>
+            <li><a href="#when-excel">When a spreadsheet is enough</a></li>
+            <li><a href="#when-gridscalr">When the drawing is the source</a></li>
+            <li><a href="#handover">Moving between them</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              A spreadsheet is enough for a one-off list whose quantities you already trust.
+              GridScalr is for quantities that must stay traceable to a page, a measurement and a
+              revision. Both can export CSV, and GridScalr can import edited values back by stable
+              ID.
+            </p>
+          </div>
+
+          <h2 id="question">The question behind the comparison</h2>
+          <p>
+            “Excel or GridScalr” is really two questions: where do the quantities come from, and
+            what happens when the drawing changes? A spreadsheet can hold any list and any formula.
+            What it cannot do on its own is prove that a row still matches the drawing it was copied
+            from.
+          </p>
+          <p>
+            That difference matters more on recurring work than on a single order. The comparison
+            below looks at traceability, deductions, revision handling and the handover between the
+            two, not at which product has more features.
+          </p>
+          <h2 id="table">Criteria in brief</h2>
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>Criterion</th>
+                  <th>GridScalr</th>
+                  <th>A spreadsheet</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Primary task</td>
+                  <td>Measure and take off quantities in PDF and TIF drawings</td>
+                  <td>Calculate and organise values you already have</td>
+                </tr>
+                <tr>
+                  <td>Traceability</td>
+                  <td>Each quantity derives from a measured item on a page</td>
+                  <td>Depends on how the sheet was filled in</td>
+                </tr>
+                <tr>
+                  <td>Deductions</td>
+                  <td>Separate measurements, subtracted inside the category and room</td>
+                  <td>A formula or a manually adjusted cell</td>
+                </tr>
+                <tr>
+                  <td>Revision change</td>
+                  <td>Measurements keep their page and scale; a new revision can be compared</td>
+                  <td>Cells must be updated by hand</td>
+                </tr>
+                <tr>
+                  <td>Recalculation</td>
+                  <td>Order, table, CSV and PDF read the same items</td>
+                  <td>Every formula and copy must stay consistent</td>
+                </tr>
+                <tr>
+                  <td>Handover</td>
+                  <td>CSV and Excel exports derived from the items</td>
+                  <td>Native format, familiar to most buyers</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">
+            GridScalr does not import XLSX. The CSV round trip updates existing rows by stable ID;
+            it does not create new measurements from spreadsheet rows.
+          </p>
+          <h2 id="when-excel">When a spreadsheet is enough</h2>
+          <p>
+            A spreadsheet is the better tool when the quantities are already decided, the job
+            happens once, and nobody will ask where a number came from six months later. A short
+            material list for a single repair, a budget built from rates you maintain elsewhere, or
+            a template the procurement team already owns are all reasonable spreadsheet jobs.
+          </p>
+          <p>
+            It is also the right place for prices, discounts and commercial terms. GridScalr records
+            quantities and units; it is not an estimating or accounting system, and it should not
+            pretend to be one.
+          </p>
+          <h2 id="when-gridscalr">When the drawing is the source</h2>
+          <p>
+            GridScalr earns its place when the quantity has to survive a question. The measurement
+            is linked to a page, a category and a room; the deduction is its own object; the order
+            dialog shows gross, deduction, net, waste and order quantity from the same items that
+            feed the table and the report. When a drawing is reissued, the page keeps its identity
+            and the change can be reviewed.
+          </p>
+          <p>
+            That is also why the app refuses to guess. A missing scale, a hidden layer or a room
+            without an area is reported rather than silently turned into a plausible number.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>When the drawing is the source</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/order.webp"
+              data-lightbox
+              aria-label="Click to enlarge: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/order.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The order dialog shows gross, deduction, net, waste and order quantity per row, derived from the measured items."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+          <h2 id="handover">Moving between them</h2>
+          <p>
+            The handover is deliberate in both directions. <b>Order CSV</b>, <b>Order Excel</b> and
+            <b>Order PDF</b> are exports of the same item data; the Excel workbook adds summary,
+            category, room, page and markup sheets. A takeoff table can also export CSV for editing
+            and import it back: GridScalr shows a dry run, applies only existing rows by stable ID,
+            and treats reference and derived columns as read-only.
+          </p>
+          <p>
+            So the practical split is: measure and take off in GridScalr, then let the buyer sort,
+            filter and price in the spreadsheet. Keep the project as the source, and do not maintain
+            a second quantity list that nobody can trace.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Moving between them</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/table.webp"
+              data-lightbox
+              aria-label="Click to enlarge: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/table.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The schedule groups the measured objects by category, beside the plan."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>
+              Copying quantities into a spreadsheet and then editing only the spreadsheet, so the
+              two drift apart.
+            </li>
+            <li>Using a formula for deductions that nobody can trace back to a measured shaft.</li>
+            <li>
+              Expecting an XLSX file to import back into GridScalr; only the takeoff-table CSV round
+              trip is supported.
+            </li>
+            <li>Treating GridScalr as an estimating tool for prices and commercial terms.</li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Can I export quantities to Excel?</summary>
+              <p>
+                Yes. Order Excel writes a workbook with summary, category, room, page and markup
+                sheets, all derived from the measured items. Order CSV and Order PDF export the same
+                data.
+              </p>
+            </details>
+            <details>
+              <summary>Can I edit in Excel and import the result?</summary>
+              <p>
+                Yes, through a takeoff table CSV. The dry run shows changed and rejected rows, and
+                only existing measurements and spaces are updated by stable ID.
+              </p>
+            </details>
+            <details>
+              <summary>Does GridScalr replace a spreadsheet?</summary>
+              <p>
+                No. It replaces the part where quantities are read from a drawing. Prices, rates and
+                commercial terms still belong in the spreadsheet or the procurement system.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}quantity-takeoff/"
+              ><b>Quantity takeoff</b><span>The task page for net, waste and exports.</span></a
+            >
+            <a href="{{ROOT}}guides/waste-and-rounding/"
+              ><b>Waste and rounding</b><span>How the net becomes an order quantity.</span></a
+            >
+            <a href="{{ROOT}}guides/what-is-takeoff/"
+              ><b>What is quantity takeoff?</b><span>The step between drawing and order.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Try the export on the demo</h2>
+            <p>
+              The demo project has a finished takeoff, so the order dialog, the workbook and the CSV
+              can be compared with the same items.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Get the demo project</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>

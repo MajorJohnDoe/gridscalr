@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Driftkortsmall: fälten som ska med</title>
+    <meta
+      name="description"
+      content="En praktisk driftkortsmall: fastighet, system, datum, utförd av, signatur, sida, revision och referens tillbaka till planen, med checklista."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/driftkort-mall/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/operation-card-fields/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/driftkort-mall/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/operation-card-fields/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Driftkortsmall: fälten som ska med" />
+    <meta
+      property="og:description"
+      content="En praktisk driftkortsmall: fastighet, system, datum, utförd av, signatur, sida, revision och referens tillbaka till planen, med checklista."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/sv/guider/driftkort-mall/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Driftkortsmall: fälten som ska med" />
+    <meta
+      name="twitter:description"
+      content="En praktisk driftkortsmall: fastighet, system, datum, utförd av, signatur, sida, revision och referens tillbaka till planen, med checklista."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Driftkortsmall: fälten som ska med",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/guider/driftkort-mall/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Driftkortsmall: fälten som ska med",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/driftkort-mall/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Finns det en obligatorisk driftkortsstandard?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "GridScalr tvingar inte fram ett format. Den inbyggda mallen ger titelblock och revisionstabell; anpassa fältvärdena till fastighetens dokumentationspraxis."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Uppdateras fältet Sida automatiskt?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nej. Det är fritext, förifyllt med bladets ordningsnummer, och räknas inte om när blad läggs till eller tas bort."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Exporteras bladfälten när lager är dolda?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Bladfälten ritas in i PDF:en även när alla lager är dolda, och texten går att söka i."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}guides/operation-card-fields/" hreflang="en" lang="en">English</a>
+          <a href="{{ROOT}}sv/guider/driftkort-mall/" hreflang="sv" lang="sv" aria-current="page"
+            >Svenska</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}sv/guider/">Guider</a
+            ><span>/</span>
+            <span>Driftkortsmall: fälten som ska med</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Driftkortsmall: fälten som ska med</h1>
+          <p class="lede">
+            Ett kort utan ägare, datum och revision är en skiss. Det här är fälten som gör det
+            användbart.
+          </p>
+          <p class="guide-meta">
+            Uppdaterad 24 november 2026 · 5 min läsning · Granskad mot GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>På den här sidan</p>
+          <ol>
+            <li><a href="#title-block">Fastighet, system och aggregat</a></li>
+            <li><a href="#responsibility">Datum, utförd av och signatur</a></li>
+            <li><a href="#page-revision">Sida och revision</a></li>
+            <li><a href="#reference">Referensen tillbaka till planen</a></li>
+            <li><a href="#checklist">Före export</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Ladda ner GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Kort svar</h2>
+            <p>
+              Ett komplett driftkort anger fastighet, system och aggregat på ett tydligt sätt,
+              datum, vem som utfört arbetet och en signatur. Det har sidnummer, revisionstabell och
+              en referens tillbaka till planen, så nästa tekniker kan hitta ritningen och se vad som
+              ändrats.
+            </p>
+          </div>
+
+          <h2 id="title-block">Fastighet, system och aggregat</h2>
+          <p>
+            Titelblocket börjar med projektnamnet, och det är där fastigheten hör hemma. Namnge
+            sedan systemet och aggregatet, till exempel luftbehandlingsaggregatet <b>LB01</b>, så
+            att kortet kan arkiveras och hittas med samma beteckning som resten av dokumentationen.
+            Mallen har fält för <b>Projektnamn</b>, <b>System</b>, <b>Driftkort</b> och
+            <b>Uppdragsnr</b>.
+          </p>
+          <p>
+            Använd ett kort per system. Ett kort som blandar två aggregat är svårt att revidera och
+            svårare att lämna över, eftersom en ändring i det ena tvingar fram en ny revision av
+            båda.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Fastighet, system och aggregat</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/operation-card.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/operation-card.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Ett A3-driftkort med ifyllt titelblock, revisionstabell och schemasymboler på ritlager."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+          <h2 id="responsibility">Datum, utförd av och signatur</h2>
+          <p>
+            Kortet ska visa när det togs fram eller kontrollerades, vem som gjorde arbetet och vem
+            som signerade. Mallen har <b>Datum</b>, <b>Handläggare/Konst.</b> och <b>Sign</b>. Ett
+            datum utan namn går inte att spåra, och ett namn utan datum går inte att placera i
+            fastighetens historik.
+          </p>
+          <p>
+            Signaturen är inte dekoration. Den markerar punkten där någon godtog att schemat stämmer
+            med installationen. Om kortet ändras senare av någon annan visar revisionstabellen det,
+            och den ursprungliga signeringen finns kvar i revisionstabellen.
+          </p>
+          <h2 id="page-revision">Sida och revision</h2>
+          <p>
+            Fältet <b>Sida</b> är fritext, förifyllt med bladets ordningsnummer och räknas aldrig om
+            automatiskt. Skriv den sidbeteckning fastigheten faktiskt använder och kontrollera den
+            när blad läggs till eller tas bort. Använd inte sidnumret som aggregatbeteckning;
+            aggregatets egen tag hör i systemfältet.
+          </p>
+          <p>
+            Revisionstabellen är där ändringar registreras. Varje rad bär referens, vad revisionen
+            avser, datum och signatur. Lägg till en rad när ett aggregat, ett börvärde eller en
+            styrstrategi ändras, även om ritningen ser likadan ut.
+          </p>
+          <h2 id="reference">Referensen tillbaka till planen</h2>
+          <p>
+            Ett driftkort är schematiskt, inte arkitektoniskt, så det kan inte visa var aggregatet
+            sitter i byggnaden. Fälten <b>Ref.</b> och <b>Rev. avser</b> kopplar kortet till planen:
+            ritningsnummer, rum eller detalj som läsaren behöver för att hitta installationen.
+          </p>
+          <p>
+            Skriv referensen på samma sätt som ritningspaketet gör. Ett rumsnummer räcker inte om
+            planen omfattar flera byggnader, och ett ritningsnummer räcker inte om läsaren inte vet
+            vilken revision av planen som gäller.
+          </p>
+          <h2 id="checklist">Före export</h2>
+          <p>
+            Öppna <b>Redigera bladfält…</b>, eller dubbelklicka i en cell, och fyll i varje fält som
+            gäller. Kontrollera att revisionsraden motsvarar ändringen du gjorde och att referensen
+            pekar på den planrevision som faktiskt används. Exportera sedan ritningen som PDF.
+          </p>
+          <p>
+            Bladfälten ritas in i PDF:en även när alla lager är dolda, och texten går att söka i.
+            Att dölja ett lager döljer aldrig titelblocket eller datatabellen, så en ren export bär
+            ändå sitt ansvar och sin revision.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Före export</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/layers.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Lagerpanelen håller ritlager och mätlager åtskilda; en symbol eller anteckning hör på ett ritlager."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+
+          <h2 id="mistakes">Vanliga fel</h2>
+          <ul class="checklist">
+            <li>
+              Fylla i titelblocket efter ritningen, så kortet saknar datum, ägare och revision.
+            </li>
+            <li>Använda sidnumret som aggregatbeteckning i stället för systemets egen tag.</li>
+            <li>Lägga till ett aggregat utan att lägga till en revisionsrad.</li>
+            <li>Räkna med att fritextfältet Sida räknas om när blad läggs in.</li>
+          </ul>
+
+          <h2 id="faq">Frågor</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Finns det en obligatorisk driftkortsstandard?</summary>
+              <p>
+                GridScalr tvingar inte fram ett format. Den inbyggda mallen ger titelblock och
+                revisionstabell; anpassa fältvärdena till fastighetens dokumentationspraxis.
+              </p>
+            </details>
+            <details>
+              <summary>Uppdateras fältet Sida automatiskt?</summary>
+              <p>
+                Nej. Det är fritext, förifyllt med bladets ordningsnummer, och räknas inte om när
+                blad läggs till eller tas bort.
+              </p>
+            </details>
+            <details>
+              <summary>Exporteras bladfälten när lager är dolda?</summary>
+              <p>
+                Ja. Bladfälten ritas in i PDF:en även när alla lager är dolda, och texten går att
+                söka i.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Relaterat</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}sv/driftkort/"
+              ><b>Driftkort</b><span>Uppgiftssidan för blad, symboler och export.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/vad-ar-ett-driftkort/"
+              ><b>Vad är ett driftkort?</b
+              ><span>Dokumentet, syftet och vem som använder det.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/driftkort-ventilation/"
+              ><b>Driftkort för ventilation</b
+              ><span>Samma fält tillämpade på ett luftbehandlingsaggregat.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Fyll i demokortet</h2>
+            <p>
+              Demoprojektet innehåller LB01 med ifyllt titelblock, så du kan jämföra fälten med ett
+              riktigt blad.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Hämta demoprojektet</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>
