@@ -92,5 +92,6 @@ export function applyDragState(
       drag.moved = true;
     }
   }
+  if (drag.moved) store.noteGestureChange();
   return "handled";
 }
