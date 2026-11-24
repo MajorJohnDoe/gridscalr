@@ -328,8 +328,10 @@ screen changed at rest.
 ## Phase 4 — Tile cache for the primary canvas
 
 - Issue: [#351](https://github.com/MajorJohnDoe/gridscalr/issues/351)
-- Branch: `perf/4-tile-cache`, cut from `main` `f44a213` (phase 3 merged). PR
-  opened against `main`. Not merged.
+- PR: [#364](https://github.com/MajorJohnDoe/gridscalr/pull/364), opened from
+  `perf/4-tile-cache`, base `main` (`f44a213`, phase 3 merged). Not merged.
+- Commit: `e229f91` (implementation, tests and phase docs) plus a
+  documentation-only commit that records this entry.
 - Schema: unchanged (28)
 - No version bump, tag or release artifact.
 
