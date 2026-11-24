@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>What is an operation card? HVAC documentation</title>
+    <meta
+      name="description"
+      content="An operation card records how an HVAC system is built, set and maintained. See what the card contains, who uses it, and how to draw one in GridScalr."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/guides/what-is-an-operation-card/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/what-is-an-operation-card/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/vad-ar-ett-driftkort/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/what-is-an-operation-card/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="What is an operation card? HVAC documentation" />
+    <meta
+      property="og:description"
+      content="An operation card records how an HVAC system is built, set and maintained. See what the card contains, who uses it, and how to draw one in GridScalr."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/guides/what-is-an-operation-card/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="What is an operation card? HVAC documentation" />
+    <meta
+      name="twitter:description"
+      content="An operation card records how an HVAC system is built, set and maintained. See what the card contains, who uses it, and how to draw one in GridScalr."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "What is an operation card? HVAC documentation",
+        "url": "https://majorjohndoe.github.io/gridscalr/guides/what-is-an-operation-card/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "What is an operation card?",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/what-is-an-operation-card/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is an operation card the same as an as-built drawing?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. An as-built records the installed geometry. An operation card is a schematic for operating and maintaining one system, with settings and control points."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does an operation card need a scale?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. It is a template sheet marked not to scale. Calibration belongs on measured drawings, not on schematic cards."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can the title block be exported with the drawing?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Sheet fields and the revision table are drawn into the PDF even when every layer is hidden."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a
+            href="{{ROOT}}guides/what-is-an-operation-card/"
+            hreflang="en"
+            lang="en"
+            aria-current="page"
+            >English</a
+          >
+          <a href="{{ROOT}}sv/guider/vad-ar-ett-driftkort/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>What is an operation card?</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>What is an operation card?</h1>
+          <p class="lede">
+            The sheet that tells the next technician how a system is put together, set and looked
+            after.
+          </p>
+          <p class="guide-meta">
+            Updated 24 November 2026 · 5 min read · Checked against GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#what">What the card documents</a></li>
+            <li><a href="#who">Who uses it</a></li>
+            <li><a href="#contains">What a complete card contains</a></li>
+            <li><a href="#draw">Drawing the card in GridScalr</a></li>
+            <li><a href="#quality">Keeping the card useful</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              An operation card is a drawing sheet that documents one HVAC system: its equipment,
+              duct and pipe runs, sensors, control points and settings. It stays with the building
+              so the next technician can understand, operate and maintain the system without
+              reconstructing it from memory.
+            </p>
+          </div>
+
+          <h2 id="what">What the card documents</h2>
+          <p>
+            An operation card, or <i>driftkort</i> in Swedish, describes a system rather than a
+            room. It shows the units, fans, coils, dampers, valves, sensors and control points that
+            belong together, and it records the values a technician needs in order to run and
+            service them. The drawing is schematic, not architectural: position on the page matters
+            less than the relationship between components.
+          </p>
+          <h2 id="who">Who uses it</h2>
+          <p>
+            Operations technicians use the card during inspection, adjustment and fault tracing.
+            Property managers use it as part of the building's technical documentation. Contractors
+            use it when a component is replaced or a control strategy changes. Because all three
+            read the same sheet, an out-of-date card is worse than none: the card needs a revision
+            table and a clear owner.
+          </p>
+          <h2 id="contains">What a complete card contains</h2>
+          <ul>
+            <li>
+              A title block with property, system, unit designation, date, author and revision.
+            </li>
+            <li>
+              A schematic with the system's equipment, ducts or pipes, sensors and control points.
+            </li>
+            <li>Setpoints and operating values that a technician must know.</li>
+            <li>A revision table so changes can be traced.</li>
+            <li>Notes for maintenance, access and known deviations.</li>
+          </ul>
+          <h2 id="draw">Drawing the card in GridScalr</h2>
+          <p>
+            GridScalr creates an operation card sheet from a built-in template on A3 or A2. The
+            title block and revision table are part of the sheet, fields are edited on the canvas or
+            in the sheet form, and schematic symbols are drawn on drawing layers. The exported PDF
+            keeps the title block and fields even when every layer is hidden, and the text is
+            searchable.
+          </p>
+          <p>
+            Template sheets are marked <b>Sheet · not to scale</b>. They do not need calibration,
+            because they document a system rather than measure the building.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Drawing the card in GridScalr</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/operation-card.webp"
+              data-lightbox
+              aria-label="Click to enlarge: An A3 operation card with a filled title block and schematic symbols on drawing layers."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/operation-card.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="An A3 operation card with a filled title block and schematic symbols on drawing layers."
+              />
+            </a>
+            <figcaption>
+              <span
+                >An A3 operation card with a filled title block and schematic symbols on drawing
+                layers.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="quality">Keeping the card useful</h2>
+          <p>
+            A card is only useful if the next reader can trust it. Keep one system per card, name
+            the unit consistently, and update the revision row whenever a component or setpoint
+            changes. Put site notes on their own drawing layer so they can be hidden without losing
+            the schematic, and export only the layers the recipient should see.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Keeping the card useful</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/layers.webp"
+              data-lightbox
+              aria-label="Click to enlarge: Drawing and measurement layers are listed separately; the schematic symbols sit on drawing layers."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Drawing and measurement layers are listed separately; the schematic symbols sit on drawing layers."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Drawing and measurement layers are listed separately; the schematic symbols sit on
+                drawing layers.</span
+              >
+            </figcaption>
+          </figure>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>Filling the title block after the drawing, so the card has no revision.</li>
+            <li>Mixing measurements into the schematic layer, which makes later edits harder.</li>
+            <li>Using the page number as the unit designation instead of the system's own tag.</li>
+            <li>Exporting with hidden layers that the recipient still needs.</li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Is an operation card the same as an as-built drawing?</summary>
+              <p>
+                No. An as-built records the installed geometry. An operation card is a schematic for
+                operating and maintaining one system, with settings and control points.
+              </p>
+            </details>
+            <details>
+              <summary>Does an operation card need a scale?</summary>
+              <p>
+                No. It is a template sheet marked not to scale. Calibration belongs on measured
+                drawings, not on schematic cards.
+              </p>
+            </details>
+            <details>
+              <summary>Can the title block be exported with the drawing?</summary>
+              <p>
+                Yes. Sheet fields and the revision table are drawn into the PDF even when every
+                layer is hidden.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}operation-cards/"
+              ><b>Operation cards</b
+              ><span>The task page for templates, symbols and sheet fields.</span></a
+            >
+            <a href="{{ROOT}}guides/what-is-takeoff/"
+              ><b>What is quantity takeoff?</b
+              ><span>How the same project also carries quantities.</span></a
+            >
+            <a href="{{ROOT}}guides/mark-a-deviation/"
+              ><b>Mark a deviation</b><span>A site note placed on a drawing layer.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Open the demo card</h2>
+            <p>
+              The demo project includes LB01, a filled operation card with schematic symbols and a
+              title block, ready to inspect.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Get the demo project</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mark a deviation on a drawing and export it</title>
+    <meta
+      name="description"
+      content="Mark a site deviation on a drawing layer with a revision cloud, callout and stamp, then export a clean PDF to the contractor. The source drawing is untouched."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/guides/mark-a-deviation/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/mark-a-deviation/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/markera-avvikelse/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/mark-a-deviation/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Mark a deviation on a drawing and export it" />
+    <meta
+      property="og:description"
+      content="Mark a site deviation on a drawing layer with a revision cloud, callout and stamp, then export a clean PDF to the contractor. The source drawing is untouched."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/guides/mark-a-deviation/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Mark a deviation on a drawing and export it" />
+    <meta
+      name="twitter:description"
+      content="Mark a site deviation on a drawing layer with a revision cloud, callout and stamp, then export a clean PDF to the contractor. The source drawing is untouched."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Mark a deviation on a drawing and export it",
+        "url": "https://majorjohndoe.github.io/gridscalr/guides/mark-a-deviation/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Mark a deviation on a drawing and export it",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/mark-a-deviation/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Which layer should a deviation use?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A drawing layer. Measurements stay on measurement layers, and drawing layers render below them so labels stay readable."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can the contractor toggle layers in the PDF?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, if Optional layers (OCG) is enabled. Compatible readers can then switch exported layers on and off without changing the flattened drawing."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is the source drawing changed by the export?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. GridScalr never writes to a source document and refuses an export that resolves to one."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a href="{{ROOT}}guides/mark-a-deviation/" hreflang="en" lang="en" aria-current="page"
+            >English</a
+          >
+          <a href="{{ROOT}}sv/guider/markera-avvikelse/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>Mark a deviation on a drawing and export it</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Mark a deviation on a drawing and export it</h1>
+          <p class="lede">
+            A cloud, a callout and a status stamp turn a site observation into a drawing the
+            contractor can act on.
+          </p>
+          <p class="guide-meta">
+            Updated 24 November 2026 · 5 min read · Checked against GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#layer">Start on a drawing layer</a></li>
+            <li><a href="#mark">Draw the revision cloud</a></li>
+            <li><a href="#annotate">Add a callout and a stamp</a></li>
+            <li><a href="#export">Export to the contractor</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              Draw the deviation on a drawing layer, not a measurement layer. Put a revision cloud
+              around the area, add a callout with the action and a status stamp, then export a
+              drawing PDF with the layers the contractor needs. Hidden items stay out of the export
+              and the source drawing is never modified.
+            </p>
+          </div>
+
+          <h2 id="layer">Start on a drawing layer</h2>
+          <p>
+            Drawing tools live on drawing layers, separately from measurements. Add a drawing layer
+            for the site visit, name it clearly and make it active before you draw. Drawing layers
+            render below measurement layers, so measurement labels stay readable. Every object can
+            still be hidden or locked individually without changing the layer, and a hidden layer is
+            excluded from every export just like hidden items.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Start on a drawing layer</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/layers.webp"
+              data-lightbox
+              aria-label="Click to enlarge: Drawing and measurement layers are listed separately. The cloud, callout and stamp on the plan sit on a drawing layer."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Drawing and measurement layers are listed separately. The cloud, callout and stamp on the plan sit on a drawing layer."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Drawing and measurement layers are listed separately. The cloud, callout and stamp
+                on the plan sit on a drawing layer.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="mark">Draw the revision cloud</h2>
+          <p>
+            Choose <b>Revision cloud</b> (<b>D</b>) and click each corner; close on the first point
+            or press <b>Enter</b>. The cloud can be reshaped with its vertex handles. Pick
+            <b>Cloud + text</b> from the tool variant if the note should travel with the cloud, and
+            use a light fill at roughly 20–30 % opacity so the drawing underneath stays readable.
+            Text, font size and text-box width can be edited later from Properties.
+          </p>
+          <h2 id="annotate">Add a callout and a stamp</h2>
+          <p>
+            Use <b>Callout</b> (<b>N</b>) when the note needs a leader to a specific component:
+            click the object, then click where the text box should sit, and type the observation.
+            Use <b>Stamp</b> (<b>S</b>) for a status such as <b>INSPECTED</b>,
+            <b>NOT APPROVED</b> or a custom status. The stamp presets follow common status colours,
+            and a placed stamp can keep its own colour override. A revision delta is available when
+            the change belongs to a numbered revision.
+          </p>
+          <h2 id="export">Export to the contractor</h2>
+          <p>
+            Choose <b>File → Export → Drawing PDF…</b>. Select the current page, all pages or a page
+            range, and whole pages or a selected crop area. Include the visible layers the
+            contractor needs, plus labels, the calibration line and, when useful, a legend.
+            <b>Optional layers (OCG)</b> and <b>Review annotations</b> are off by default and keep
+            the flattened drawing intact. Hidden layers and hidden items are never exported; locked
+            items are.
+          </p>
+          <p>
+            The source drawing is never modified, and GridScalr refuses to save an export over any
+            source document in the project. Save the PDF under a name that names the building, the
+            sheet and the inspection date.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Export to the contractor</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/export.webp"
+              data-lightbox
+              aria-label="Click to enlarge: The drawing PDF export dialog with page range, layer selection and the optional OCG setting."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/export.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The drawing PDF export dialog with page range, layer selection and the optional OCG setting."
+              />
+            </a>
+            <figcaption>
+              <span
+                >The drawing PDF export dialog with page range, layer selection and the optional OCG
+                setting.</span
+              >
+            </figcaption>
+          </figure>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>Drawing the deviation on a measurement layer, so it mixes with the takeoff.</li>
+            <li>Relying on a hidden layer that the recipient cannot see or does not open.</li>
+            <li>
+              Leaving the stamp off, so the reader cannot tell whether the deviation is approved.
+            </li>
+            <li>Exporting over the source drawing instead of a new file name.</li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Which layer should a deviation use?</summary>
+              <p>
+                A drawing layer. Measurements stay on measurement layers, and drawing layers render
+                below them so labels stay readable.
+              </p>
+            </details>
+            <details>
+              <summary>Can the contractor toggle layers in the PDF?</summary>
+              <p>
+                Yes, if Optional layers (OCG) is enabled. Compatible readers can then switch
+                exported layers on and off without changing the flattened drawing.
+              </p>
+            </details>
+            <details>
+              <summary>Is the source drawing changed by the export?</summary>
+              <p>
+                No. GridScalr never writes to a source document and refuses an export that resolves
+                to one.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}guides/compare-revisions/"
+              ><b>Compare two revisions</b
+              ><span>Check what changed before the next site visit.</span></a
+            >
+            <a href="{{ROOT}}guides/what-is-an-operation-card/"
+              ><b>What is an operation card?</b
+              ><span>The other drawing sheet a technician maintains.</span></a
+            >
+            <a href="{{ROOT}}guides/tif-drawing/"
+              ><b>Measure a scanned TIF</b
+              ><span>Mark up a scan without changing the original.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Practise on the demo plan</h2>
+            <p>
+              Open the demo project, add a drawing layer and place a cloud, a callout and an
+              inspected stamp on the plan.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Get the demo project</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>

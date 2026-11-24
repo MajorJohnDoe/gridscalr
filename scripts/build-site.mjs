@@ -287,6 +287,78 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/spill-och-avrundning/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/waste-and-rounding/" />
   </url>
+  <url>
+    <loc>${baseUrl}/guides/what-is-takeoff/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/what-is-takeoff/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/vad-ar-mangdning/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/what-is-takeoff/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/vad-ar-mangdning/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/what-is-takeoff/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/vad-ar-mangdning/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/what-is-takeoff/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/guides/what-is-an-operation-card/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/what-is-an-operation-card/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/vad-ar-ett-driftkort/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/what-is-an-operation-card/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/vad-ar-ett-driftkort/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/what-is-an-operation-card/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/vad-ar-ett-driftkort/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/what-is-an-operation-card/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/guides/tif-drawing/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/tif-drawing/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/tif-ritning/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/tif-drawing/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/tif-ritning/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/tif-drawing/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/tif-ritning/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/tif-drawing/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/guides/compare-revisions/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/compare-revisions/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/jamfora-ritningar/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/compare-revisions/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/jamfora-ritningar/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/compare-revisions/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/jamfora-ritningar/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/compare-revisions/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/guides/mark-a-deviation/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/mark-a-deviation/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/markera-avvikelse/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/mark-a-deviation/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/guider/markera-avvikelse/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/guides/mark-a-deviation/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/guider/markera-avvikelse/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/guides/mark-a-deviation/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/compare/bluebeam/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/compare/bluebeam/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/jamfor/bluebeam/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/compare/bluebeam/" />
+  </url>
+  <url>
+    <loc>${baseUrl}/sv/jamfor/bluebeam/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="${baseUrl}/compare/bluebeam/" />
+    <xhtml:link rel="alternate" hreflang="sv" href="${baseUrl}/sv/jamfor/bluebeam/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${baseUrl}/compare/bluebeam/" />
+  </url>
 </urlset>
 `;
 

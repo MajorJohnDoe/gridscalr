@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vad är ett driftkort? Dokumentation för drift</title>
+    <meta
+      name="description"
+      content="Ett driftkort dokumenterar hur ett ventilationssystem är byggt, inställt och skött. Se vad kortet innehåller, vem som använder det och hur du ritar det."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/vad-ar-ett-driftkort/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/what-is-an-operation-card/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/vad-ar-ett-driftkort/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/what-is-an-operation-card/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Vad är ett driftkort? Dokumentation för drift" />
+    <meta
+      property="og:description"
+      content="Ett driftkort dokumenterar hur ett ventilationssystem är byggt, inställt och skött. Se vad kortet innehåller, vem som använder det och hur du ritar det."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/sv/guider/vad-ar-ett-driftkort/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Vad är ett driftkort? Dokumentation för drift" />
+    <meta
+      name="twitter:description"
+      content="Ett driftkort dokumenterar hur ett ventilationssystem är byggt, inställt och skött. Se vad kortet innehåller, vem som använder det och hur du ritar det."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Vad är ett driftkort? Dokumentation för drift",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/guider/vad-ar-ett-driftkort/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Vad är ett driftkort?",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/vad-ar-ett-driftkort/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Är ett driftkort samma sak som en relationsritning?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nej. En relationsritning visar installerad geometri. Ett driftkort är ett schema för att köra och underhålla ett system, med inställningar och styrpunkter."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Behöver ett driftkort en skala?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nej. Det är ett mallblad märkt ej skalenligt. Kalibrering hör till mätta ritningar, inte till schematiska kort."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Följer titelblocket med i exporten?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Bladfält och revisionstabell ritas in i PDF:en även när alla lager är dolda."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}guides/what-is-an-operation-card/" hreflang="en" lang="en">English</a>
+          <a
+            href="{{ROOT}}sv/guider/vad-ar-ett-driftkort/"
+            hreflang="sv"
+            lang="sv"
+            aria-current="page"
+            >Svenska</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}sv/guider/">Guider</a
+            ><span>/</span>
+            <span>Vad är ett driftkort?</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Vad är ett driftkort?</h1>
+          <p class="lede">
+            Bladet som berättar för nästa tekniker hur ett system är byggt, inställt och skött.
+          </p>
+          <p class="guide-meta">
+            Uppdaterad 24 november 2026 · 5 min läsning · Granskad mot GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>På den här sidan</p>
+          <ol>
+            <li><a href="#what">Vad kortet dokumenterar</a></li>
+            <li><a href="#who">Vem som använder det</a></li>
+            <li><a href="#contains">Vad ett komplett kort innehåller</a></li>
+            <li><a href="#draw">Rita kortet i GridScalr</a></li>
+            <li><a href="#quality">Håll kortet användbart</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Ladda ner GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Kort svar</h2>
+            <p>
+              Ett driftkort är ett ritningsblad som dokumenterar ett ventilationssystem: aggregat,
+              kanaler och rör, givare, styrpunkter och inställningar. Det följer byggnaden så att
+              nästa tekniker kan förstå, köra och underhålla systemet utan att rekonstruera det ur
+              minnet. Det används vid besiktning, injustering och felsökning.
+            </p>
+          </div>
+
+          <h2 id="what">Vad kortet dokumenterar</h2>
+          <p>
+            Ett driftkort beskriver ett system, inte ett rum. Det visar aggregat, fläktar,
+            batterier, spjäll, ventiler, givare och styrpunkter som hör ihop, och det registrerar de
+            värden en tekniker behöver för att köra och serva dem. Ritningen är schematisk, inte
+            arkitektonisk: placeringen på bladet spelar mindre roll än förhållandet mellan
+            komponenterna.
+          </p>
+          <h2 id="who">Vem som använder det</h2>
+          <p>
+            Drifttekniker använder kortet vid besiktning, injustering och felsökning. Tekniska
+            förvaltare använder det som en del av byggnadens tekniska dokumentation. Entreprenörer
+            använder det när en komponent byts eller en styrstrategi ändras. Eftersom alla tre läser
+            samma blad är ett inaktuellt kort sämre än inget: kortet behöver en revisionstabell, ett
+            datum i titelblocket och en tydlig ägare som ansvarar för uppdateringar.
+          </p>
+          <h2 id="contains">Vad ett komplett kort innehåller</h2>
+          <ul>
+            <li>
+              Ett titelblock med fastighet, system, aggregatbeteckning, datum, utförare och
+              revision.
+            </li>
+            <li>Ett schema med systemets aggregat, kanaler eller rör, givare och styrpunkter.</li>
+            <li>Börvärden och driftsvärden som teknikern måste känna till.</li>
+            <li>En revisionstabell så att ändringar går att följa.</li>
+            <li>Anteckningar om underhåll, åtkomst och kända avvikelser.</li>
+          </ul>
+          <h2 id="draw">Rita kortet i GridScalr</h2>
+          <p>
+            GridScalr skapar ett driftkortsblad från en inbyggd mall på A3 eller A2. Titelblock och
+            revisionstabell ingår i bladet, fälten redigeras på ritytan eller i bladformuläret, och
+            schemasymbolerna ritas på ritlager. Den exporterade PDF:en behåller titelblock och fält
+            även när alla lager är dolda, och texten är sökbar.
+          </p>
+          <p>
+            Mallblad visas som <b>Blad · ej skalenligt</b>. De behöver ingen kalibrering, eftersom
+            de dokumenterar ett system i stället för att mäta byggnaden.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Rita kortet i GridScalr</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/operation-card.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Ett A3-driftkort med ifyllt titelblock och schemasymboler på ritlager."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/operation-card.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Ett A3-driftkort med ifyllt titelblock och schemasymboler på ritlager."
+              />
+            </a>
+            <figcaption>
+              <span>Ett A3-driftkort med ifyllt titelblock och schemasymboler på ritlager.</span>
+            </figcaption>
+          </figure>
+          <h2 id="quality">Håll kortet användbart</h2>
+          <p>
+            Ett kort är bara användbart om nästa läsare kan lita på det. Håll ett system per kort,
+            namnge aggregatet konsekvent och uppdatera revisionsraden varje gång en komponent eller
+            ett börvärde ändras. Lägg platsanteckningar på ett eget ritlager så att de kan döljas
+            utan att schemat försvinner, och exportera bara de lager som mottagaren ska se.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Håll kortet användbart</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/layers.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Ritlager och mätlager listas separat; schemasymbolerna ligger på ritlager."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Ritlager och mätlager listas separat; schemasymbolerna ligger på ritlager."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Ritlager och mätlager listas separat; schemasymbolerna ligger på ritlager.</span
+              >
+            </figcaption>
+          </figure>
+
+          <h2 id="mistakes">Vanliga fel</h2>
+          <ul class="checklist">
+            <li>Fylla i titelblocket efter ritningen, så att kortet saknar revision.</li>
+            <li>Blanda mätningar i schemalagret, vilket gör senare ändringar svårare.</li>
+            <li>
+              Använda sidnumret som aggregatbeteckning i stället för systemets egen beteckning.
+            </li>
+            <li>Exportera med dolda lager som mottagaren ändå behöver.</li>
+          </ul>
+
+          <h2 id="faq">Frågor</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Är ett driftkort samma sak som en relationsritning?</summary>
+              <p>
+                Nej. En relationsritning visar installerad geometri. Ett driftkort är ett schema för
+                att köra och underhålla ett system, med inställningar och styrpunkter.
+              </p>
+            </details>
+            <details>
+              <summary>Behöver ett driftkort en skala?</summary>
+              <p>
+                Nej. Det är ett mallblad märkt ej skalenligt. Kalibrering hör till mätta ritningar,
+                inte till schematiska kort.
+              </p>
+            </details>
+            <details>
+              <summary>Följer titelblocket med i exporten?</summary>
+              <p>
+                Ja. Bladfält och revisionstabell ritas in i PDF:en även när alla lager är dolda.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Relaterat</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}sv/driftkort/"
+              ><b>Driftkort</b><span>Uppgiftssidan för mallar, symboler och bladfält.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/vad-ar-mangdning/"
+              ><b>Vad är mängdning?</b><span>Hur samma projekt också bär mängder.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/markera-avvikelse/"
+              ><b>Markera en avvikelse</b><span>En platsanteckning på ett ritlager.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Öppna demokortet</h2>
+            <p>
+              Demoprojektet innehåller LB01, ett ifyllt driftkort med schemasymboler och titelblock,
+              redo att granska.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Hämta demoprojektet</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>
