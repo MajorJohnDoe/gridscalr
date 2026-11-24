@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mäta area på ritning — kalibrering, avdrag och netto</title>
+    <meta name="description" content="Mät rumsarea i PDF- och TIF-ritningar: kalibrera skalan, rita rektangel eller polygon, dra av schakt och öppningar och få nettoarea per rum." />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/sv/mata-area/" />
+    <link rel="alternate" hreflang="en" href="https://majorjohndoe.github.io/gridscalr/area-takeoff/" />
+    <link rel="alternate" hreflang="sv" href="https://majorjohndoe.github.io/gridscalr/sv/mata-area/" />
+    <link rel="alternate" hreflang="x-default" href="https://majorjohndoe.github.io/gridscalr/area-takeoff/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Mäta area på ritning — kalibrering, avdrag och netto" />
+    <meta property="og:description" content="Mät rumsarea i PDF- och TIF-ritningar: kalibrera skalan, rita rektangel eller polygon, dra av schakt och öppningar och få nettoarea per rum." />
+    <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/sv/mata-area/" />
+    <meta property="og:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+    <meta property="og:image:alt" content="GridScalr — measure areas, draw operation cards and take off quantities" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Mäta area på ritning — kalibrering, avdrag och netto" />
+    <meta name="twitter:description" content="Mät rumsarea i PDF- och TIF-ritningar: kalibrera skalan, rita rektangel eller polygon, dra av schakt och öppningar och få nettoarea per rum." />
+    <meta name="twitter:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Mäta area på ritning — kalibrering, avdrag och netto",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/mata-area/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {"@type": "WebSite", "name": "GridScalr", "url": "https://majorjohndoe.github.io/gridscalr/"}
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {"@type": "ListItem", "position": 1, "name": "GridScalr", "item": "https://majorjohndoe.github.io/gridscalr/"},
+          {"@type": "ListItem", "position": 2, "name": "Mäta area", "item": "https://majorjohndoe.github.io/gridscalr/sv/mata-area/"}
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [{"@type": "Question", "name": "Måste jag kalibrera för att mäta area?", "acceptedAnswer": {"@type": "Answer", "text": "Ja. Använd ett känt mått eller utskriven skala. Räknade objekt kräver ingen skala, men areor gör det."}},
+{"@type": "Question", "name": "Kan jag mäta i en skannad ritning?", "acceptedAnswer": {"@type": "Answer", "text": "Ja. TIF-skannade ritningar importeras som sidor och kalibreras på samma sätt som en PDF."}},
+{"@type": "Question", "name": "Uppdateras rumsarean när jag ändrar en mätning?", "acceptedAnswer": {"@type": "Answer", "text": "Ja. Rummet summerar sina kopplade mätningar, och avdrag dras från nettot."}}]
+      }
+    </script>
+  </head>  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/" aria-current="page">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}area-takeoff/" hreflang="en" lang="en">English</a>
+          <a href="{{ROOT}}sv/mata-area/" hreflang="sv" lang="sv" aria-current="page">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span>
+            <a href="{{ROOT}}sv/funktioner/">Funktioner</a><span>/</span>
+            <span>Mäta area</span>
+          </nav>
+          <p class="eyebrow">Areor</p>
+          <h1>Mät area på ritning — med avdrag och rum</h1>
+          <p class="lede">Kalibrera en gång, rita rummet och dra av det som inte ska beställas. Nettoarean följer rummet, så en ändrad mätning slår igenom i mängden.</p>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}">Ladda ner GridScalr {{RELEASE_VERSION}}</a>
+            <a class="button secondary" href="{{ROOT}}#download">Alla filer</a>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Demoprojekt · area 484 m² · skala 1:100</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/hero.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Area 484 m² markerad i lagret Mätningar, med rum, kategori och avdrag i panelen."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="GridScalr med en kalibrerad industriritning i 100 % zoom och en area på 484 m² markerad i lagret Mätningar."
+              />
+            </a>
+            <figcaption><span>Area 484 m² markerad i lagret Mätningar, med rum, kategori och avdrag i panelen.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="steps">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Så fungerar det</p>
+            <h2>Kalibrera, rita, dra av</h2>
+          </div>
+          <ol class="steps">
+            <li>
+              <span class="step-number">1</span>
+              <h3>Kalibrera sidan</h3>
+              <p>Mät mot ett känt mått eller ange utskriven skala 1:N. Kontrollera mot ett andra mått och lås skalan på sidan.</p>
+            </li>
+            <li>
+              <span class="step-number">2</span>
+              <h3>Rita arean</h3>
+              <p>Använd rektangel för fyrkantiga rum och polygon för L-former och sneda väggar. Fästpunkterna håller hörnen på ritningens linjer.</p>
+            </li>
+            <li>
+              <span class="step-number">3</span>
+              <h3>Dra av och koppla</h3>
+              <p>Markera schakt och öppningar som avdrag och koppla mätningen till rummet så att rumsarean räknas om.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section" id="facts">
+        <div class="wrap split">
+          <div class="prose-block">
+            <p class="eyebrow">Areor</p>
+            <h2>Det mätningen bär med sig</h2>
+            <ul class="checklist facts-list">
+              <li><strong>Skala</strong> Känt mått eller utskriven 1:N, låsbar per sida</li>
+              <li><strong>Area</strong> Rektangel och polygon med fästpunkter</li>
+              <li><strong>Avdrag</strong> Egen rad som dras från nettot</li>
+              <li><strong>Rum</strong> Arean räknas om från kopplade mätningar</li>
+            </ul>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Det mätningen bär med sig</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/spaces.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Area per rum, med byggnad och våning ovanför. Uppmätt area kommer från de kopplade mätningarna."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/spaces.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Utrymmesregistret i GridScalr med byggnad, våning och rum, där lagret visar uppmätt area 484 m² och kontoret en manuell area."
+              />
+            </a>
+            <figcaption><span>Area per rum, med byggnad och våning ovanför. Uppmätt area kommer från de kopplade mätningarna.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="example">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Räkneexempel</p>
+            <h2>Så ser siffrorna ut</h2>
+            <p>Samma fyra tal finns i beställningsdialogen och i schemat. Avdraget dras före spelet läggs på.</p>
+          </div>
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>Rum</th><th>Brutto</th><th>Avdrag</th><th>Netto</th><th>Spill 10 %</th><th>Beställning</th></tr></thead>
+                <tbody>
+                  <tr><td>Lager</td><td>484,00</td><td>0</td><td>484,00</td><td>48,40</td><td class="order">532,50</td></tr><tr><td>Mellanbjälklag</td><td>120,00</td><td>6,25</td><td>113,75</td><td>11,38</td><td class="order">125,50</td></tr>
+                  <tr class="total"><td>Våning 1, netto</td><td>—</td><td>—</td><td>597,75</td><td>—</td><td>—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Så ser siffrorna ut</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/table.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Schemat och rapporten läser samma uppmätta areor."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/table.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Mängdschemat i GridScalr med grupper per kategori och rader för etikett, rum och kategori, bredvid en plan över mellanbjälklaget."
+              />
+            </a>
+            <figcaption><span>Schemat och rapporten läser samma uppmätta areor.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="mistakes">
+        <div class="wrap split">
+          <div class="prose-block">
+            <p class="eyebrow">Läs mer</p>
+            <h2>Vanliga fel</h2>
+            <ul class="checklist">
+              <li>Kalibrera en sida och anta att resten följer. Skalan gäller per sida.</li>              <li>Lägga avdraget i ett annat rum, så att bruttoarean blir för hög.</li>              <li>Mäta före en omkalibrering. Varje mätning behåller skalan den skapades med; uppdatera medvetet.</li>              <li>Lämna ett rum utan area. Det flaggas i stället för att visa en halv summa.</li>
+            </ul>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Vanliga fel</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/layers.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Varje objekt listas på sitt lager med enhet och sida, så avdrag och rum kan granskas."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Utfällt mätlager i GridScalr med en area på 484 m², ett avdrag och räknade objekt med enhet."
+              />
+            </a>
+            <figcaption><span>Varje objekt listas på sitt lager med enhet och sida, så avdrag och rum kan granskas.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="faq">
+        <div class="wrap prose-block">
+          <p class="eyebrow">Frågor</p>
+          <h2>Frågor</h2>
+          <div class="faq-list">
+              <details open>
+                <summary>Måste jag kalibrera för att mäta area?</summary>
+                <p>Ja. Använd ett känt mått eller utskriven skala. Räknade objekt kräver ingen skala, men areor gör det.</p>
+              </details>
+              <details>
+                <summary>Kan jag mäta i en skannad ritning?</summary>
+                <p>Ja. TIF-skannade ritningar importeras som sidor och kalibreras på samma sätt som en PDF.</p>
+              </details>
+              <details>
+                <summary>Uppdateras rumsarean när jag ändrar en mätning?</summary>
+                <p>Ja. Rummet summerar sina kopplade mätningar, och avdrag dras från nettot.</p>
+              </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="related">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Relaterat</p>
+            <h2>Fortsätt</h2>
+          </div>
+          <div class="docs-links">
+              <a href="{{ROOT}}sv/driftkort/"><b>Driftkort</b><span>Rita kortet i samma projekt som planen.</span></a>
+              <a href="{{ROOT}}sv/mangdning/"><b>Mängdning</b><span>Från nettoarea till beställningsmängd.</span></a>
+              <a href="{{ROOT}}sv/funktioner/"><b>Funktioner</b><span>Alla vyer i aktuell release.</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Prova på demoritningen</h2>
+            <p>Demoprojektet innehåller en kalibrerad plan, ett avdrag, ett driftkort och färdiga mängder.</p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}">Ladda ner GridScalr {{RELEASE_VERSION}}</a>
+            <a class="button secondary" href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr">Hämta demoprojektet</a>
+            <a class="button secondary" data-release-page href="{{RELEASE_URL}}">Release notes och checksummor</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img class="logo" src="{{ROOT}}assets/app-icon.svg" width="26" height="26" alt="" aria-hidden="true" />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens</p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md">Tredjepartsnotiser</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md">Säkerhetspolicy</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md">Användarguide</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md">Arbetsflöden</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/">Release notes</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>

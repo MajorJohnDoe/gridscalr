@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Driftkort för ventilation — rita dem vid sidan av planen</title>
+    <meta name="description" content="Rita och uppdatera driftkort i samma projekt som planen: A3-mallar, bladfält, schemasymboler och PDF-export med lager och etiketter." />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/sv/driftkort/" />
+    <link rel="alternate" hreflang="en" href="https://majorjohndoe.github.io/gridscalr/operation-cards/" />
+    <link rel="alternate" hreflang="sv" href="https://majorjohndoe.github.io/gridscalr/sv/driftkort/" />
+    <link rel="alternate" hreflang="x-default" href="https://majorjohndoe.github.io/gridscalr/operation-cards/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Driftkort för ventilation — rita dem vid sidan av planen" />
+    <meta property="og:description" content="Rita och uppdatera driftkort i samma projekt som planen: A3-mallar, bladfält, schemasymboler och PDF-export med lager och etiketter." />
+    <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/sv/driftkort/" />
+    <meta property="og:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+    <meta property="og:image:alt" content="GridScalr — measure areas, draw operation cards and take off quantities" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Driftkort för ventilation — rita dem vid sidan av planen" />
+    <meta name="twitter:description" content="Rita och uppdatera driftkort i samma projekt som planen: A3-mallar, bladfält, schemasymboler och PDF-export med lager och etiketter." />
+    <meta name="twitter:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Driftkort för ventilation — rita dem vid sidan av planen",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/driftkort/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {"@type": "WebSite", "name": "GridScalr", "url": "https://majorjohndoe.github.io/gridscalr/"}
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {"@type": "ListItem", "position": 1, "name": "GridScalr", "item": "https://majorjohndoe.github.io/gridscalr/"},
+          {"@type": "ListItem", "position": 2, "name": "Driftkort", "item": "https://majorjohndoe.github.io/gridscalr/sv/driftkort/"}
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [{"@type": "Question", "name": "Kan jag redigera ett befintligt driftkort?", "acceptedAnswer": {"@type": "Answer", "text": "Ja. Importera sidan eller en TIF och rita ovanpå, eller rita om det från en mall."}},
+{"@type": "Question", "name": "Behöver jag ett CAD-program?", "acceptedAnswer": {"@type": "Answer", "text": "Nej. Blad, symboler och text ritas i samma program som mängdningen."}},
+{"@type": "Question", "name": "Är symbolerna en certifierad standard?", "acceptedAnswer": {"@type": "Answer", "text": "De är ritade för driftkort och följer vanlig VVS-praxis. Kontrollera din egen ritningsstandard innan kortet skickas ut."}}]
+      }
+    </script>
+  </head>  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/" aria-current="page">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}operation-cards/" hreflang="en" lang="en">English</a>
+          <a href="{{ROOT}}sv/driftkort/" hreflang="sv" lang="sv" aria-current="page">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span>
+            <a href="{{ROOT}}sv/funktioner/">Funktioner</a><span>/</span>
+            <span>Driftkort</span>
+          </nav>
+          <p class="eyebrow">Driftkort</p>
+          <h1>Rita driftkortet i samma projekt som planen</h1>
+          <p class="lede">A3-mallar med bladfält, schemasymboler och sidbundna lager. Kortet är en egen sida bredvid planen, så systemet följer samma projektnummer och revision.</p>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}">Ladda ner GridScalr {{RELEASE_VERSION}}</a>
+            <a class="button secondary" href="{{ROOT}}#download">Alla filer</a>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Driftkort LB01 · sida 4/4</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/operation-card.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: LB01 med aggregat, kanaler och givare. Lagren för uteluft, frånluft och aggregat syns till vänster."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/operation-card.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Driftkort LB01 för ett ventilationsaggregat på en A3-mall, med kanaler, givare, schemasymboler och lager för uteluft, frånluft och aggregat."
+              />
+            </a>
+            <figcaption><span>LB01 med aggregat, kanaler och givare. Lagren för uteluft, frånluft och aggregat syns till vänster.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="steps">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Så fungerar det</p>
+            <h2>Från tomt blad till arkiverat kort</h2>
+          </div>
+          <ol class="steps">
+            <li>
+              <span class="step-number">1</span>
+              <h3>Börja från en bladmall</h3>
+              <p>Skapa ett A3- eller A2-blad och fyll bladfältet: fastighet, system, datum, utförd av och signatur.</p>
+            </li>
+            <li>
+              <span class="step-number">2</span>
+              <h3>Rita systemet</h3>
+              <p>Placera aggregat, kanaler, ventiler och givare från schemabiblioteket. Varje lager bär en del av systemet.</p>
+            </li>
+            <li>
+              <span class="step-number">3</span>
+              <h3>Fyll fälten och exportera</h3>
+              <p>Komplettera bladfälten, kontrollera revisionen och exportera sidan som PDF med lager och etiketter.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section" id="facts">
+        <div class="wrap split">
+          <div class="prose-block">
+            <p class="eyebrow">Driftkort</p>
+            <h2>Det kortet innehåller</h2>
+            <ul class="checklist facts-list">
+              <li><strong>Blad</strong> A3- och A2-mall med bladfält</li>
+              <li><strong>Symboler</strong> Ventilation, värme, styr och el</li>
+              <li><strong>Lager</strong> Egna lager per sida, lås per objekt</li>
+              <li><strong>Export</strong> PDF med lager, etiketter och teckenförklaring</li>
+            </ul>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Det kortet innehåller</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/layers.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Varje objekt listas på sitt lager med enhet och sida, så kortet kan granskas post för post."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Utfällt mätlager i GridScalr med en area på 484 m², ett avdrag och räknade objekt med enhet."
+              />
+            </a>
+            <figcaption><span>Varje objekt listas på sitt lager med enhet och sida, så kortet kan granskas post för post.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="example">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Räkneexempel</p>
+            <h2>Bladfälten</h2>
+            <p>Ett kort som inte går att arkivera är inget kort. Fyll samma fält på varje blad så att paketet kan sorteras på fastighet och system.</p>
+          </div>
+            <ul class="checklist">              <li>Fastighet och byggnad</li>              <li>System och aggregatbeteckning</li>              <li>Datum och revision</li>              <li>Utförd av och signatur</li>              <li>Sida och antal sidor</li>              <li>Hänvisning till planen</li></ul>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Bladfälten</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/export.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Exportera kortet platt, eller med valfria lager för läsare som stödjer dem."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/export.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Exportdialogen i GridScalr med val av sidor, beskärning, lager, valfria OCG-lager och teckenförklaring."
+              />
+            </a>
+            <figcaption><span>Exportera kortet platt, eller med valfria lager för läsare som stödjer dem.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="mistakes">
+        <div class="wrap split">
+          <div class="prose-block">
+            <p class="eyebrow">Läs mer</p>
+            <h2>Vanliga fel</h2>
+            <ul class="checklist">
+              <li>Uppdatera planen men inte kortet, så att ritningspaketet säger emot sig självt.</li>              <li>Använda symboler utan teckenförklaring, så att nästa tekniker får gissa.</li>              <li>Återanvända ett lager för flera system, vilket gör exporten omöjlig att filtrera.</li>              <li>Exportera fel sidintervall och arkivera ett halvt kort.</li>
+            </ul>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Vanliga fel</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/hero.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Kortet och planen delar projektnummer, revision och sidlista."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="GridScalr med den kalibrerade planen och driftkort LB01 i sidlistan."
+              />
+            </a>
+            <figcaption><span>Kortet och planen delar projektnummer, revision och sidlista.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="faq">
+        <div class="wrap prose-block">
+          <p class="eyebrow">Frågor</p>
+          <h2>Frågor</h2>
+          <div class="faq-list">
+              <details open>
+                <summary>Kan jag redigera ett befintligt driftkort?</summary>
+                <p>Ja. Importera sidan eller en TIF och rita ovanpå, eller rita om det från en mall.</p>
+              </details>
+              <details>
+                <summary>Behöver jag ett CAD-program?</summary>
+                <p>Nej. Blad, symboler och text ritas i samma program som mängdningen.</p>
+              </details>
+              <details>
+                <summary>Är symbolerna en certifierad standard?</summary>
+                <p>De är ritade för driftkort och följer vanlig VVS-praxis. Kontrollera din egen ritningsstandard innan kortet skickas ut.</p>
+              </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="related">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Relaterat</p>
+            <h2>Fortsätt</h2>
+          </div>
+          <div class="docs-links">
+              <a href="{{ROOT}}sv/mata-area/"><b>Mäta area</b><span>Kalibrera och mät i samma projekt.</span></a>
+              <a href="{{ROOT}}sv/mangdning/"><b>Mängdning</b><span>Gör systemet till beställningsmängder.</span></a>
+              <a href="{{ROOT}}sv/funktioner/"><b>Funktioner</b><span>Alla vyer i aktuell release.</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Utgå från demokortet</h2>
+            <p>Demoprojektet innehåller driftkort LB01 bredvid planen, så du kan granska lager och fält.</p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}">Ladda ner GridScalr {{RELEASE_VERSION}}</a>
+            <a class="button secondary" href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr">Hämta demoprojektet</a>
+            <a class="button secondary" data-release-page href="{{RELEASE_URL}}">Release notes och checksummor</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img class="logo" src="{{ROOT}}assets/app-icon.svg" width="26" height="26" alt="" aria-hidden="true" />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens</p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md">Tredjepartsnotiser</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md">Säkerhetspolicy</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md">Användarguide</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md">Arbetsflöden</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/">Release notes</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>

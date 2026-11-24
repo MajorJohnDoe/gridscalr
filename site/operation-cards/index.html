@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Operation cards for HVAC — draw them beside the plan</title>
+    <meta name="description" content="Draw and update operation cards in the same project as the plan: A3 templates, sheet fields, schematic symbols and PDF export with layers and labels." />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/operation-cards/" />
+    <link rel="alternate" hreflang="en" href="https://majorjohndoe.github.io/gridscalr/operation-cards/" />
+    <link rel="alternate" hreflang="sv" href="https://majorjohndoe.github.io/gridscalr/sv/driftkort/" />
+    <link rel="alternate" hreflang="x-default" href="https://majorjohndoe.github.io/gridscalr/operation-cards/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Operation cards for HVAC — draw them beside the plan" />
+    <meta property="og:description" content="Draw and update operation cards in the same project as the plan: A3 templates, sheet fields, schematic symbols and PDF export with layers and labels." />
+    <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/operation-cards/" />
+    <meta property="og:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+    <meta property="og:image:alt" content="GridScalr — measure areas, draw operation cards and take off quantities" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Operation cards for HVAC — draw them beside the plan" />
+    <meta name="twitter:description" content="Draw and update operation cards in the same project as the plan: A3 templates, sheet fields, schematic symbols and PDF export with layers and labels." />
+    <meta name="twitter:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Operation cards for HVAC — draw them beside the plan",
+        "url": "https://majorjohndoe.github.io/gridscalr/operation-cards/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {"@type": "WebSite", "name": "GridScalr", "url": "https://majorjohndoe.github.io/gridscalr/"}
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {"@type": "ListItem", "position": 1, "name": "GridScalr", "item": "https://majorjohndoe.github.io/gridscalr/"},
+          {"@type": "ListItem", "position": 2, "name": "Operation cards", "item": "https://majorjohndoe.github.io/gridscalr/operation-cards/"}
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [{"@type": "Question", "name": "Can I edit an existing operation card?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Import the page or a TIF and draw on top of it, or redraw it from a template."}},
+{"@type": "Question", "name": "Do I need a CAD program?", "acceptedAnswer": {"@type": "Answer", "text": "No. The sheet, symbols and text are drawn in the same app as the takeoff."}},
+{"@type": "Question", "name": "Are the symbols a certified standard?", "acceptedAnswer": {"@type": "Answer", "text": "They are drawn for operation cards and follow common HVAC practice. Check your own drawing standard before issuing a card."}}]
+      }
+    </script>
+  </head>  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/" aria-current="page">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a href="{{ROOT}}operation-cards/" hreflang="en" lang="en" aria-current="page">English</a>
+          <a href="{{ROOT}}sv/driftkort/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span>
+            <a href="{{ROOT}}features/">Features</a><span>/</span>
+            <span>Operation cards</span>
+          </nav>
+          <p class="eyebrow">Operation cards</p>
+          <h1>Draw an operation card in the same project as the plan</h1>
+          <p class="lede">A3 templates with sheet fields, schematic symbols and page-scoped layers. The card is its own page beside the plan, so the system follows the same project number and revision.</p>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}">Download GridScalr {{RELEASE_VERSION}}</a>
+            <a class="button secondary" href="{{ROOT}}#download">All downloads</a>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Operation card LB01 · page 4/4</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/operation-card.webp"
+              data-lightbox
+              aria-label="Click to enlarge: LB01 with the unit, ducts and sensors. Supply air, exhaust air and unit layers sit on the left."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/operation-card.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Operation card LB01 for an air handling unit on an A3 sheet, with ducts, sensors, schematic symbols and layers for supply air, exhaust air and the unit."
+              />
+            </a>
+            <figcaption><span>LB01 with the unit, ducts and sensors. Supply air, exhaust air and unit layers sit on the left.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="steps">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">How it works</p>
+            <h2>From blank sheet to a filed card</h2>
+          </div>
+          <ol class="steps">
+            <li>
+              <span class="step-number">1</span>
+              <h3>Start from a sheet template</h3>
+              <p>Create an A3 or A2 sheet and fill the title block: property, system, date, handled by and signature.</p>
+            </li>
+            <li>
+              <span class="step-number">2</span>
+              <h3>Draw the system</h3>
+              <p>Place the air handling unit, ducts, valves and sensors from the schematic library. Each layer carries one part of the system.</p>
+            </li>
+            <li>
+              <span class="step-number">3</span>
+              <h3>Fill the fields and export</h3>
+              <p>Complete the sheet fields, check the revision and export the page as PDF with layers and labels.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section" id="facts">
+        <div class="wrap split">
+          <div class="prose-block">
+            <p class="eyebrow">Operation cards</p>
+            <h2>What the card contains</h2>
+            <ul class="checklist facts-list">
+              <li><strong>Sheet</strong> A3 and A2 templates with sheet fields</li>
+              <li><strong>Symbols</strong> Ventilation, heating, control and electrical</li>
+              <li><strong>Layers</strong> Own layers per page, lock per item</li>
+              <li><strong>Export</strong> PDF with layers, labels and legend</li>
+            </ul>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>What the card contains</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/layers.webp"
+              data-lightbox
+              aria-label="Click to enlarge: Every object is listed on its layer with its unit and page, so a card can be checked item by item."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Expanded measurement layer in GridScalr listing a 484 m² area, a deduction and counted objects with their units."
+              />
+            </a>
+            <figcaption><span>Every object is listed on its layer with its unit and page, so a card can be checked item by item.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="example">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Worked example</p>
+            <h2>The sheet fields</h2>
+            <p>A card that cannot be filed is not a card. Fill the same fields on every sheet so the set can be sorted by property and system.</p>
+          </div>
+            <ul class="checklist">              <li>Property and building</li>              <li>System and unit ID</li>              <li>Date and revision</li>              <li>Handled by and signature</li>              <li>Page number and total pages</li>              <li>Reference to the plan</li></ul>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>The sheet fields</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/export.webp"
+              data-lightbox
+              aria-label="Click to enlarge: Export the card flattened, or with optional layers for a reader that supports them."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/export.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Drawing export dialog in GridScalr with page selection, crop area, layer selection, optional OCG layers and a legend."
+              />
+            </a>
+            <figcaption><span>Export the card flattened, or with optional layers for a reader that supports them.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="mistakes">
+        <div class="wrap split">
+          <div class="prose-block">
+            <p class="eyebrow">Read more</p>
+            <h2>Common mistakes</h2>
+            <ul class="checklist">
+              <li>Updating the plan but not the card, so the drawing set disagrees with itself.</li>              <li>Using symbols without a legend, so the next technician has to guess.</li>              <li>Reusing one layer for several systems, which makes the export impossible to filter.</li>              <li>Exporting the wrong page range and filing a partial card.</li>
+            </ul>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Common mistakes</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/hero.webp"
+              data-lightbox
+              aria-label="Click to enlarge: The card and the plan share project number, revision and page list."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="GridScalr with the calibrated plan and the operation card LB01 in the page list."
+              />
+            </a>
+            <figcaption><span>The card and the plan share project number, revision and page list.</span></figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="faq">
+        <div class="wrap prose-block">
+          <p class="eyebrow">Questions</p>
+          <h2>Questions</h2>
+          <div class="faq-list">
+              <details open>
+                <summary>Can I edit an existing operation card?</summary>
+                <p>Yes. Import the page or a TIF and draw on top of it, or redraw it from a template.</p>
+              </details>
+              <details>
+                <summary>Do I need a CAD program?</summary>
+                <p>No. The sheet, symbols and text are drawn in the same app as the takeoff.</p>
+              </details>
+              <details>
+                <summary>Are the symbols a certified standard?</summary>
+                <p>They are drawn for operation cards and follow common HVAC practice. Check your own drawing standard before issuing a card.</p>
+              </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="related">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Related</p>
+            <h2>Continue</h2>
+          </div>
+          <div class="docs-links">
+              <a href="{{ROOT}}area-takeoff/"><b>Measure areas</b><span>Calibrate and measure in the same project.</span></a>
+              <a href="{{ROOT}}quantity-takeoff/"><b>Quantity takeoff</b><span>Turn the system into order quantities.</span></a>
+              <a href="{{ROOT}}features/"><b>Feature tour</b><span>Every view in the current release.</span></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Start from the demo card</h2>
+            <p>The demo project ships with operation card LB01 next to the plan, so you can inspect the layers and fields.</p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}">Download GridScalr {{RELEASE_VERSION}}</a>
+            <a class="button secondary" href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr">Get the demo project</a>
+            <a class="button secondary" data-release-page href="{{RELEASE_URL}}">Release notes and checksums</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img class="logo" src="{{ROOT}}assets/app-icon.svg" width="26" height="26" alt="" aria-hidden="true" />
+            <span>GridScalr</span>
+          </a>
+          <p>Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.</p>
+          <p class="footer-version">Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed</p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md">Third-party notices</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md">Security policy</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md">User guide</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md">Workflows</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/">Release notes</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>

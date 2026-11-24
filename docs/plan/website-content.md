@@ -1,6 +1,7 @@
 # Webbplatsen: innehåll, guider och organisk trafik
 
-Status: fas 0 klar (tema, `site:capture`, startsida). Guider och uppgiftssidor återstår.
+Status: fas 0 och 1 klara (tema, `site:capture`, startsida, tre uppgiftssidor). Guider
+och roll-/metodsidor återstår.
 Godkänd visuell riktning (skiss 4): ljus yta, Slate-paletten från appen, stora skärmbilder i
 full bredd, riktig appikon, svenska först.
 
@@ -88,6 +89,8 @@ Tre sökstadier som sajten måste möta:
 3. **Produktmedveten** — "GridScalr". Startsida, nedladdning, systemkrav, release notes.
 
 ## 4. Informationsarkitektur
+
+Svenska sidor ligger under `/sv/`; tabellen visar den svenska sluggen utan prefixet.
 
 En intention per URL. En uppgiftssida får aldrig konkurrera med sin egen guide: guiden
 lär ut arbetsgången, uppgiftssidan säljer att programmet gör den.

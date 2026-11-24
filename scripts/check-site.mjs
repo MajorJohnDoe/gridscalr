@@ -23,6 +23,21 @@ const pairUrls = {
     sv: `${baseUrl}/sv/funktioner/`,
     "x-default": `${baseUrl}/features/`,
   },
+  area: {
+    en: `${baseUrl}/area-takeoff/`,
+    sv: `${baseUrl}/sv/mata-area/`,
+    "x-default": `${baseUrl}/area-takeoff/`,
+  },
+  cards: {
+    en: `${baseUrl}/operation-cards/`,
+    sv: `${baseUrl}/sv/driftkort/`,
+    "x-default": `${baseUrl}/operation-cards/`,
+  },
+  qty: {
+    en: `${baseUrl}/quantity-takeoff/`,
+    sv: `${baseUrl}/sv/mangdning/`,
+    "x-default": `${baseUrl}/quantity-takeoff/`,
+  },
 };
 
 const pages = [
@@ -102,6 +117,90 @@ const pages = [
       "inköpsunderlag",
       "tif",
     ],
+  },
+  {
+    file: "area-takeoff/index.html",
+    lang: "en",
+    kind: "task",
+    pair: "area",
+    canonical: pairUrls.area.en,
+    title: "Measure area on PDF drawings — calibration, deductions",
+    description:
+      "Measure room areas in PDF and TIF drawings: calibrate the scale, draw rectangles or polygons, subtract shafts and openings, and get net area per room.",
+    titleTerms: ["area", "pdf", "drawings", "deductions"],
+    h1Terms: ["measure area", "drawing", "deductions", "rooms"],
+    metaTerms: ["room areas", "pdf", "tif", "calibrate", "net area"],
+    bodyTerms: ["calibration", "deduction", "room", "waste", "schedule"],
+  },
+  {
+    file: "sv/mata-area/index.html",
+    lang: "sv",
+    kind: "task",
+    pair: "area",
+    canonical: pairUrls.area.sv,
+    title: "Mäta area på ritning — kalibrering, avdrag och netto",
+    description:
+      "Mät rumsarea i PDF- och TIF-ritningar: kalibrera skalan, rita rektangel eller polygon, dra av schakt och öppningar och få nettoarea per rum.",
+    titleTerms: ["mäta area", "ritning", "kalibrering", "avdrag"],
+    h1Terms: ["mät area", "ritning", "avdrag", "rum"],
+    metaTerms: ["rumsarea", "pdf", "tif", "kalibrera", "nettoarea"],
+    bodyTerms: ["kalibrering", "avdrag", "rum", "spill", "schema"],
+  },
+  {
+    file: "operation-cards/index.html",
+    lang: "en",
+    kind: "task",
+    pair: "cards",
+    canonical: pairUrls.cards.en,
+    title: "Operation cards for HVAC — draw them beside the plan",
+    description:
+      "Draw and update operation cards in the same project as the plan: A3 templates, sheet fields, schematic symbols and PDF export with layers and labels.",
+    titleTerms: ["operation cards", "hvac", "plan"],
+    h1Terms: ["operation card", "project", "plan"],
+    metaTerms: ["operation cards", "a3", "sheet fields", "schematic symbols", "pdf"],
+    bodyTerms: ["sheet", "symbols", "layers", "export", "revision"],
+  },
+  {
+    file: "sv/driftkort/index.html",
+    lang: "sv",
+    kind: "task",
+    pair: "cards",
+    canonical: pairUrls.cards.sv,
+    title: "Driftkort för ventilation — rita dem vid sidan av planen",
+    description:
+      "Rita och uppdatera driftkort i samma projekt som planen: A3-mallar, bladfält, schemasymboler och PDF-export med lager och etiketter.",
+    titleTerms: ["driftkort", "ventilation", "planen"],
+    h1Terms: ["driftkortet", "projekt", "planen"],
+    metaTerms: ["driftkort", "a3", "bladfält", "schemasymboler", "pdf"],
+    bodyTerms: ["blad", "symboler", "lager", "export", "revision"],
+  },
+  {
+    file: "quantity-takeoff/index.html",
+    lang: "en",
+    kind: "task",
+    pair: "qty",
+    canonical: pairUrls.qty.en,
+    title: "Quantity takeoff from drawings — net, waste and order",
+    description:
+      "Turn areas and counted objects into order quantities: gross, deductions, net, waste and rounding per object, exported to Excel, CSV or a print-ready PDF.",
+    titleTerms: ["quantity takeoff", "drawings", "waste", "order"],
+    h1Terms: ["drawing", "order quantity"],
+    metaTerms: ["order quantities", "gross", "deductions", "net", "waste", "excel"],
+    bodyTerms: ["quantity", "waste", "rounding", "excel", "schedule"],
+  },
+  {
+    file: "sv/mangdning/index.html",
+    lang: "sv",
+    kind: "task",
+    pair: "qty",
+    canonical: pairUrls.qty.sv,
+    title: "Mängdning från ritning — netto, spill och beställning",
+    description:
+      "Gör uppmätta areor och räknade objekt till beställningsmängder: brutto, avdrag, netto, spill och avrundning per objekt, exporterat till Excel, CSV eller PDF.",
+    titleTerms: ["mängdning", "ritning", "netto", "spill", "beställning"],
+    h1Terms: ["ritning", "beställningsmängd"],
+    metaTerms: ["beställningsmängder", "brutto", "avdrag", "netto", "spill", "excel"],
+    bodyTerms: ["mängd", "spill", "avrundning", "excel", "schema"],
   },
 ];
 
@@ -326,7 +425,7 @@ function checkHead(document, page, release) {
 
 function checkImages(document, page) {
   const images = [...document.querySelectorAll("img")];
-  const minimum = page.kind === "home" ? 6 : 12;
+  const minimum = page.kind === "home" ? 6 : page.kind === "task" ? 4 : 12;
   assert(images.length >= minimum, `${page.file}: expected at least ${minimum} images`);
 
   const eager = images.filter((img) => img.getAttribute("fetchpriority") === "high");
@@ -355,7 +454,7 @@ function checkImages(document, page) {
   }
 
   const lightboxTriggers = [...document.querySelectorAll("[data-lightbox]")];
-  const minimumShots = page.kind === "home" ? 5 : 14;
+  const minimumShots = page.kind === "home" ? 5 : page.kind === "task" ? 4 : 14;
   assert(
     lightboxTriggers.length >= minimumShots,
     `${page.file}: expected at least ${minimumShots} lightbox screenshots`,
