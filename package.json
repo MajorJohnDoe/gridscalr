@@ -70,6 +70,7 @@
     "check:docs": "node scripts/check-docs.mjs",
     "site:build": "node scripts/build-site.mjs",
     "site:check": "node scripts/check-site.mjs",
+    "site:capture": "node scripts/capture-site-shots.mjs",
     "docs:demo": "node scripts/make-demo-project.mjs",
     "docs:capture": "node scripts/capture-docs.mjs",
     "theme:preview": "node scripts/theme-preview.mjs",

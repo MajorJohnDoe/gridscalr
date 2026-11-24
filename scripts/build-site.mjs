@@ -223,6 +223,17 @@ for (const file of screenshots) {
   await cp(resolve(screenshotsDir, file), resolve(outputDir, "screenshots", file));
 }
 
+// Marketing screenshots for the website, one folder per language. Captured by
+// `npm run site:capture` and kept apart from the in-app help screenshots.
+const siteShotsDir = resolve(screenshotsDir, "site");
+if (
+  await stat(siteShotsDir)
+    .then((info) => info.isDirectory())
+    .catch(() => false)
+) {
+  await cp(siteShotsDir, resolve(outputDir, "screenshots", "site"), { recursive: true });
+}
+
 for (const [source, target] of iconFiles) {
   await requireFile(resolve(iconsDir, source));
   await cp(resolve(iconsDir, source), resolve(outputDir, target));

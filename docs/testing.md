@@ -96,6 +96,19 @@ request labelled `docs-capture`; it is deliberately not part of every pull
 request because it needs Chromium and takes minutes. The full capture and the
 review of the changed images remain a documentation pass.
 
+## Website screenshots
+
+`npm run site:capture` writes the marketing screenshots the website uses, one
+folder per language: `docs/screenshots/site/sv/` and `docs/screenshots/site/en/`.
+It opens the bundled demo project, switches the interface to the requested
+language and captures the same seven views in both languages at a zoom where the
+drawing fills the canvas. The images are written as WebP so the pages stay light.
+
+The site shots are deliberately separate from the in-app help screenshots:
+`docs:capture` always runs in English and rewrites `docs/screenshots/`, while a
+Swedish page must not show an English interface. Run `site:capture` when a screen
+the website shows changes, then `npm run site:build` and `npm run site:check`.
+
 ## File budgets
 
 `npm run check:file-budgets` scans two independent scopes from one
