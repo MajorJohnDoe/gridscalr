@@ -82,6 +82,14 @@ describe("frame statistics", () => {
     expect(stats?.worstAgoMs).toBe(0);
   });
 
+  it("counts the frames that no longer fit a 60 Hz frame", () => {
+    const samples = frames([16.7, 16.7, 20, 21.5, 50], 0, 100);
+    const stats = frameWindow(samples, 500);
+    expect(stats?.count).toBe(5);
+    expect(stats?.overGoodMs).toBe(3);
+    expect(frameWindow(frames([10, 10], 0, 100), 200)?.overGoodMs).toBe(0);
+  });
+
   it("ignores samples older than the window but keeps the current frame", () => {
     const samples = frames([500], 0, 100).concat(frames([16], FRAME_WINDOW_MS + 100, 16));
     const stats = frameWindow(samples, FRAME_WINDOW_MS + 200);

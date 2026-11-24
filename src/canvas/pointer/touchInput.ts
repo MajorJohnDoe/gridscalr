@@ -1,5 +1,6 @@
 import type { Point } from "../../model/types";
 import { store } from "../../state/store";
+import type { GestureKind } from "../../features/gestureRender";
 import { TouchNavigation } from "../touchNavigation";
 import type { Viewport } from "../viewport";
 
@@ -11,6 +12,8 @@ export interface TouchInputContext {
   cancelGesture(): void;
   cancelDraft(): void;
   openContextMenu(clientX: number, clientY: number): void;
+  beginViewGesture(kind: GestureKind): void;
+  endViewGesture(kind: GestureKind): void;
 }
 
 /**
@@ -36,7 +39,9 @@ export class TouchInput {
       onGestureStart: () => {
         this.context.cancelGesture();
         this.context.cancelDraft();
+        this.context.beginViewGesture("pointer");
       },
+      onGestureEnd: () => this.context.endViewGesture("pointer"),
       suppressOneFinger: () => this.penActive || performance.now() - this.lastPenAt < 800,
       capturePointer: (pointerId) => this.context.capturePointer(pointerId),
       releasePointer: (pointerId) => this.context.releasePointer(pointerId),

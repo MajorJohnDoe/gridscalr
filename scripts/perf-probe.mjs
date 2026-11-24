@@ -83,6 +83,7 @@ function medianFrames(frames) {
     p95: round(median(frames.map((entry) => entry.p95))),
     p99: round(median(frames.map((entry) => entry.p99))),
     max: round(median(frames.map((entry) => entry.max))),
+    overGoodMs: Math.round(median(frames.map((entry) => entry.overGoodMs))),
     count: Math.round(median(frames.map((entry) => entry.count))),
     fps: round(median(frames.map((entry) => entry.fps))),
   };
@@ -112,6 +113,7 @@ function snapshotFrames(snapshot) {
         p95: round(snapshot.frames.p95),
         p99: round(snapshot.frames.p99),
         max: round(snapshot.frames.max),
+        overGoodMs: snapshot.frames.overGoodMs,
         count: snapshot.frames.count,
         fps: round(snapshot.frames.fps),
       }

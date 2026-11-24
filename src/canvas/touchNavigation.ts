@@ -6,6 +6,8 @@ export interface TouchNavigationOptions {
   toLocal: (clientX: number, clientY: number) => Point;
   setView: (next: Viewport, start: Viewport) => void;
   onGestureStart?: () => void;
+  /** A two-finger gesture ended: the canvas can redraw sharply again. */
+  onGestureEnd?: () => void;
   /** Palms and accidental touches are ignored while a pen is active or recent. */
   suppressOneFinger?: () => boolean;
   capturePointer?: (pointerId: number) => void;
@@ -72,6 +74,7 @@ export class TouchNavigation {
     if (this.gesture) {
       this.gesture = null;
       this.suppressUntilUp = this.pointers.size > 0;
+      this.options.onGestureEnd?.();
       return true;
     }
     if (tracked && this.suppressUntilUp) {

@@ -1,7 +1,9 @@
 import { textItemLayout } from "./text";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "./annotations";
+import { COUNT_SYMBOL_RADIUS } from "./countSymbols";
 import { railGeometry, railLegendY } from "./rail";
 import { symbolArtBounds, symbolFor, symbolSizeOf } from "./symbols";
+import type { LabelLayout } from "./labelLayout";
 import type { MarkupItem, Point } from "./types";
 
 export function distance(a: Point, b: Point): number {
@@ -548,6 +550,29 @@ export function itemCorners(item: MarkupItem): [Point, Point, Point, Point] {
 
 export function itemBounds(item: MarkupItem): Bounds {
   return boundingBox(itemCorners(item));
+}
+
+/**
+ * Page-space bounds a focus or zoom-to action should show: the item geometry,
+ * the count symbol disc and the measurement label. The canvas and its tests
+ * must describe the same box, so the rule is pure and lives here.
+ */
+export function itemFocusBounds(item: MarkupItem, label?: LabelLayout): Bounds {
+  const bounds = itemBounds(item);
+  if (item.kind === "count" && item.points[0]) {
+    const radius = COUNT_SYMBOL_RADIUS + 2;
+    bounds.min.x -= radius;
+    bounds.min.y -= radius;
+    bounds.max.x += radius;
+    bounds.max.y += radius;
+  }
+  if (label) {
+    bounds.min.x = Math.min(bounds.min.x, label.box.x);
+    bounds.min.y = Math.min(bounds.min.y, label.box.y);
+    bounds.max.x = Math.max(bounds.max.x, label.box.x + label.box.width);
+    bounds.max.y = Math.max(bounds.max.y, label.box.y + label.box.height);
+  }
+  return bounds;
 }
 
 /**

@@ -3681,5 +3681,42 @@ remains the scheduling home.
 - **Next step:** Phase 3 compares `draw-items` p95 and total per gesture, the
   frame max/p99 distribution, and frames over 20 ms. Keep frame p50/p95 in the
   history as a health row, not as the pass/fail metric.
+- **Outcome (Performance 1 phase 3, #350):** `FrameWindow` now carries
+  `overGoodMs` — the frames at or above `FRAME_GOOD_MS` (20 ms) — and
+  `perf:probe` reports it as `frames.overGoodMs`, so the metric this finding
+  asked for exists. Phase 3 compared `draw-items` and that counter instead of
+  frame p95, which stayed at 16.7/16.8 ms before and after as predicted. On the
+  CI shape `draw-items` p95 fell 20.4 → 4.9 ms and its total 2 130.8 → 71.6 ms
+  over the same 5 s pan and three-step zoom; on the reference shape 21.8 → 4.9 ms
+  and 2 083.0 → 76.4 ms. Frame max moved 33.4 → 33.3 ms (CI) and 49.9 → 33.4 ms
+  (reference), and frames over 20 ms 1 → 1 and 3 → 1. `draw-items` p95 now
+  includes the settle redraw (21.4 ms max); the per-frame raster paint is under
+  the 0.1 ms timer resolution at p50. See
+  [`docs/performance/history.md`](../performance/history.md).
 - **Related:** #348, #350, [`docs/performance/history.md`](../performance/history.md),
   `src/features/perfMonitor/model.ts`, `src/canvas/CanvasView.ts`.
+
+### F-147 — The reference pane still redraws every item during a primary pan
+
+- **Problem:** Gesture-time raster reuse starts from a pointer or wheel gesture
+  on the canvas that owns it. The read-only reference canvas attaches no pointer
+  gestures (`PointerController.attach()` returns early for a read-only view), so
+  it never begins a gesture; it follows the primary viewport and reproduces the
+  full `drawContent()` on every store "view" change. In split view the item cost
+  per pan frame is therefore unchanged there.
+- **Evidence:** `PointerController.attach()` returns early for a read-only
+  canvas, and `src/app/referenceController.ts` drives the reference pane's own
+  `TouchNavigation`. Phase 3's probe does not open split view, so this cost is
+  not in the phase 3 numbers. In a split-view pan the primary canvas now costs one
+  blit and the reference canvas still costs one `draw-items`.
+- **Impact:** Split view and the comparison pane keep their old pan cost, so the
+  30–96 % reduction measured in phase 3 applies to the primary canvas only. A
+  drawing pan is still smooth with split view open, but it is the dominant
+  remaining item-draw cost on that screen.
+- **Next step:** Phase 4's tile cache is scoped to the primary canvas and does
+  not close this. A later change could let the primary publish a follow
+  transform (the same gesture delta) so the reference pane reuses its own raster
+  for the duration of the gesture, or give the reference pane a reader-only
+  gesture signal. Decide with the tile-cache work, not before it.
+- **Related:** #350, [`docs/adr/0001-feature-modules.md`](../adr/0001-feature-modules.md),
+  `src/features/gestureRender/`.

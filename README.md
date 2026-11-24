@@ -420,6 +420,12 @@ and the support summary that **Copy diagnostics** appends. It is off until
 enabled in **Preferences → Diagnostics**, reads the same budget functions the
 app already enforces, and reports counts, durations and sizes only, never a
 project name, item label or path.
+`src/features/gestureRender/` reuses the previous content raster while a pan or a
+wheel zoom is in flight, transforming it with the gesture instead of redrawing
+every item, and redraws for real once the gesture settles (pointerup, or 120 ms
+after the last wheel event). The `interaction` canvas stays live throughout, so
+selection handles, the marquee, snapping and the draft overlay never lag. At rest
+the output is unchanged.
 The fields and spaces features in `src/features/fields/` and
 `src/features/spaces/` own typed property definitions, field sets, the room
 register and derived room areas; `src/features/schedules/` reads `spaceAreas()`

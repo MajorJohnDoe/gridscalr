@@ -5,6 +5,7 @@ import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import type { Point } from "../../model/types";
 import type { PageId } from "../../model/types";
 import { store } from "../../state/store";
+import type { GestureKind } from "../../features/gestureRender";
 import type { Viewport } from "../viewport";
 import type { MarqueeState, PanState } from "./pointerState";
 import { wheelZoomFactor } from "./wheel";
@@ -15,6 +16,8 @@ export interface NavigationContext {
   capturePointer(pointerId: number): void;
   updateCursor(): void;
   drawInteraction(): void;
+  beginViewGesture(kind: GestureKind): void;
+  endViewGesture(kind: GestureKind): void;
 }
 
 /** Pan and marquee state, including marquee hit testing. */
@@ -45,13 +48,19 @@ export class NavigationGesture {
     event.preventDefault();
     const factor = wheelZoomFactor(event);
     if (event.ctrlKey || event.metaKey) {
-      if (factor !== 1) zoomAt(localPoint, factor);
+      if (factor !== 1) {
+        this.context.beginViewGesture("wheel");
+        zoomAt(localPoint, factor);
+        this.context.endViewGesture("wheel");
+      }
       return;
     }
     const dx = event.shiftKey ? event.deltaY : event.deltaX;
     const dy = event.shiftKey ? 0 : event.deltaY;
     const view = this.context.viewport();
+    this.context.beginViewGesture("wheel");
     store.setView(view.zoom, view.panX - dx, view.panY - dy);
+    this.context.endViewGesture("wheel");
   }
 
   beginPan(clientX: number, clientY: number, pointerId: number): void {
@@ -63,6 +72,7 @@ export class NavigationGesture {
       panY: view.panY,
     };
     this.context.capturePointer(pointerId);
+    this.context.beginViewGesture("pointer");
     this.context.updateCursor();
   }
 
@@ -79,11 +89,8 @@ export class NavigationGesture {
     if (!this.pan) return false;
     this.pan = null;
     this.context.updateCursor();
+    this.context.endViewGesture("pointer");
     return true;
-  }
-
-  cancelPan(): void {
-    this.pan = null;
   }
 
   beginMarquee(page: Point, additive: boolean, pointerId: number): void {
@@ -140,5 +147,6 @@ export class NavigationGesture {
   cancelAll(): void {
     this.pan = null;
     this.marquee = null;
+    this.context.endViewGesture("pointer");
   }
 }

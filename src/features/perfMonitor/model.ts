@@ -89,6 +89,8 @@ export interface FrameWindow {
   p95: number;
   p99: number;
   max: number;
+  /** Frames at or above {@link FRAME_GOOD_MS}: work no longer inside a 60 Hz frame. */
+  overGoodMs: number;
   /** Milliseconds between the slowest frame and `now`. */
   worstAgoMs: number;
   fps: number;
@@ -184,6 +186,7 @@ export function frameWindow(
     p95: percentile(sorted, 0.95),
     p99: percentile(sorted, 0.99),
     max: sorted[sorted.length - 1],
+    overGoodMs: durations.filter((ms) => ms >= FRAME_GOOD_MS).length,
     worstAgoMs: Math.max(0, now - worstAt),
     fps: Math.min(240, (scope.length * 1000) / span),
   };
