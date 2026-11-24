@@ -279,20 +279,30 @@ pub(crate) fn reveal_file(file: &Path) -> Result<(), LaunchFailure> {
 #[cfg(windows)]
 fn send_with_mapi(file: &Path, subject: &str, body: &str) -> Result<(), String> {
     use std::os::windows::ffi::OsStrExt;
+    use windows_sys::Win32::Foundation::FreeLibrary;
+    use windows_sys::Win32::System::LibraryLoader::{GetProcAddress, LoadLibraryW};
     use windows_sys::Win32::System::Mapi::{
         MapiFileDescW, MapiMessageW, MAPI_DIALOG, MAPI_E_USER_ABORT, MAPI_LOGON_UI, SUCCESS_SUCCESS,
     };
 
-    #[link(name = "mapi32")]
-    unsafe extern "system" {
-        fn MAPISendMailW(
-            lhsession: usize,
-            uluiparam: usize,
-            lpmessage: *const MapiMessageW,
-            flflags: u32,
-            ulreserved: u32,
-        ) -> u32;
+    // Resolve at runtime instead of through an import library: MAPI32.dll is a
+    // system component, and the SDK import library does not export the Unicode
+    // entry point on every toolchain. A missing entry point falls back to
+    // Outlook; it never becomes a load-time failure for the whole app.
+    type MapiSendMailW =
+        unsafe extern "system" fn(usize, usize, *const MapiMessageW, u32, u32) -> u32;
+
+    let module_name: Vec<u16> = "mapi32.dll\0".encode_utf16().collect();
+    let module = unsafe { LoadLibraryW(module_name.as_ptr()) };
+    if module.is_null() {
+        return Err("mapi32.dll unavailable".to_string());
     }
+    let Some(procedure) = (unsafe { GetProcAddress(module, c"MAPISendMailW".as_ptr().cast()) })
+    else {
+        unsafe { FreeLibrary(module) };
+        return Err("MAPISendMailW unavailable".to_string());
+    };
+    let send_mail: MapiSendMailW = unsafe { std::mem::transmute(procedure) };
 
     fn wide(value: &str) -> Vec<u16> {
         value.encode_utf16().chain(std::iter::once(0)).collect()
@@ -331,7 +341,8 @@ fn send_with_mapi(file: &Path, subject: &str, body: &str) -> Result<(), String> 
         nFileCount: 1,
         lpFiles: &mut attachment,
     };
-    let code = unsafe { MAPISendMailW(0, 0, &message, MAPI_LOGON_UI | MAPI_DIALOG, 0) };
+    let code = unsafe { send_mail(0, 0, &message, MAPI_LOGON_UI | MAPI_DIALOG, 0) };
+    unsafe { FreeLibrary(module) };
     if code == SUCCESS_SUCCESS || code == MAPI_E_USER_ABORT {
         Ok(())
     } else {

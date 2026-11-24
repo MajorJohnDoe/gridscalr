@@ -146,8 +146,10 @@ plans live in `src-tauri/src/mail_launch.rs`.
   programs are `xdg-email`, `thunderbird`, `osascript`, `open`, `explorer.exe`
   and `outlook.exe`.
 - Windows prefers Simple MAPI through `MAPISendMailW` in the system
-  `mapi32.dll`, using the reviewed `windows-sys` struct definitions and
-  `MAPI_LOGON_UI | MAPI_DIALOG`; `outlook.exe /a` is the fallback. macOS passes
+  `mapi32.dll`, resolved at runtime with `LoadLibraryW` and `GetProcAddress`
+  using the reviewed `windows-sys` struct definitions and
+  `MAPI_LOGON_UI | MAPI_DIALOG`; a missing DLL or entry point, or a MAPI error,
+  falls back to `outlook.exe /a` instead of failing the app at load time. macOS passes
   the path, subject and body as `osascript` run arguments, never as AppleScript
   source. Thunderbird's single `-compose` argument is stripped of quotes,
   commas and line breaks so it cannot gain a second field.
