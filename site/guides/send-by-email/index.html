@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Send a drawing by e-mail from GridScalr</title>
+    <meta
+      name="description"
+      content="Export the marked-up drawing PDF and open a new, unsent draft in your local mail client — Outlook, Mail or Thunderbird. Webmail is not supported."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/guides/send-by-email/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/send-by-email/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/skicka-ritning-mejl/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/send-by-email/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Send a drawing by e-mail from GridScalr" />
+    <meta
+      property="og:description"
+      content="Export the marked-up drawing PDF and open a new, unsent draft in your local mail client — Outlook, Mail or Thunderbird. Webmail is not supported."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/guides/send-by-email/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Send a drawing by e-mail from GridScalr" />
+    <meta
+      name="twitter:description"
+      content="Export the marked-up drawing PDF and open a new, unsent draft in your local mail client — Outlook, Mail or Thunderbird. Webmail is not supported."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Send a drawing by e-mail from GridScalr",
+        "url": "https://majorjohndoe.github.io/gridscalr/guides/send-by-email/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Send a drawing by e-mail from GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/send-by-email/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does GridScalr send the e-mail?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. It opens an unsent draft in your local mail client and leaves sending, recipients and any client prompt to you. Nothing leaves the machine automatically."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use webmail such as Gmail in a browser?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. A mailto: link cannot carry an attachment, so webmail in a browser is not supported. Use a desktop mail client, or export the PDF and attach it yourself."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Where does the attached PDF come from?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "From the drawing-export dialog, written to the app cache folder mail-outbox. The ten most recent attachments are kept and older ones are deleted at the next launch or export. The project file and the source drawing are never attached or modified."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a href="{{ROOT}}guides/send-by-email/" hreflang="en" lang="en" aria-current="page"
+            >English</a
+          >
+          <a href="{{ROOT}}sv/guider/skicka-ritning-mejl/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>Send a drawing by e-mail from GridScalr</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Send a drawing by e-mail from GridScalr</h1>
+          <p class="lede">
+            Open the marked-up drawing as an unsent draft in your local mail client, with the PDF
+            already attached.
+          </p>
+          <p class="guide-meta">Updated 24 November 2026 · 4 min read</p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#export">Pick the drawing and export it</a></li>
+            <li><a href="#draft">What the mail client receives</a></li>
+            <li><a href="#fallback">When no draft opens</a></li>
+            <li><a href="#limits">Webmail and the browser build</a></li>
+            <li><a href="#mistakes">Common mistakes</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              Choose <b>File → Send &amp; share → Send by e-mail…</b>. GridScalr opens the same
+              drawing-export dialog as <b>Drawing PDF…</b>, then starts a new, unsent draft in your
+              local mail client with <b>&lt;project&gt;-markups.pdf</b> attached. Nothing is sent
+              automatically, and the source drawing is never modified.
+            </p>
+          </div>
+
+          <h2 id="export">Pick the drawing and export it</h2>
+          <p>
+            The e-mail action does not take a shortcut past the export settings. Page range, crop
+            area, visible layers, labels, the calibration line, the legend, optional reader layers
+            and review annotations follow the same rules as any other drawing PDF. Hidden items and
+            hidden layers are never attached. When the export has finished, the mail client opens
+            with the file already on the draft.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>One export dialog, two destinations</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/export.webp"
+              data-lightbox
+              aria-label="Click to enlarge: The drawing-export dialog chooses pages, crop area, visible layers and the legend before the PDF is attached."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/export.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Drawing export dialog in GridScalr with page selection, crop area, layer selection and a legend."
+              />
+            </a>
+            <figcaption>
+              <span
+                >The drawing-export dialog chooses pages, crop area, visible layers and the legend
+                before the PDF is attached.</span
+              >
+            </figcaption>
+          </figure>
+
+          <h2 id="draft">What the mail client receives</h2>
+          <p>
+            The draft is addressed to nobody until you add a recipient. Add the subject and message
+            in your usual client, then send it there. On Windows, GridScalr prefers Simple MAPI
+            through the default MAPI client, usually <b>Outlook</b>, and falls back to
+            <b>outlook.exe /a</b>. On macOS it drives <b>Mail</b> through
+            <b>osascript</b>, which may ask for Automation permission the first time. On Linux it
+            prefers <b>xdg-email --attach</b> and falls back to <b>Thunderbird</b>. Your client may
+            still show its own profile, security or attachment prompt; that prompt belongs to the
+            client.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>The drawing behind the attachment</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/hero.webp"
+              data-lightbox
+              aria-label="Click to enlarge: The measured drawing is exported from the current project, so the recipient sees the same visible content."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="A calibrated industrial plan in GridScalr with the page list, measurements and the Properties panel."
+              />
+            </a>
+            <figcaption>
+              <span
+                >The measured drawing is exported from the current project, so the recipient sees
+                the same visible content.</span
+              >
+            </figcaption>
+          </figure>
+
+          <h2 id="fallback">When no draft opens</h2>
+          <p>
+            If no mail client opens, GridScalr names the saved PDF and offers <b>Show file</b>, so a
+            failed launch is never silent. You can then attach the file yourself in whatever mail
+            client you use. The attachment is written to the app cache folder
+            <b>mail-outbox</b>, which keeps the ten most recent attachments and deletes older ones
+            at the next launch or export.
+          </p>
+
+          <h2 id="limits">Webmail and the browser build</h2>
+          <p>
+            Webmail in a browser is not supported, because a <b>mailto:</b> link cannot carry an
+            attachment. Send by e-mail is a desktop action and is disabled in the browser fallback.
+            Nothing is sent automatically, the project file is never attached, and closing the draft
+            without sending is your choice, not an app failure.
+          </p>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>Expecting the draft to carry a recipient; the recipient is always yours to add.</li>
+            <li>Choosing webmail and expecting the PDF to be attached by a mailto: link.</li>
+            <li>
+              Assuming a client prompt means the export failed; read the prompt and confirm it in
+              the mail client.
+            </li>
+            <li>Sending before checking the page range, crop and visible layers in the export dialog.</li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Does GridScalr send the e-mail?</summary>
+              <p>
+                No. It opens an unsent draft in your local mail client and leaves sending,
+                recipients and any client prompt to you. Nothing leaves the machine automatically.
+              </p>
+            </details>
+            <details>
+              <summary>Can I use webmail such as Gmail in a browser?</summary>
+              <p>
+                No. A mailto: link cannot carry an attachment, so webmail in a browser is not
+                supported. Use a desktop mail client, or export the PDF and attach it yourself.
+              </p>
+            </details>
+            <details>
+              <summary>Where does the attached PDF come from?</summary>
+              <p>
+                From the drawing-export dialog, written to the app cache folder mail-outbox. The ten
+                most recent attachments are kept and older ones are deleted at the next launch or
+                export. The project file and the source drawing are never attached or modified.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}guides/mark-a-deviation/"
+              ><b>Mark a deviation on a drawing</b
+              ><span>The annotation you may want in the drawing you send.</span></a
+            >
+            <a href="{{ROOT}}features/"
+              ><b>All features</b
+              ><span>Every export and report, including the drawing PDF.</span></a
+            >
+            <a href="{{ROOT}}guides/compare-revisions/"
+              ><b>Compare two drawing revisions</b
+              ><span>Check the change before the drawing leaves your desk.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Send your next drawing from the project</h2>
+            <p>
+              Open the demo project, export the marked-up plan and see the draft appear in the mail
+              client you already use.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a class="button secondary" data-release-page href="{{RELEASE_URL}}"
+              >Release page and checksums</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>
