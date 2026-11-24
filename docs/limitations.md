@@ -166,6 +166,10 @@ release candidate; a regression beyond a budget blocks the release. The memory
 row stays a manual desktop check: the browser fallback and WebKit report no
 working set, and `performance.memory` exists on WebView2 only.
 
+The measured baseline for each optimization phase, with the commit, machine
+profile and run-to-run variance, is in
+[`docs/performance/history.md`](performance/history.md).
+
 | Measure | Budget | Notes |
 | --- | --- | --- |
 | p95 edit latency | under 100 ms | A single history-tracked mutation in the reference project. |

@@ -181,6 +181,8 @@ export class CanvasView {
   private imageCache = new Map<string, HTMLImageElement>();
   private imageLoading = new Set<string>();
   private imageFailed = new Set<string>();
+  /** Depth of a nested draw stage; a stage inside another stage is not timed twice. */
+  private drawSpanDepth = 0;
 
   constructor(host: HTMLElement, hooks: CanvasHooks, options: CanvasViewOptions = {}) {
     this.host = host;
@@ -1116,7 +1118,29 @@ export class CanvasView {
     });
   }
 
+  /**
+   * Times one draw stage. `drawAll` runs both stages inside `canvas-redraw`, so
+   * the depth guard keeps a stage that is called from another stage from being
+   * counted twice; the named span always measures real work.
+   */
+  private timedDraw(name: "draw-base" | "draw-items", run: () => void): void {
+    if (this.drawSpanDepth > 0) {
+      run();
+      return;
+    }
+    this.drawSpanDepth += 1;
+    try {
+      perfSpan(name, run);
+    } finally {
+      this.drawSpanDepth -= 1;
+    }
+  }
+
   private drawBase(): void {
+    this.timedDraw("draw-base", () => this.drawBaseStage());
+  }
+
+  private drawBaseStage(): void {
     const ctx = this.baseCtx;
     this.prepare(ctx);
     const project = this.sceneProject;
@@ -1186,6 +1210,10 @@ export class CanvasView {
   }
 
   private drawContent(): void {
+    this.timedDraw("draw-items", () => this.drawContentStage());
+  }
+
+  private drawContentStage(): void {
     const ctx = this.contentCtx;
     this.prepare(ctx);
     const project = this.sceneProject;
