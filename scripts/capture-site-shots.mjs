@@ -242,7 +242,19 @@ async function captureSet(page, locale, outDir) {
   await fitWholePage(page, 0.96);
   await shoot("operation-card.png");
 
-  // 6. Calibration and export.
+  // 6. Expanded measurement layer.
+  await setPage(page, 1);
+  await focusItem(page, "item_floor_living", 1);
+  await page.evaluate(() => window.__gridscalr.store.clearSelection());
+  await page.locator('.dock-tab[data-tab="layers"]').click();
+  const layerName = locale === "sv" ? "Mätningar" : "Measurements";
+  const layerRow = page.locator(".layer-row").filter({ hasText: layerName }).first();
+  const expand = layerRow.getByRole("button", { name: /Expand|Expandera/ });
+  if (await expand.count()) await expand.click();
+  await wait(page, 600);
+  await shoot("layers.png");
+
+  // 7. Calibration and export.
   await setPage(page, 1);
   await fitWholePage(page, 0.95);
   const points = await page.evaluate(() => {
