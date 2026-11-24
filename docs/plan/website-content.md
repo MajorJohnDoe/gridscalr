@@ -1,10 +1,10 @@
 # Webbplatsen: innehåll, guider och organisk trafik
 
 Status: fas 0 och 1 klara (tema, `site:capture`, startsida, tre uppgiftssidor). Guideindex
-och nio guider publicerade, inklusive de två definitionerna och Bluebeam-jämförelsen.
-Funktionssidan är ombyggd med skärmbilder per språk. Guideomgången är klar förutom fem
-kvarvarande ämnen: bruttoarea/nettoarea, driftkortsmall, driftkort ventilation, rumsarea och
-Excel-jämförelse. Roll-, metod- och installationssidor samt resterande guider återstår.
+och fjorton guider publicerade, inklusive de två definitionerna och de två jämförelserna.
+Guidekatalogen är därmed komplett. Dörr- och fönsterguiden är medvetet inte planerad.
+Funktionssidan är ombyggd med skärmbilder per språk. Roll-, metod- och installationssidor
+samt `/nyheter/` återstår.
 Godkänd visuell riktning (skiss 4): ljus yta, Slate-paletten från appen, stora skärmbilder i
 full bredd, riktig appikon, svenska först.
 
@@ -113,7 +113,7 @@ lär ut arbetsgången, uppgiftssidan säljer att programmet gör den.
 | `/guider/vad-ar-mangdning/` | `/en/guides/what-is-takeoff/` | Definition, topp-funnel | Ny |
 | `/guider/vad-ar-ett-driftkort/` | `/en/guides/what-is-an-operation-card/` | Definition, topp-funnel | Ny |
 | `/jamfor/bluebeam/` | `/compare/bluebeam/` | Ärlig jämförelse | Publicerad |
-| `/jamfor/excel/` | `/en/compare/excel/` | När kalkylark räcker | Senare |
+| `/jamfor/excel/` | `/en/compare/excel/` | När kalkylark räcker | Publicerad |
 | `/nyheter/` | `/en/changelog/` | Release notes som HTML | Ny, genereras |
 | `/funktioner/` | `/en/features/` | Full funktionskatalog | Behålls, uppdateras |
 
@@ -162,9 +162,12 @@ sökfras vi själva hittat på. "Mäta area i pdf" slår "local-first takeoff".
 
 ## 6. Guidekatalog
 
-Guiderna är sajtens motor. Tolv guider i två omgångar, plus två definitioner och två
-jämförelser. Varje guide ska kunna läsas fristående och innehålla ett reproducerbart
-exempel från demoprojektet.
+Guiderna är sajtens motor. Tio arbetsguider i två omgångar, plus två definitioner och två
+jämförelser — fjorton sidor totalt. Katalogen är komplett. Dörrar och fönster är medvetet
+inte planerad: en antalstabell för dörrar och fönster skulle kräva attribut som appen inte
+lagrar (se `docs/limitations.md`), och guiden ska inte beskriva ett stöd som inte finns.
+Varje guide kan läsas fristående och innehåller ett reproducerbart exempel från
+demoprojektet.
 
 ### Omgång 1 — kärnan (publiceras med uppgiftssidorna)
 
@@ -185,7 +188,6 @@ exempel från demoprojektet.
 | `jamfora-ritningar` | Jämför två ritningsrevisioner | jämföra ritningar | Sida vid sida, överlagring, skillnadslista, innan beställning. |
 | `markera-avvikelse` | Markera en avvikelse på rätt sida | markera avvikelse ritning | Lager för markeringar, moln, hänvisning, stämpel, export till entreprenör. |
 | `rumsarea` | Mät rumsarea och koppla den till rummet | rumsarea | Rum och våning, uppmätt vs manuell area, varning vid saknad area. |
-| `mangdning-excel` | När räcker Excel — och när gör det inte? | mängdning i excel | Ärlig jämförelse: engångsjobb vs återkommande, spårbarhet, revision. |
 
 ### Definitioner och jämförelser
 

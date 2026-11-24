@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gross area and net area: what is the difference?</title>
+    <meta
+      name="description"
+      content="Gross area is what you measure; net area is what you order. See how deductions work, why waste applies to the net, and how to check both before export."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/guides/gross-and-net-area/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/gross-and-net-area/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/bruttoarea-nettoarea/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/gross-and-net-area/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Gross area and net area: what is the difference?" />
+    <meta
+      property="og:description"
+      content="Gross area is what you measure; net area is what you order. See how deductions work, why waste applies to the net, and how to check both before export."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/guides/gross-and-net-area/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Gross area and net area: what is the difference?" />
+    <meta
+      name="twitter:description"
+      content="Gross area is what you measure; net area is what you order. See how deductions work, why waste applies to the net, and how to check both before export."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Gross area and net area: what is the difference?",
+        "url": "https://majorjohndoe.github.io/gridscalr/guides/gross-and-net-area/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Gross area and net area: what is the difference?",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/gross-and-net-area/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is net area the same as BOA?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Not automatically. BOA is a statutory living-area term with its own rules. Net area here is your gross minus your deductions, and it is comparable to BOA only when the measurement and the deductions follow the same rules."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Where is the deduction subtracted?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Inside the same category and room as the gross measurement. A deduction in another group does not reduce the row you are looking at."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does waste apply to the gross or the net?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The net. Waste and rounding are applied to the quantity that will actually be installed or covered, after deductions."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a href="{{ROOT}}guides/gross-and-net-area/" hreflang="en" lang="en" aria-current="page"
+            >English</a
+          >
+          <a href="{{ROOT}}sv/guider/bruttoarea-nettoarea/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>Gross area and net area: what is the difference?</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Gross area and net area: what is the difference?</h1>
+          <p class="lede">
+            The gross is what the drawing shows. The net is what you can order. The gap is made of
+            deductions, and it has to be deliberate.
+          </p>
+          <p class="guide-meta">
+            Updated 24 November 2026 · 5 min read · Checked against GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#terms">The terms in plain language</a></li>
+            <li><a href="#deductions">Why deductions exist</a></li>
+            <li><a href="#record">Record the gross and the deduction</a></li>
+            <li><a href="#to-order">From net to order</a></li>
+            <li><a href="#check">Check before you export</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              Gross area is the full measured area of a space. Net area is the gross minus
+              deductions such as shafts, openings and other areas that will not be ordered.
+              GridScalr keeps both visible, subtracts the deduction inside the same category and
+              room, and applies waste to the net.
+            </p>
+          </div>
+
+          <h2 id="terms">The terms in plain language</h2>
+          <p>
+            In everyday Swedish use, <b>BTA</b> (bruttoarea) is the gross floor area inside the
+            external walls, and <b>BOA</b> (boarea) is the living area within it. English drawings
+            use gross and net in much the same way: one figure describes the whole enclosed space,
+            the other describes what the space can be used or ordered for.
+          </p>
+          <p>
+            The statutory definitions have exceptions and belong to the Swedish area standard, not
+            to this app. GridScalr does not calculate a BTA or BOA classification. It records your
+            gross measurement, your deductions and the arithmetic between them, and leaves the
+            classification to the person who owns it.
+          </p>
+          <h2 id="deductions">Why deductions exist</h2>
+          <p>
+            A deduction is an area you measured but do not want in the order. A lift shaft, a stair
+            opening, a duct riser or a void above a suspended ceiling all take space without taking
+            material. If they stay in the gross, the order is too large; if they are deleted, the
+            drawing no longer shows what was measured.
+          </p>
+          <p>
+            GridScalr therefore keeps the deduction as its own measurement marked <b>Deduct</b>. It
+            is subtracted inside the same category and room, so the gross stays readable and the net
+            stays explainable. A deduction that exceeds its gross is clamped to zero and the row
+            shows a warning rather than a negative quantity.
+          </p>
+          <h2 id="record">Record the gross and the deduction</h2>
+          <p>
+            Draw the full area first, then switch <b>Area mode</b> to <b>Deduct</b> in the
+            measurement flyout and draw the shaft or opening. Use the same category and room as the
+            gross measurement, because a deduction only offsets inside its own group. Give the
+            deduction a label such as <b>Shaft 01</b> so the next reader knows why it is there.
+          </p>
+          <p>
+            This is deliberately two measurements rather than one polygon with a hole. The gross
+            stays visible in the quantity report, the deduction can be reviewed on its own, and if
+            the shaft is moved or resized later, the deduction stays a separate row.
+          </p>
+          <h2 id="to-order">From net to order</h2>
+          <p>
+            The order dialog reads the items, not a separate spreadsheet. Each row shows gross,
+            deduction, net, waste and order quantity for one category, room and measurement type.
+            Waste is calculated on the net, never on the gross, because material is bought for the
+            area that will actually be covered.
+          </p>
+          <p>
+            Hidden items and hidden layers are excluded from the calculation, while locked but
+            visible items are included. That is the same rule the canvas, the Markups CSV and every
+            export use, so a quantity cannot quietly disagree with the drawing.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>From net to order</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/order.webp"
+              data-lightbox
+              aria-label="Click to enlarge: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/order.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The order dialog shows gross, deduction, net, waste and order quantity per row; here the warehouse floor has no deduction."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+          <h2 id="check">Check before you export</h2>
+          <p>
+            Before the order leaves the app, check four things. Every gross area has the deductions
+            that belong to it; each deduction sits in the same category and room; no row shows a
+            clamped deduction warning; and waste and rounding are set on the material that needs
+            them.
+          </p>
+          <p>
+            The takeoff table and the PDF report read the same rows as the order dialog. If the
+            numbers look wrong in one place, they are wrong everywhere, which is the point: there is
+            one source and no second copy to reconcile.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Check before you export</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/table.webp"
+              data-lightbox
+              aria-label="Click to enlarge: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/table.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The schedule groups the measured objects by category, beside the plan."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>Deducting in another room or category, where the subtraction has no effect.</li>
+            <li>Applying waste to the gross area instead of the net.</li>
+            <li>
+              Deleting the shaft from the drawing instead of measuring it as a deduction, so the
+              gross is no longer reviewable.
+            </li>
+            <li>
+              Presenting the net as a statutory BOA figure without applying the standard's own
+              rules.
+            </li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Is net area the same as BOA?</summary>
+              <p>
+                Not automatically. BOA is a statutory living-area term with its own rules. Net area
+                here is your gross minus your deductions, and it is comparable to BOA only when the
+                measurement and the deductions follow the same rules.
+              </p>
+            </details>
+            <details>
+              <summary>Where is the deduction subtracted?</summary>
+              <p>
+                Inside the same category and room as the gross measurement. A deduction in another
+                group does not reduce the row you are looking at.
+              </p>
+            </details>
+            <details>
+              <summary>Does waste apply to the gross or the net?</summary>
+              <p>
+                The net. Waste and rounding are applied to the quantity that will actually be
+                installed or covered, after deductions.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}quantity-takeoff/"
+              ><b>Quantity takeoff</b><span>The task page for net, waste and exports.</span></a
+            >
+            <a href="{{ROOT}}guides/waste-and-rounding/"
+              ><b>Waste and rounding</b><span>How the net becomes an order quantity.</span></a
+            >
+            <a href="{{ROOT}}guides/area-pdf/"
+              ><b>Measure area in a PDF</b><span>Where the gross measurement comes from.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Compare gross and net on the demo</h2>
+            <p>
+              The demo project has a measured warehouse floor and a separate deduction, so the order
+              dialog can be checked row by row.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Get the demo project</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>

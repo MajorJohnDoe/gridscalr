@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Operation card template: the fields to include</title>
+    <meta
+      name="description"
+      content="A practical operation card template: property, system, date, handled by, signature, page, revision and the reference back to the plan, with a checklist."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/guides/operation-card-fields/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/operation-card-fields/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/driftkort-mall/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/operation-card-fields/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Operation card template: the fields to include" />
+    <meta
+      property="og:description"
+      content="A practical operation card template: property, system, date, handled by, signature, page, revision and the reference back to the plan, with a checklist."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/guides/operation-card-fields/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Operation card template: the fields to include" />
+    <meta
+      name="twitter:description"
+      content="A practical operation card template: property, system, date, handled by, signature, page, revision and the reference back to the plan, with a checklist."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Operation card template: the fields to include",
+        "url": "https://majorjohndoe.github.io/gridscalr/guides/operation-card-fields/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Operation card template: the fields to include",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/operation-card-fields/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is there a required operation card standard?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "GridScalr does not enforce one format. The built-in template provides a title block and revision table; adapt the field values to the documentation practice of the property."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does the Page field update automatically?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. It is free text, prefilled with the sheet ordinal, and it is not renumbered when sheets are added or removed."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are the sheet fields exported when layers are hidden?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Sheet fields are drawn into the PDF even when every layer is hidden, and the exported text is searchable."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a
+            href="{{ROOT}}guides/operation-card-fields/"
+            hreflang="en"
+            lang="en"
+            aria-current="page"
+            >English</a
+          >
+          <a href="{{ROOT}}sv/guider/driftkort-mall/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>Operation card template: the fields to include</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Operation card template: the fields to include</h1>
+          <p class="lede">
+            A card without an owner, a date and a revision is a sketch. These are the fields that
+            make it usable.
+          </p>
+          <p class="guide-meta">
+            Updated 24 November 2026 · 5 min read · Checked against GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#title-block">Property, system and unit</a></li>
+            <li><a href="#responsibility">Date, handled by and signature</a></li>
+            <li><a href="#page-revision">Page and revision</a></li>
+            <li><a href="#reference">The reference back to the plan</a></li>
+            <li><a href="#checklist">Before you export</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              A complete operation card names the property, the system and the unit, the date, who
+              handled it and a signature. It carries a page number, a revision table and a reference
+              back to the plan, so the next technician can find the drawing and see what changed.
+            </p>
+          </div>
+
+          <h2 id="title-block">Property, system and unit</h2>
+          <p>
+            The title block starts with the project name, which is where the property belongs. Then
+            name the system and the unit, for example the air handling unit <b>LB01</b>, so the card
+            can be filed and found by the same designation the rest of the documentation uses. The
+            built-in template has fields for <b>Project name</b>, <b>System</b>,
+            <b>Operation card</b> and <b>Assignment no.</b>
+          </p>
+          <p>
+            Use one card per system. A card that mixes two units is hard to revise and harder to
+            hand over, because a change to one unit forces a new revision of both.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Property, system and unit</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/operation-card.webp"
+              data-lightbox
+              aria-label="Click to enlarge: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/operation-card.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="An A3 operation card with a filled title block, revision table and schematic symbols on drawing layers."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+          <h2 id="responsibility">Date, handled by and signature</h2>
+          <p>
+            The card needs to say when it was produced or checked, who did the work and who signed
+            it. The template provides <b>Date</b>, <b>Handled by/Consultant</b> and <b>Sign</b>. A
+            date without a name is not traceable, and a name without a date cannot be placed in the
+            project's history.
+          </p>
+          <p>
+            The signature is not decoration. It marks the point where someone accepted that the
+            schematic matches the installation. If the card is later changed by someone else, the
+            revision table records that too, and the original sign-off stays in the revision table.
+          </p>
+          <h2 id="page-revision">Page and revision</h2>
+          <p>
+            The <b>Page</b> field is free text, prefilled with the sheet's ordinal and never
+            renumbered automatically. Write the page designation the property actually uses, and
+            check it after sheets are inserted or removed. Do not use the page number as the unit
+            designation; the unit's own tag belongs in the system field.
+          </p>
+          <p>
+            The revision table is where changes are recorded. Each row carries the reference, what
+            the revision refers to, the date and a signature. Add a row whenever a component,
+            setpoint or control strategy changes, even if the drawing itself looks the same.
+          </p>
+          <h2 id="reference">The reference back to the plan</h2>
+          <p>
+            An operation card is schematic, not architectural, so it cannot show where the unit sits
+            in the building. The <b>Ref.</b> and <b>Rev. refers to</b> fields connect the card to
+            the plan: the drawing number, the room or the detail that the reader needs in order to
+            find the physical installation.
+          </p>
+          <p>
+            Write the reference the same way the drawing set writes it. A room number alone is not
+            enough if the plan has several buildings, and a drawing number alone is not enough if
+            the reader does not know which revision of the plan is current.
+          </p>
+          <h2 id="checklist">Before you export</h2>
+          <p>
+            Open <b>Edit sheet fields…</b>, or double-click a cell, and fill every field that
+            applies. Check that the revision row matches the change you made, and that the reference
+            points at the plan revision that is actually in use. Then export the drawing PDF.
+          </p>
+          <p>
+            Sheet fields are drawn into the PDF even when every layer is hidden, and the exported
+            text is searchable. Hiding a layer never hides the title block or the data table, so a
+            clean export still carries its ownership and revision.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Before you export</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/layers.webp"
+              data-lightbox
+              aria-label="Click to enlarge: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The Layers panel keeps drawing layers and measurement layers apart; a symbol or note belongs on a drawing layer."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>
+              Filling the title block after the drawing, so the card has no date, owner or revision.
+            </li>
+            <li>Using the page number as the unit designation instead of the system's own tag.</li>
+            <li>Adding a component without adding a revision row.</li>
+            <li>Expecting the free-text Page field to renumber itself when sheets are inserted.</li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Is there a required operation card standard?</summary>
+              <p>
+                GridScalr does not enforce one format. The built-in template provides a title block
+                and revision table; adapt the field values to the documentation practice of the
+                property.
+              </p>
+            </details>
+            <details>
+              <summary>Does the Page field update automatically?</summary>
+              <p>
+                No. It is free text, prefilled with the sheet ordinal, and it is not renumbered when
+                sheets are added or removed.
+              </p>
+            </details>
+            <details>
+              <summary>Are the sheet fields exported when layers are hidden?</summary>
+              <p>
+                Yes. Sheet fields are drawn into the PDF even when every layer is hidden, and the
+                exported text is searchable.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}operation-cards/"
+              ><b>Operation cards</b><span>The task page for sheets, symbols and export.</span></a
+            >
+            <a href="{{ROOT}}guides/what-is-an-operation-card/"
+              ><b>What is an operation card?</b
+              ><span>The document, its purpose and who uses it.</span></a
+            >
+            <a href="{{ROOT}}guides/operation-card-ventilation/"
+              ><b>Ventilation operation card</b
+              ><span>The same fields applied to an air handling unit.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Fill in the demo card</h2>
+            <p>
+              The demo project includes LB01 with a filled title block, so you can compare the
+              fields with a real sheet.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Get the demo project</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>

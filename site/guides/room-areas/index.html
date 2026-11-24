@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Room areas: measured, manual and linked</title>
+    <meta
+      name="description"
+      content="Measure a room area, link the measurements to the room and read the register per building and floor. See how missing-area warnings work before export."
+    />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/guides/room-areas/" />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/room-areas/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/rumsarea/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/room-areas/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Room areas: measured, manual and linked" />
+    <meta
+      property="og:description"
+      content="Measure a room area, link the measurements to the room and read the register per building and floor. See how missing-area warnings work before export."
+    />
+    <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/guides/room-areas/" />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Room areas: measured, manual and linked" />
+    <meta
+      name="twitter:description"
+      content="Measure a room area, link the measurements to the room and read the register per building and floor. See how missing-area warnings work before export."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Room areas: measured, manual and linked",
+        "url": "https://majorjohndoe.github.io/gridscalr/guides/room-areas/",
+        "inLanguage": "en",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guides",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Measure a room area and link it to the room",
+            "item": "https://majorjohndoe.github.io/gridscalr/guides/room-areas/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does a linked measurement update the room area?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The room sums its visible linked area measurements, additions minus deductions, and recalculates when a linked measurement changes."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What does Missing mean?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The room has no usable area: nothing is linked, or a linked measurement has no page scale. GridScalr shows the warning instead of a partial sum."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I type an area instead of measuring?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, as a manual area. It is a fallback while nothing is linked; as soon as an area measurement is linked, the measured value wins."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="{{ROOT}}area-takeoff/">Areas</a>
+          <a href="{{ROOT}}operation-cards/">Operation cards</a>
+          <a href="{{ROOT}}quantity-takeoff/">Quantities</a>
+          <a href="{{ROOT}}guides/" aria-current="page">Guides</a>
+          <a href="{{ROOT}}features/">Features</a>
+          <a href="{{ROOT}}#download">Download</a>
+          <a href="{{ROOT}}#docs">Docs</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a href="{{ROOT}}guides/room-areas/" hreflang="en" lang="en" aria-current="page"
+            >English</a
+          >
+          <a href="{{ROOT}}sv/guider/rumsarea/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}guides/">Guides</a
+            ><span>/</span>
+            <span>Measure a room area and link it to the room</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Measure a room area and link it to the room</h1>
+          <p class="lede">
+            The drawing holds the measurement. The register holds the room. Linking them is what
+            makes the area reviewable.
+          </p>
+          <p class="guide-meta">
+            Updated 24 November 2026 · 5 min read · Checked against GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#register">Build the register first</a></li>
+            <li><a href="#measured-manual">Measured or manual area</a></li>
+            <li><a href="#link">Link the measurements</a></li>
+            <li><a href="#warnings">Read the warnings</a></li>
+            <li><a href="#check">Check per floor and building</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Download GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Short answer</h2>
+            <p>
+              Draw the room as an area measurement, open View → Spaces… and link the measurement to
+              the room. A measured room sums its visible linked areas minus deductions, while a
+              manual value is only a fallback. A room without a usable area shows Missing instead of
+              a partial sum.
+            </p>
+          </div>
+
+          <h2 id="register">Build the register first</h2>
+          <p>
+            The space register at <b>View → Spaces…</b> is a tree: a building contains floors, and a
+            floor contains rooms or zones. Each room has a room number, a name, a floor, a usage and
+            a status, and can optionally be linked to one drawing page. The structure is what lets
+            you read areas per floor and per building instead of one flat list.
+          </p>
+          <p>
+            <b>Create rooms from the room text</b> starts from the room names already on the
+            measurements. It creates root-level rooms and never links a measurement, so move them
+            under the right building and floor as a separate, deliberate step.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Build the register first</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/spaces.webp"
+              data-lightbox
+              aria-label="Click to enlarge: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/spaces.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The space register shows a missing area on a floor and a measured 484 m² warehouse beside a manual 24.5 m² office."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+          <h2 id="measured-manual">Measured or manual area</h2>
+          <p>
+            <b>Measured from linked area measurements</b> sums the visible area measurements linked
+            to the space: additions minus deductions, converted to m². <b>Manual area</b> stores a
+            value you type. The area is never stored twice, and a linked measurement always wins
+            over a manual value.
+          </p>
+          <p>
+            The manual value is a fallback for a room that cannot be measured, for example a
+            corridor outside the drawing set. When a measurement is linked, the row reports that the
+            manual value is not used, so nobody has to guess which figure is current.
+          </p>
+          <h2 id="link">Link the measurements</h2>
+          <p>
+            Select one or more area measurements on the drawing, open <b>View → Spaces…</b> and use
+            the link action on the room row. The hint under the buttons names how many area
+            measurements are selected. Only area measurements can be linked, and a locked
+            measurement cannot be linked.
+          </p>
+          <p>
+            A link moves the measurement into the room; linking it to another room moves it again.
+            The search action on a room selects its first visible linked measurement and zooms to
+            it, which is the fastest way to check that the right polygon belongs to the right room.
+          </p>
+          <h2 id="warnings">Read the warnings</h2>
+          <p>
+            <b>Missing</b> means the room has no usable area: nothing is linked, or a linked
+            measurement has no page scale. GridScalr never falls back to a manual value on its own
+            and never shows a partial sum as if it were complete. A missing area is a prompt to
+            measure, link or set a manual fallback, not a number to ignore.
+          </p>
+          <p>
+            Hidden measurements and hidden layers are excluded from the sum, while locked
+            measurements are included. That matches the quantity report and every export. A
+            deduction applies inside its own category and room, so a shaft linked to the wrong room
+            leaves both rooms wrong. The register always reports m², even when the project uses
+            another area unit for measurements.
+          </p>
+          <h2 id="check">Check per floor and building</h2>
+          <p>
+            The <b>Rooms</b> and <b>Area</b> cards read the space register, so a floor with a
+            missing room shows up as a named warning rather than a zero. Work from the building
+            down: every floor should have its rooms, every measured room should have at least one
+            linked area, and every manual value should have a reason.
+          </p>
+          <p>
+            The register is a dialog opened from <b>View → Spaces…</b>, not a dock panel. Link the
+            measurements first and reopen the register after a selection change, because the dialog
+            does not rebuild itself when the selection behind it changes.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Check per floor and building</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/en/layers.webp"
+              data-lightbox
+              aria-label="Click to enlarge: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/en/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="The Layers panel keeps the measurements page-scoped; the room area is read from the visible linked measurements on that page."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+
+          <h2 id="mistakes">Common mistakes</h2>
+          <ul class="checklist">
+            <li>Linking a deduction to a different room from its gross area.</li>
+            <li>
+              Setting a manual area and expecting it to update when a measurement is linked later.
+            </li>
+            <li>Leaving a room as Missing and treating it as zero in the total.</li>
+            <li>
+              Creating rooms from room text and assuming the measurements are linked automatically.
+            </li>
+          </ul>
+
+          <h2 id="faq">Questions</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Does a linked measurement update the room area?</summary>
+              <p>
+                Yes. The room sums its visible linked area measurements, additions minus deductions,
+                and recalculates when a linked measurement changes.
+              </p>
+            </details>
+            <details>
+              <summary>What does Missing mean?</summary>
+              <p>
+                The room has no usable area: nothing is linked, or a linked measurement has no page
+                scale. GridScalr shows the warning instead of a partial sum.
+              </p>
+            </details>
+            <details>
+              <summary>Can I type an area instead of measuring?</summary>
+              <p>
+                Yes, as a manual area. It is a fallback while nothing is linked; as soon as an area
+                measurement is linked, the measured value wins.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Related</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}area-takeoff/"
+              ><b>Measure area on a drawing</b
+              ><span>The task page for calibration, deductions and rooms.</span></a
+            >
+            <a href="{{ROOT}}guides/area-pdf/"
+              ><b>Measure area in a PDF</b><span>How the linked measurement is drawn.</span></a
+            >
+            <a href="{{ROOT}}guides/gross-and-net-area/"
+              ><b>Gross and net area</b
+              ><span>Why the deduction changes the room's net area.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Try it</p>
+            <h2>Link the demo rooms</h2>
+            <p>
+              The demo project has a building, a floor, a measured warehouse and a manual office, so
+              the register can be checked against the plan.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Get the demo project</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr home">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed ·
+            <a data-release-page href="{{RELEASE_URL}}">Release notes</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Security policy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}features/">All features</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >User guide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Workflows</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</span>
+        <span>Windows installers are not code-signed. Verify the SHA-256 checksums.</span>
+      </div>
+    </footer>
+  </body>
+</html>

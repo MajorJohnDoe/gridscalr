@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bruttoarea och nettoarea: skillnaden och avdraget</title>
+    <meta
+      name="description"
+      content="Bruttoarea är det du mäter, nettoarea det du beställer. Så fungerar avdrag, varför spill räknas på nettot och hur du kontrollerar båda före export."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/bruttoarea-nettoarea/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/gross-and-net-area/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/bruttoarea-nettoarea/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/gross-and-net-area/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Bruttoarea och nettoarea: skillnaden och avdraget" />
+    <meta
+      property="og:description"
+      content="Bruttoarea är det du mäter, nettoarea det du beställer. Så fungerar avdrag, varför spill räknas på nettot och hur du kontrollerar båda före export."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/sv/guider/bruttoarea-nettoarea/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Bruttoarea och nettoarea: skillnaden och avdraget" />
+    <meta
+      name="twitter:description"
+      content="Bruttoarea är det du mäter, nettoarea det du beställer. Så fungerar avdrag, varför spill räknas på nettot och hur du kontrollerar båda före export."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Bruttoarea och nettoarea: skillnaden och avdraget",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/guider/bruttoarea-nettoarea/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Bruttoarea, nettoarea och avdrag",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/bruttoarea-nettoarea/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Är nettoarea samma sak som BOA?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Inte automatiskt. BOA är en statlig term för boyta med egna regler. Nettoarean här är din bruttoarea minus dina avdrag, och den är jämförbar med BOA först när mätningen och avdragen följer samma regler."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Var dras avdraget från?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Inom samma kategori och rum som bruttomätningen. Ett avdrag i en annan grupp minskar inte raden du tittar på."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Räknas spill på brutto eller netto?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "På nettot. Spill och avrundning tillämpas på den mängd som faktiskt ska installeras eller täckas, efter avdrag."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}guides/gross-and-net-area/" hreflang="en" lang="en">English</a>
+          <a
+            href="{{ROOT}}sv/guider/bruttoarea-nettoarea/"
+            hreflang="sv"
+            lang="sv"
+            aria-current="page"
+            >Svenska</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}sv/guider/">Guider</a
+            ><span>/</span>
+            <span>Bruttoarea, nettoarea och avdrag</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Bruttoarea, nettoarea och avdrag</h1>
+          <p class="lede">
+            Bruttot är det ritningen visar. Nettot är det du kan beställa. Skillnaden består av
+            avdrag, och den ska vara medveten.
+          </p>
+          <p class="guide-meta">
+            Uppdaterad 24 november 2026 · 5 min läsning · Granskad mot GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>På den här sidan</p>
+          <ol>
+            <li><a href="#terms">Begreppen i klartext</a></li>
+            <li><a href="#deductions">Varför avdrag finns</a></li>
+            <li><a href="#record">Registrera brutto och avdrag</a></li>
+            <li><a href="#to-order">Från netto till beställning</a></li>
+            <li><a href="#check">Kontrollera före export</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Ladda ner GridScalr {{RELEASE_VERSION}} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Kort svar</h2>
+            <p>
+              Bruttoarea är hela den uppmätta ytan i ett utrymme på ritningen. Nettoarea är
+              bruttoarean minus avdrag som schakt, öppningar och andra ytor som inte ska beställas.
+              GridScalr visar båda, drar av inom samma kategori och rum och räknar spillet på
+              nettot.
+            </p>
+          </div>
+
+          <h2 id="terms">Begreppen i klartext</h2>
+          <p>
+            I dagligt tal är <b>BTA</b> (bruttoarea) den area som omsluts av ytterväggarna, och
+            <b>BOA</b> (boarea) den boarea som ligger innanför. Engelska ritningar använder gross
+            och net på samma sätt: den ena siffran beskriver hela det omslutna utrymmet, den andra
+            vad ytan kan användas eller beställas för.
+          </p>
+          <p>
+            De statliga definitionerna har undantag och hör till den svenska areastandarden, inte
+            till appen. GridScalr räknar inte fram en BTA- eller BOA-klassning. Appen registrerar
+            din uppmätta bruttoarea, dina avdrag och mellanskillnaden, och lämnar klassningen till
+            den som äger den frågan.
+          </p>
+          <h2 id="deductions">Varför avdrag finns</h2>
+          <p>
+            Ett avdrag är en yta du har mätt men inte vill ha med i beställningen. Ett hisschakt, en
+            trappöppning, en kanaltrumma eller ett tomrum över ett undertak tar plats utan att ta
+            material. Ligger de kvar i bruttot blir beställningen för stor; raderas de visar
+            ritningen inte längre vad som mättes.
+          </p>
+          <p>
+            Därför behåller GridScalr avdraget som en egen mätning märkt <b>Avdrag</b>. Det dras
+            från inom samma kategori och rum, så bruttot förblir läsbart och nettot förklarbart. Ett
+            avdrag som är större än bruttot begränsas till noll och raden visar en varning i stället
+            för en negativ mängd.
+          </p>
+          <h2 id="record">Registrera brutto och avdrag</h2>
+          <p>
+            Rita hela ytan först, växla sedan <b>Arealäge</b> till <b>Dra av från area</b> i
+            <b>Alternativ för ny mätning</b> och rita schaktet eller öppningen. Använd samma
+            kategori och rum som bruttomätningen, eftersom ett avdrag bara kvittas inom sin egen
+            grupp. Ge avdraget en etikett som <b>Schakt 01</b> så att nästa läsare ser varför det
+            finns.
+          </p>
+          <p>
+            Det är medvetet två mätningar i stället för en polygon med hål. Bruttot finns kvar i
+            mängdrapporten, avdraget kan granskas för sig, och om schaktet flyttas eller ändras
+            senare finns avdraget kvar som en egen rad.
+          </p>
+          <h2 id="to-order">Från netto till beställning</h2>
+          <p>
+            Beställningsdialogen läser objekten, inte ett separat kalkylark. Varje rad visar brutto,
+            avdrag, netto, spill och beställningsmängd för en kategori, ett rum och en mättyp.
+            Spillet räknas på nettot, aldrig på bruttot, eftersom material köps för den yta som
+            faktiskt ska täckas.
+          </p>
+          <p>
+            Dolda objekt och dolda lager utesluts från beräkningen, medan låsta men synliga objekt
+            ingår. Det är samma regel som canvas, Markups-CSV och varje export använder, så en mängd
+            kan inte tyst avvika från ritningen.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Från netto till beställning</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/order.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/order.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Beställningsdialogen visar brutto, avdrag, netto, spill och beställningsmängd per rad; här har lagerytan inget avdrag."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+          <h2 id="check">Kontrollera före export</h2>
+          <p>
+            Innan beställningen lämnar appen, kontrollera fyra saker. Varje bruttoyta har de avdrag
+            som hör till den; varje avdrag ligger i samma kategori och rum; ingen rad visar
+            varningen för begränsat avdrag; och spill och avrundning är satta på det material som
+            behöver dem.
+          </p>
+          <p>
+            Mängdschemat och PDF-rapporten läser samma rader som beställningsdialogen. Ser talen fel
+            ut på ett ställe är de fel överallt, och det är poängen: det finns en källa och ingen
+            andra kopia att stämma av.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Kontrollera före export</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/table.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: "
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/table.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Schemat grupperar de uppmätta objekten per kategori, bredvid planen."
+              />
+            </a>
+            <figcaption><span></span></figcaption>
+          </figure>
+
+          <h2 id="mistakes">Vanliga fel</h2>
+          <ul class="checklist">
+            <li>
+              Lägga avdraget i ett annat rum eller en annan kategori, där subtraktionen inte får
+              effekt.
+            </li>
+            <li>Räkna spill på bruttoarean i stället för på nettot.</li>
+            <li>
+              Radera schaktet från ritningen i stället för att mäta det som avdrag, så bruttot inte
+              längre går att granska.
+            </li>
+            <li>Kalla nettot för BOA utan att tillämpa standardens egna regler.</li>
+          </ul>
+
+          <h2 id="faq">Frågor</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Är nettoarea samma sak som BOA?</summary>
+              <p>
+                Inte automatiskt. BOA är en statlig term för boyta med egna regler. Nettoarean här
+                är din bruttoarea minus dina avdrag, och den är jämförbar med BOA först när
+                mätningen och avdragen följer samma regler.
+              </p>
+            </details>
+            <details>
+              <summary>Var dras avdraget från?</summary>
+              <p>
+                Inom samma kategori och rum som bruttomätningen. Ett avdrag i en annan grupp minskar
+                inte raden du tittar på.
+              </p>
+            </details>
+            <details>
+              <summary>Räknas spill på brutto eller netto?</summary>
+              <p>
+                På nettot. Spill och avrundning tillämpas på den mängd som faktiskt ska installeras
+                eller täckas, efter avdrag.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Relaterat</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}sv/mangdning/"
+              ><b>Mängdning</b><span>Uppgiftssidan för netto, spill och export.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/spill-och-avrundning/"
+              ><b>Spill och avrundning</b><span>Från nettoarea till beställningsmängd.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/mata-area-pdf/"
+              ><b>Mäta area i en PDF</b><span>Där bruttomätningen kommer ifrån.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Jämför brutto och netto i demot</h2>
+            <p>
+              Demoprojektet har en uppmätt lageryta och ett separat avdrag, så beställningsdialogen
+              går att kontrollera rad för rad.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Hämta demoprojektet</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>
