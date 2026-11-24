@@ -40,6 +40,7 @@ export interface PanelActions {
   openConflictedCopies: () => void;
   packageProject: () => void;
   openPackage: () => void;
+  sendByEmail: () => void;
   exportAs: (
     kind: "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf" | "quantity-xlsx",
   ) => void;

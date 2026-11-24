@@ -2,6 +2,8 @@ mod commands;
 mod conflicted_copy;
 mod derived_cache;
 mod disk_space;
+mod mail_launch;
+mod mail_send;
 mod package;
 mod package_limits;
 mod path_guard;
@@ -153,6 +155,8 @@ pub fn run() {
             temp_cleanup::clean_project_temporaries,
             source_cleanup::source_list_managed_copies,
             source_cleanup::source_remove_managed_copies,
+            mail_send::compose_mail,
+            mail_send::reveal_export,
             package::package_create,
             package::package_inspect,
             package::package_extract,
@@ -175,6 +179,7 @@ pub fn run() {
             #[cfg(not(debug_assertions))]
             let _ = smoke;
             LaunchPaths::push(app.handle(), paths);
+            mail_send::prune_mail_outbox_at_start(&app.handle());
             Ok(())
         })
         .build(tauri::generate_context!())

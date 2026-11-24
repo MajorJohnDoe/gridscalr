@@ -540,6 +540,42 @@ rejected, and that the release workflow keeps the two checks and never runs
 the release workflow. A physical macOS install stays unverified; see
 [`limitations.md`](limitations.md).
 
+### Manual send-by-email checklist
+
+Run this on each packaged platform with a project that has at least one PDF
+page. It is the only check that proves a real mail client received the draft;
+the automated suites cover the shared PDF builder, the menu state and the Rust
+argument builders and path guard.
+
+1. **Windows / Simple MAPI:** with Outlook (or another MAPI client) as the
+   default mail app, choose **File → Send & share → Send by e-mail…**, accept
+   the drawing-export dialog and confirm that a compose window opens with
+   `<project>-markups.pdf` attached, the subject and body filled in, and no
+   recipient. Confirm the file appears under
+   `%LOCALAPPDATA%\\<app identifier>\\cache\\mail-outbox\\`.
+2. **Windows / Outlook fallback:** temporarily point the default mail app away
+   from MAPI (or test on a machine without a MAPI client) and confirm the
+   command falls back to `outlook.exe /a` or reports **No mail client opened**
+   with a working **Show file** action.
+3. **macOS / Mail:** choose the command, allow the Automation prompt for
+   Mail.app when it appears, and confirm a visible, unsent draft with the PDF
+   attached. Deny the prompt once and confirm the failure dialog still shows the
+   written file and **Show file**.
+4. **Linux / xdg-email:** with a default mail handler configured, confirm
+   `xdg-email --attach` opens a draft with the attachment. Then test the
+   Thunderbird fallback with `xdg-email` unavailable and confirm
+   `thunderbird -compose attachment=…` opens a draft.
+5. **No client:** remove or rename the mail client, run the command, and confirm
+   the **No mail client opened** dialog names the `mail-outbox` path and
+   **Show file** reveals it. The PDF must still exist and open.
+6. **Size guard:** export a drawing above 20 MB and confirm the warning offers
+   **Continue**, **Export to disk instead** and **Cancel**; each choice must do
+   exactly that. A drawing below 20 MB must not show the warning.
+7. **Retention and safety:** run ten exports, then an eleventh, and confirm the
+   outbox contains only the ten most recent PDFs after the prune. Confirm the
+   project file and every source drawing are unchanged, and that
+   **Send by e-mail…** is disabled with a reason in the browser fallback.
+
 ### Manual accessibility checklist (canvas and keyboard)
 
 Run this by hand on the desktop build for a release candidate, ideally once with

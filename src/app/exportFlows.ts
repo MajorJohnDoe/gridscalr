@@ -1,9 +1,10 @@
 import type { CanvasView } from "../canvas/CanvasView";
-import type { DrawingExportOptions } from "../model/export";
+import { drawingPdfFileName, safeExportBaseName, type DrawingExportOptions } from "../model/export";
 import type { Project } from "../model/types";
 import { serializeProject, sourceDocumentPaths } from "../io/projectFile";
 import { saveBinaryFile, saveTextFile } from "../io/platform";
 import { describeError } from "../io/platformError";
+import { buildDrawingPdfBytes, isEncryptedExportError } from "../pdf/drawingExport";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import { serializeQuantityCsv } from "../report/csv";
 import { serializeMarkupCsv } from "../report/markupCsv";
@@ -33,10 +34,6 @@ export interface ExportContext {
   chooseDrawingExport: (project: Project) => Promise<DrawingExportOptions | null>;
 }
 
-function safeProjectName(project: Project): string {
-  return project.name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") || "gridscalr";
-}
-
 function safeScheduleName(name: string): string {
   return name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") || "schedule";
 }
@@ -60,7 +57,7 @@ export async function exportScheduleCsvFlow(scheduleId: string): Promise<void> {
   try {
     const path = await saveTextFile(
       result.text,
-      `${safeProjectName(project)}-${safeScheduleName(schedule.name)}.csv`,
+      `${safeExportBaseName(project.name)}-${safeScheduleName(schedule.name)}.csv`,
       scheduleCsvFilters(),
       { forbiddenPaths: protectedPaths },
     );
@@ -78,7 +75,7 @@ export async function exportScheduleCsvFlow(scheduleId: string): Promise<void> {
 
 export async function exportProject(kind: ExportKind, context: ExportContext): Promise<void> {
   const { project, renderer, canvas } = context;
-  const safe = safeProjectName(project);
+  const safe = safeExportBaseName(project.name);
   const protectedPaths = sourceDocumentPaths(project, context.projectPath);
   if (!project.pages.length && (kind === "drawing" || kind === "png")) {
     toast(t("export.noPages"), "warning");
@@ -142,15 +139,13 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
     }
 
     if (kind === "drawing") {
-      if (!renderer) throw new Error(t("app.sourcePdfMissing"));
       try {
         const options = await context.chooseDrawingExport(project);
         if (!options) return;
-        const { exportProjectPdf } = await import("../pdf/pdfExport");
-        const bytes = await exportProjectPdf(project, renderer, options);
+        const bytes = await buildDrawingPdfBytes(project, renderer, options);
         const path = await saveBinaryFile(
           bytes,
-          `${safe}-markups.pdf`,
+          drawingPdfFileName(project.name),
           pdfFilters(),
           "application/pdf",
           { forbiddenPaths: protectedPaths },
@@ -162,7 +157,7 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
           );
         }
       } catch (error) {
-        if (error instanceof Error && /encrypt/i.test(error.message)) {
+        if (isEncryptedExportError(error)) {
           await messageDialog(
             t("export.cannotExportTitle"),
             t("export.cannotExportEncrypted"),

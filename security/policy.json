@@ -79,5 +79,12 @@
     "dialog:allow-open": "File -> Open project/drawing and Relink use the native open dialog.",
     "dialog:allow-save": "Save, Save As, export targets and package output use the native save dialog."
   },
+  "externalProcess": {
+    "commands": "compose_mail and reveal_export in src-tauri/src/mail_send.rs.",
+    "launchPolicy": "Every launch is std::process::Command with a fixed program and an argument array in src-tauri/src/mail_launch.rs. No sh -c, no shell string, no interpolation into a command and no opener plugin. The programs are xdg-email, thunderbird, osascript, open, explorer.exe and outlook.exe.",
+    "pathGuard": "compose_mail writes only into the app-cache mail-outbox folder. reveal_export requires an existing .pdf that resolves inside that same folder through path_guard::ensure_inside_root, so a source drawing and a symlink escape are refused.",
+    "windowsMapi": "Simple MAPI resolves MAPISendMailW from the system mapi32.dll at runtime with LoadLibraryW and GetProcAddress, using windows-sys 0.61 structs, MAPI_LOGON_UI | MAPI_DIALOG and the attachment path as a wide string. A missing entry point or DLL falls back to outlook.exe /a instead of becoming a load-time failure.",
+    "reason": "Launching a local mail client is the feature. The fixed-program argument-array rule and the outbox guard keep the renderer from choosing a program, a directory or a source path."
+  },
   "testOnlyCommands": "smoke_test_dir and finish_smoke_test live in src-tauri/src/smoke.rs and are compiled with #[cfg(debug_assertions)] only. A normal release build has no handler that can exit the app (F-037)."
 }

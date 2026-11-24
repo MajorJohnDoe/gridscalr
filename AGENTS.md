@@ -415,6 +415,7 @@ src/app/clipboardPaste.ts  clipboard image and item paste entry point
 src/app/pageZoomGuard.ts   suppresses WebView2 page zoom for Ctrl + wheel and pinch
 src/app/referenceController.ts reference pane, comparison session and comparison PDF lifecycle
 src/app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
+src/app/shareByEmailFlow.ts File -> Send by e-mail wiring: shared drawing dialog and PDF builder
 src/app/selectionActions.ts selection, bulk edits and item commands
 src/app/documentImport.ts  PDF/TIF import, password retries and checksum checks
 src/app/searchController.ts search panel, text index and OCR run loop
@@ -468,6 +469,7 @@ src/styles/schedules.css cards, live table and builder
 src/styles/takeoffSettings.css hub tabs, object table, table list and card feeds
 src/styles/spaces.css  space register rows, area badges and warnings
 src/styles/fields.css     custom field list, typed value and field-set styles
+src/features/shareByEmail/ sending the drawing PDF to a local mail client: safe name, 20 MB guard, outcome copy, export dialog reuse and reveal
 src/features/projectPackage/model.ts package manifest, safe names and portable project paths
 src/features/projectPackage/controller.ts package and open-package flows
 src/features/projectPackage/ui.ts package dialogs and progress UI
@@ -688,6 +690,8 @@ src/io/stampDefaults.ts    global stamp presets for new projects
 src/io/layerDefaults.ts    local default colours for new measurement and drawing layers
 src/io/platform.ts         Tauri/browser file I/O, dialogs, recents, hashing entry point
 src/io/platformError.ts    structured Rust command error codes to localized messages
+src-tauri/src/mail_send.rs  app-cache mail-outbox attachment, ten-file prune, path guard and the compose/reveal commands
+src-tauri/src/mail_launch.rs per-OS mail/reveal launch plans, argument-array commands and the Windows Simple MAPI call
 src-tauri/src/commands.rs  atomic file replacement, canonical source-path checks, structured command errors and Tauri file commands
 src-tauri/src/package.rs   streaming ZIP package create/inspect/extract with manifest checks
 docs/user-guide.md         in-app user guide

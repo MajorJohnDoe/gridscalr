@@ -161,6 +161,11 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   into project actions. Replacing a managed source keeps managed mode, and the
   copy it supersedes is left on disk for the project doctor's explicit
   **Remove unused drawings…** action.
+- Send the drawing PDF to a local mail client with **File → Send & share →
+  Send by e-mail…**. The same drawing-export dialog runs first, the attachment
+  is the same flattened PDF, and above 20 MB the app offers an explicit
+  **Export to disk instead** choice. Webmail is out of scope because a `mailto:`
+  link cannot attach a file; the browser fallback shows the entry disabled.
 - Share a project and its drawings as one portable `.gridscalr.zip` with a
   versioned manifest, relative links and SHA-256 checksums, then open the package
   on another machine without relinking. Managed drawings are included once and
@@ -454,6 +459,12 @@ the unified measured/counted object list, the card visibility switches and the
 of 10 MB and 20 000 rows, updates existing rows by stable ID and applies as one
 undo step. `src/app/exportFlows.ts` writes the schedule CSV;
 `src/app/summaryFlow.ts` opens the import dialog.
+`src/features/shareByEmail/` reuses `src/pdf/drawingExport.ts`, the one shared
+drawing-PDF builder behind File → Export → Drawing PDF, so both paths apply the
+same visibility, locking, crop, label and legend rules. `src-tauri/src/mail_send.rs`
+writes the app-cache `mail-outbox/` attachment and guards every reveal, while
+`src-tauri/src/mail_launch.rs` holds the per-OS launch plans with argument
+arrays only; a shell is never involved.
 `src/model/layerHierarchy.ts` holds the pure layer-tree, effective visibility
 and locking rules, and `src/features/layerTree/` exposes the panel tree rows,
 inherited-state reasons, drag and keyboard nesting, subtree duplication and the

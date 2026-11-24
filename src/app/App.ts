@@ -114,6 +114,7 @@ import { openExportMenu, setMenuActions } from "../ui/topMenu";
 import { detectPlatform, mountWindowControls, type WindowControls } from "../ui/windowChrome";
 import { refreshSourceStatusPanels, toggleInspector, toggleSidebar } from "../ui/sidebar";
 import { ReferenceController } from "./referenceController";
+import { sendDrawingByEmail } from "./shareByEmailFlow";
 import {
   openPackageFlow,
   packageProjectFlow,
@@ -135,7 +136,6 @@ interface SizeTask {
   epoch: number;
   resolve: (value: PageSize | undefined) => void;
 }
-
 export class App {
   private refs: ShellRefs;
   private canvas: CanvasView;
@@ -223,6 +223,7 @@ export class App {
       openConflictedCopies: () => void this.session.conflictedCopiesFlow(),
       packageProject: () => void packageProjectFlow(createPackageHost(this.packageFlowHost())),
       openPackage: () => void openPackageFlow(createPackageHost(this.packageFlowHost())),
+      sendByEmail: () => sendDrawingByEmail(this.canvas, this.renderer),
       exportAs: (kind) => void this.exportAs(kind),
       undo: () => store.undo(),
       redo: () => store.redo(),
@@ -939,8 +940,7 @@ export class App {
 
   /** Opens the package options dialog for documentation screenshots. */
   openPackageDialogForDocs(): void {
-    if (!store.project) return;
-    showPackageDialogPreview(store.project);
+    if (store.project) showPackageDialogPreview(store.project);
   }
 
   private async exportAs(kind: ExportKind): Promise<void> {

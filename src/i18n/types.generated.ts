@@ -245,6 +245,8 @@ export type MessageKey =
   | "menu.file.package"
   | "menu.file.openPackage"
   | "menu.file.packageDesktopOnly"
+  | "menu.file.sendByEmail"
+  | "menu.file.emailDesktopOnly"
   | "menu.file.importImage"
   | "menu.file.exportDrawing"
   | "menu.file.exportPng"
@@ -3630,6 +3632,22 @@ export type MessageKey =
   | "perf.column.count"
   | "perf.column.p50"
   | "perf.column.p95"
-  | "perf.column.max";
+  | "perf.column.max"
+  | "shareByEmail.subject"
+  | "shareByEmail.body"
+  | "shareByEmail.largeTitle"
+  | "shareByEmail.largeMessage"
+  | "shareByEmail.continue"
+  | "shareByEmail.exportInstead"
+  | "shareByEmail.noClientTitle"
+  | "shareByEmail.noClientMessage"
+  | "shareByEmail.failedTitle"
+  | "shareByEmail.failedMessage"
+  | "shareByEmail.draftToast"
+  | "shareByEmail.exportedToast"
+  | "shareByEmail.reveal"
+  | "shareByEmail.revealFailed"
+  | "shareByEmail.desktopOnly"
+  | "shareByEmail.invalidOutcome";
 
 export type MessageCatalog = Record<MessageKey, string>;
