@@ -3,27 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GridScalr — PDF &amp; TIF Takeoff for Drawings</title>
+    <title>GridScalr — area, operation cards and quantity takeoff</title>
     <meta
       name="description"
-      content="Measure PDF and TIF drawings locally. Calibrate plans, count doors, windows and fixtures, and export procurement quantities for facilities operations."
+      content="Measure areas in PDF and TIF drawings, draw operation cards and take off order quantities — locally. Calibrate, subtract deductions and export to Excel or PDF."
     />
     <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/" />
     <link rel="alternate" hreflang="en" href="https://majorjohndoe.github.io/gridscalr/" />
     <link rel="alternate" hreflang="sv" href="https://majorjohndoe.github.io/gridscalr/sv/" />
     <link rel="alternate" hreflang="x-default" href="https://majorjohndoe.github.io/gridscalr/" />
     <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#14181b" />
+    <meta name="theme-color" content="#f4f6f8" />
     <link rel="icon" href="assets/favicon.ico" sizes="any" />
     <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/app-icon-128.png" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="GridScalr" />
-    <meta property="og:title" content="GridScalr — PDF &amp; TIF Takeoff for Drawings" />
+    <meta property="og:title" content="GridScalr — area, operation cards and quantity takeoff" />
     <meta
       property="og:description"
-      content="Measure PDF and TIF drawings locally. Calibrate plans, count doors, windows and fixtures, and export procurement quantities for facilities operations."
+      content="Measure areas in PDF and TIF drawings, draw operation cards and take off order quantities — locally. Calibrate, subtract deductions and export to Excel or PDF."
     />
     <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/" />
     <meta
@@ -40,10 +40,10 @@
     <meta property="og:locale:alternate" content="sv_SE" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="GridScalr — PDF &amp; TIF Takeoff for Drawings" />
+    <meta name="twitter:title" content="GridScalr — area, operation cards and quantity takeoff" />
     <meta
       name="twitter:description"
-      content="Measure PDF and TIF drawings locally. Calibrate plans, count doors, windows and fixtures, and export procurement quantities for facilities operations."
+      content="Measure areas in PDF and TIF drawings, draw operation cards and take off order quantities — locally. Calibrate, subtract deductions and export to Excel or PDF."
     />
     <meta
       name="twitter:image"
@@ -51,9 +51,7 @@
     />
 
     <link rel="stylesheet" href="assets/site.css" />
-    <link rel="stylesheet" href="assets/how-it-works.css" />
     <script src="assets/site.js" defer></script>
-    <script src="assets/how-it-works.js" defer></script>
 
     <script type="application/ld+json">
       {
@@ -67,7 +65,7 @@
         "license": "https://opensource.org/licenses/MIT",
         "downloadUrl": "{{RELEASE_URL}}",
         "releaseNotes": "{{RELEASE_NOTES_URL}}",
-        "description": "Local-first desktop app for measuring PDF and TIF drawings, counting objects and producing procurement quantities for facilities operations and technical property management.",
+        "description": "Local desktop app for measuring areas, drawing operation cards and taking off quantities from PDF and TIF drawings, built for operations technicians and technical property managers.",
         "offers": {
           "@type": "Offer",
           "price": "0",
@@ -167,11 +165,12 @@
         </a>
 
         <nav class="primary-nav" aria-label="Primary">
+          <a href="#areas">Areas</a>
+          <a href="#operation-cards">Operation cards</a>
+          <a href="#quantities">Quantities</a>
           <a href="features/">Features</a>
-          <a href="#themes">Themes</a>
           <a href="#download">Download</a>
-          <a href="#docs">Documentation</a>
-          <a href="#faq">FAQ</a>
+          <a href="#docs">Docs</a>
         </nav>
 
         <nav class="lang-switch" aria-label="Language" data-lang-switch>
@@ -195,1421 +194,477 @@
     </aside>
 
     <main id="main">
-      <section class="hero" id="hero">
-        <div class="wrap hero-grid">
-          <div class="hero-copy">
-            <p class="eyebrow">Local-first PDF &amp; TIF takeoff</p>
-            <h1>Turn PDF and TIF drawings into procurement quantities — locally.</h1>
+      <section class="hero hero-tasks" id="hero">
+        <div class="wrap">
+          <div class="hero-center">
+            <p class="eyebrow">For operations technicians and technical property managers</p>
+            <h1>
+              Measure areas, draw operation cards and take off quantities — on the same drawing.
+            </h1>
             <p class="lede">
-              Calibrate the plan, measure areas, count doors and fixtures, and export CSV, Excel or
-              PDF. No account, no cloud, no upload.
+              GridScalr is a local desktop app for PDF and TIF drawings. Calibrate once, measure
+              room areas with deductions, document the operation card and produce order quantities.
+              No account, no cloud, no upload.
             </p>
-
-            <div class="release-badge">
-              <span class="version-pill" data-release-version>{{RELEASE_VERSION}}</span>
-              <span>Released {{RELEASE_DATE}}</span>
-              <a href="{{RELEASE_NOTES_URL}}">What’s new in {{RELEASE_VERSION}}</a>
-            </div>
-
             <div class="actions">
               <a class="button primary" data-installer href="{{INSTALLER_URL}}"
                 >Download GridScalr {{RELEASE_VERSION}}</a
               >
-              <a class="button secondary" href="features/">See every feature</a>
-              <a class="button secondary" href="#how-it-works">See it in action</a>
+              <a class="button secondary" href="#areas">See how areas are measured</a>
+              <a
+                class="button secondary"
+                href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+                >Get the demo project</a
+              >
             </div>
-            <p class="download-note">
-              Windows 10/11, macOS and Linux x86_64.
-              <a data-release-page href="{{RELEASE_URL}}">All downloads and checksums</a>
+            <p class="hero-meta">
+              <span>Windows 10/11</span><span>macOS</span><span>Linux</span
+              ><span>Open source (MIT)</span><span>Works offline</span>
             </p>
-
-            <ul class="trust">
-              <li>No account</li>
-              <li>No cloud</li>
-              <li>No telemetry</li>
-              <li>Source drawings stay untouched</li>
-            </ul>
           </div>
 
-          <figure class="hero-shot">
+          <figure class="big-shot">
+            <div class="big-shot-bar">
+              <span><b>Demo project</b> · Northgate Logistics Hub · industrial-plan.pdf</span>
+              <span class="bar-right"
+                ><span>Page 1/4</span><span>Area 484 m²</span><span>Scale 1:100</span></span
+              >
+            </div>
             <a
               class="shot-link"
-              href="screenshots/hero.png"
+              href="screenshots/site/en/hero.webp"
               data-lightbox
-              aria-label="Enlarge screenshot: calibrated industrial takeoff"
+              aria-label="Click to enlarge: <b>Area 484 m²</b> selected in the Measurements layer, with room, category and deduction in the Properties panel."
             >
               <img
-                src="screenshots/hero.png"
+                src="screenshots/site/en/hero.webp"
                 width="1920"
                 height="1080"
                 fetchpriority="high"
-                alt="GridScalr showing a calibrated industrial floor plan with warehouse, office and workshop measurements and the Properties panel."
+                alt="GridScalr with a calibrated industrial plan at 100 % zoom. A 484 m² area is selected, the Properties panel shows area, perimeter and room, and the page list includes operation card LB01."
               />
-              <span class="zoom-hint">Click to enlarge</span>
             </a>
             <figcaption>
-              A calibrated industrial takeoff with rectangle areas, counts, a deduction and drawing
-              annotations.
+              <span
+                ><b>Area 484 m²</b> selected in the Measurements layer, with room, category and
+                deduction in the Properties panel.</span
+              ><span>Click to enlarge</span>
             </figcaption>
           </figure>
         </div>
       </section>
 
-      <section class="section local-first" id="local-first">
+      <section class="kpi-section" aria-label="Key figures">
         <div class="wrap">
-          <div class="section-head">
-            <p class="eyebrow">Private by default</p>
-            <h2>Your drawings never leave your machine</h2>
-            <p>
-              GridScalr reads the drawing from disk, stores the takeoff locally and writes only the
-              exports you ask for. There is no account, cloud or background service in between.
-            </p>
-          </div>
-
-          <div class="flow" aria-label="Local drawing workflow">
-            <div class="flow-step">
-              <span class="flow-kicker">Source</span>
-              <strong>PDF or TIF drawing</strong>
-              <span>Referenced by path and SHA-256. Never modified.</span>
-            </div>
-            <span class="flow-arrow" aria-hidden="true">→</span>
-            <div class="flow-step">
-              <span class="flow-kicker">Project</span>
-              <strong>Takeoff on your machine</strong>
-              <span>Layers, measurements, counts, quantities and autosave.</span>
-            </div>
-            <span class="flow-arrow" aria-hidden="true">→</span>
-            <div class="flow-step">
-              <span class="flow-kicker">Output</span>
-              <strong>CSV, Excel or PDF</strong>
-              <span>Written where you choose. Nothing is uploaded.</span>
-            </div>
-          </div>
-
-          <div class="card-grid three">
-            <article class="card">
-              <h3>No account, cloud or telemetry</h3>
-              <p>
-                Measuring, counting, project files and exports work without a network connection.
-                There is no telemetry and no automatic update service.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Source drawings are protected</h3>
-              <p>
-                Every save and export refuses to overwrite a drawing that belongs to the project.
-                The source file and its checksum stay under your control.
-              </p>
-            </article>
-            <article class="card">
-              <h3>One local project, every sheet</h3>
-              <p>
-                Multiple PDFs and TIF scans share one project. New drawings append pages instead of
-                replacing the set you already measured.
-              </p>
-            </article>
+          <div class="kpi">
+            <div><strong>484 m²</strong><span>Area in the demo project</span></div>
+            <div><strong>1:100</strong><span>Calibrated scale, lockable</span></div>
+            <div><strong>532.5 m²</strong><span>Order quantity at 10 % waste</span></div>
+            <div><strong>0</strong><span>Accounts, uploads, telemetry</span></div>
           </div>
         </div>
       </section>
 
-      <section class="section how" id="how-it-works">
+      <section class="section" id="areas">
+        <div class="wrap">
+          <p class="task-index"><span class="num">01</span><span class="label">Areas</span></p>
+          <div class="task-head">
+            <h2>Measure areas with deductions, rooms and net area</h2>
+            <div class="task-body">
+              <p>
+                Calibrate against a known dimension or enter the printed scale. Draw a room as a
+                rectangle or polygon, subtract shafts and openings, and link the area to the room so
+                it recalculates when the geometry changes.
+              </p>
+              <a class="more-link" href="features/#calibrate-measure">See area measurement</a>
+            </div>
+          </div>
+          <div class="inline-facts">
+            <div><b>Scale</b><span>Known dimension or printed 1:N, lockable per page</span></div>
+            <div><b>Area</b><span>Rectangle and polygon with snapping</span></div>
+            <div><b>Deduction</b><span>A separate row subtracted from net</span></div>
+            <div><b>Room</b><span>Area recalculates from linked measurements</span></div>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar">
+              <span><b>Space register</b> · building, floors and rooms</span>
+              <span class="bar-right"
+                ><span>Measured and manual area</span><span>Missing area is flagged</span></span
+              >
+            </div>
+            <a
+              class="shot-link"
+              href="screenshots/site/en/spaces.webp"
+              data-lightbox
+              aria-label="Click to enlarge: <b>Area per room</b>, with building and floor above. Measured area comes from the linked measurements."
+            >
+              <img
+                src="screenshots/site/en/spaces.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Space register in GridScalr with a building, a floor and rooms, showing a measured 484 m² warehouse and a manual office area."
+              />
+            </a>
+            <figcaption>
+              <span
+                ><b>Area per room</b>, with building and floor above. Measured area comes from the
+                linked measurements.</span
+              >
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="operation-cards">
+        <div class="wrap">
+          <p class="task-index">
+            <span class="num">02</span><span class="label">Operation cards</span>
+          </p>
+          <div class="task-head">
+            <h2>Draw the operation card in the same project as the plan</h2>
+            <div class="task-body">
+              <p>
+                A3 templates with sheet fields, schematic symbols and page-scoped layers. The
+                operation card is its own page beside the plan, so ventilation, heating and control
+                follow the same project number and revision.
+              </p>
+              <a class="more-link" href="features/#operation-cards">See operation cards</a>
+            </div>
+          </div>
+          <div class="inline-facts">
+            <div><b>Sheet</b><span>A3 and A2 templates with sheet fields</span></div>
+            <div><b>Symbols</b><span>Ventilation, heating, control and electrical</span></div>
+            <div><b>Layers</b><span>Own layers per page, lock per item</span></div>
+            <div><b>Export</b><span>PDF with layers, labels and legend</span></div>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar">
+              <span><b>Operation card LB01</b> · air handling unit · page 4/4</span>
+              <span class="bar-right"
+                ><span>Sheet fields filled in</span><span>146 items</span></span
+              >
+            </div>
+            <a
+              class="shot-link"
+              href="screenshots/site/en/operation-card.webp"
+              data-lightbox
+              aria-label="Click to enlarge: <b>LB01</b> with the unit, ducts and sensors. Supply air, exhaust air and unit layers sit on the left."
+            >
+              <img
+                src="screenshots/site/en/operation-card.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Operation card LB01 for an air handling unit on an A3 sheet, with ducts, sensors, schematic symbols and layers for supply air, exhaust air and the unit."
+              />
+            </a>
+            <figcaption>
+              <span
+                ><b>LB01</b> with the unit, ducts and sensors. Supply air, exhaust air and unit
+                layers sit on the left.</span
+              >
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="quantities">
+        <div class="wrap">
+          <p class="task-index"><span class="num">03</span><span class="label">Quantities</span></p>
+          <div class="task-head">
+            <h2>From area to order quantity</h2>
+            <div class="task-body">
+              <p>
+                Quantities are calculated from the objects in the project, not from a second
+                spreadsheet. Gross, deductions, net, waste and order quantity are shown per room and
+                category — and exported to Excel, CSV or a print-ready report.
+              </p>
+              <a class="more-link" href="features/#quantities">See quantity takeoff</a>
+            </div>
+          </div>
+          <div class="inline-facts">
+            <div><b>Net</b><span>Gross minus deductions, per room</span></div>
+            <div><b>Waste</b><span>Percent and rounding per object</span></div>
+            <div><b>Counts</b><span>Doors, windows and equipment by type</span></div>
+            <div><b>Export</b><span>Six-sheet XLSX, CSV and PDF</span></div>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar">
+              <span><b>Order</b> · live summary per room</span>
+              <span class="bar-right"><span>Net 484 m²</span><span>Order 532.5 m²</span></span>
+            </div>
+            <a
+              class="shot-link"
+              href="screenshots/site/en/order.webp"
+              data-lightbox
+              aria-label="Click to enlarge: <b>Warehouse: 484 m² gross</b>, 0 deduction, 48.4 m² waste and 532.5 m² to order."
+            >
+              <img
+                src="screenshots/site/en/order.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Order dialog in GridScalr with gross, deduction, net, waste and order quantity per room, and export buttons for CSV, Excel and PDF."
+              />
+            </a>
+            <figcaption>
+              <span
+                ><b>Warehouse: 484 m² gross</b>, 0 deduction, 48.4 m² waste and 532.5 m² to
+                order.</span
+              >
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="worked-example">
+        <div class="wrap">
+          <div class="example">
+            <div>
+              <p class="eyebrow">Worked example</p>
+              <h2>The numbers can be checked</h2>
+              <p>
+                Every quantity traces back to geometry on a page. The deduction is subtracted from
+                gross, waste is added to net and rounding is applied last — per object, not per
+                report.
+              </p>
+              <p class="note">
+                Open the demo project and compare the same four numbers. It ships with the app and
+                contains the drawing, the operation card and the quantities.
+              </p>
+            </div>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th>Room</th>
+                    <th>Gross</th>
+                    <th>Deduction</th>
+                    <th>Net</th>
+                    <th>Waste 10 %</th>
+                    <th>Order</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Warehouse</td>
+                    <td>484.00</td>
+                    <td>0</td>
+                    <td>484.00</td>
+                    <td>48.40</td>
+                    <td class="order">532.50</td>
+                  </tr>
+                  <tr>
+                    <td>Mezzanine</td>
+                    <td>120.00</td>
+                    <td>6.25</td>
+                    <td>113.75</td>
+                    <td>11.38</td>
+                    <td class="order">125.50</td>
+                  </tr>
+                  <tr class="total">
+                    <td>Floor 1, net</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>597.75</td>
+                    <td>—</td>
+                    <td>—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <figure class="big-shot">
+            <div class="big-shot-bar">
+              <span><b>Quantity schedule</b> · grouped by category</span>
+              <span class="bar-right"><span>Filter per room</span><span>Sum per group</span></span>
+            </div>
+            <a
+              class="shot-link"
+              href="screenshots/site/en/table.webp"
+              data-lightbox
+              aria-label="Click to enlarge: The schedule in the panel and the report read the same data. There is no second copy to keep updated."
+            >
+              <img
+                src="screenshots/site/en/table.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Quantity schedule in GridScalr with category groups and rows for label, room and category, beside a mezzanine plan at 1:50."
+              />
+            </a>
+            <figcaption>
+              <span
+                >The schedule in the panel and the report read the same data. There is no second
+                copy to keep updated.</span
+              >
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="workflow">
         <div class="wrap">
           <div class="section-head">
-            <p class="eyebrow">From drawing to order</p>
-            <h2>Three steps from plan to procurement quantities</h2>
-            <p>
-              Try it yourself: draw the six room areas on the plan, or count doors, windows and
-              fixtures and watch the quantities fill the Takeoff panel.
-            </p>
+            <p class="eyebrow">How it works</p>
+            <h2>Three steps from drawing to order</h2>
           </div>
-
-          <div class="hiw" data-hiw>
-            <div class="hiw-bar" data-hiw-ui>
-              <button class="hiw-play" type="button" data-hiw-play>Play demo</button>
-              <span class="hiw-try" aria-hidden="true">
-                <span class="hiw-try-label">Try it</span>
-                <svg class="hiw-try-arrow" viewBox="0 0 54 22" fill="none" aria-hidden="true">
-                  <path
-                    d="M2 12h7c6 0 7-8 14-8s6 9 13 9h7m-3-4 4 4-4 4"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </span>
-              <button class="hiw-mode" type="button" data-hiw-mode="area" aria-pressed="false">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m4 16 3-10 10-2 3 10-8 5-8-3Z" />
-                  <circle cx="7" cy="6" r="1.4" fill="currentColor" />
-                  <circle cx="17" cy="4" r="1.4" fill="currentColor" />
-                  <circle cx="20" cy="14" r="1.4" fill="currentColor" />
-                  <circle cx="12" cy="19" r="1.4" fill="currentColor" />
-                </svg>
-                <span>Measure areas</span>
-              </button>
-              <button class="hiw-mode" type="button" data-hiw-mode="qty" aria-pressed="false">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <circle cx="8" cy="8" r="2.2" />
-                  <circle cx="16" cy="8" r="2.2" />
-                  <circle cx="8" cy="16" r="2.2" />
-                  <circle cx="16" cy="16" r="2.2" />
-                </svg>
-                <span>Quantities</span>
-              </button>
-              <button class="hiw-replay" type="button" data-hiw-replay hidden>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v5h5" />
-                </svg>
-                <span>Play again</span>
-              </button>
-              <button
-                class="hiw-sound"
-                type="button"
-                data-hiw-sound
-                aria-pressed="true"
-                aria-label="Mute demo sound"
-              >
-                <svg
-                  class="hiw-sound-on"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M4 9v6h4l5 4V5L8 9H4Z" />
-                  <path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a9 9 0 0 1 0 12" />
-                </svg>
-                <svg
-                  class="hiw-sound-off"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M4 9v6h4l5 4V5L8 9H4Z" />
-                  <path d="m16 9 5 6m0-6-5 6" />
-                </svg>
-                <span class="hiw-sound-label" data-hiw-sound-label>Sound on</span>
-              </button>
-              <p class="hiw-bar-hint">The demo is interactive — click the active mode to replay.</p>
-              <p class="hiw-live" role="status" aria-live="polite" data-hiw-live></p>
-            </div>
-
-            <div class="hiw-app" data-hiw-app tabindex="-1">
-              <div class="hiw-top" aria-hidden="true">
-                <div class="hiw-menu">
-                  <span class="hiw-brand-dot">
-                    <svg viewBox="0 0 32 32" aria-hidden="true">
-                      <rect width="32" height="32" rx="7" fill="#35c2a1" />
-                      <rect x="1" y="1" width="30" height="30" rx="6" fill="#0f1a1c" />
-                      <path
-                        d="M7.88 18 10.38 8.88 19.63 7.5 24.13 16.25 16.63 24.5Z"
-                        fill="#5fe6c9"
-                        fill-opacity=".3"
-                        stroke="#5fe6c9"
-                        stroke-width="1.6"
-                        stroke-linejoin="round"
-                      />
-                      <circle cx="7.88" cy="18" r="1.5" fill="#9bf7e2" />
-                      <circle cx="10.38" cy="8.88" r="1.5" fill="#9bf7e2" />
-                      <circle cx="19.63" cy="7.5" r="1.5" fill="#9bf7e2" />
-                      <circle cx="24.13" cy="16.25" r="1.5" fill="#9bf7e2" />
-                      <circle cx="16.63" cy="24.5" r="1.5" fill="#9bf7e2" />
-                    </svg>
-                    GridScalr
-                  </span>
-                  <span>File</span><span>Edit</span><span>View</span><span>Settings</span
-                  ><span>Help</span>
-                </div>
-
-                <div class="hiw-title">
-                  <strong>Northgate Logistics Hub · Takeoff</strong>
-                  <span>industriplan.pdf · Page 1 of 4 · Ground floor</span>
-                </div>
-
-                <span class="hiw-local">Local · no cloud</span>
-              </div>
-
-              <div class="hiw-context" aria-hidden="true">
-                <span class="hiw-tool" data-hiw-tool="scale">
-                  <svg
-                    class="hiw-tool-icon hiw-tool-icon--scale"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m4 15 11-11 5 5L9 20l-5-5Z" />
-                    <path d="m7 14 2 2m1-5 2 2m1-5 2 2m-9 3 2 2" />
-                  </svg>
-                  <svg
-                    class="hiw-tool-icon hiw-tool-icon--area"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m4 16 3-10 10-2 3 10-8 5-8-3Z" />
-                    <circle cx="7" cy="6" r="1.4" fill="currentColor" />
-                    <circle cx="17" cy="4" r="1.4" fill="currentColor" />
-                    <circle cx="20" cy="14" r="1.4" fill="currentColor" />
-                    <circle cx="12" cy="19" r="1.4" fill="currentColor" />
-                  </svg>
-                  <svg
-                    class="hiw-tool-icon hiw-tool-icon--count"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <circle cx="8" cy="8" r="2.2" />
-                    <circle cx="16" cy="8" r="2.2" />
-                    <circle cx="8" cy="16" r="2.2" />
-                    <circle cx="16" cy="16" r="2.2" />
-                  </svg>
-                  <span data-hiw-tool-label>Calibrate</span>
-                </span>
-                <p class="hiw-tool-hint" data-hiw-tool-hint>
-                  Pick a known dimension or enter the 1:N scale
-                </p>
-                <span class="hiw-layer-select"
-                  ><i aria-hidden="true"></i> Layer <strong>Measurements</strong> ▾</span
-                >
-              </div>
-
-              <div class="hiw-main">
-                <aside class="hiw-rail" aria-hidden="true">
-                  <span class="hiw-rail-btn" title="Select"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path
-                        d="M5 3.5 19 11l-6.1 1.9L11 19 5 3.5Z"
-                        fill="currentColor"
-                        stroke="none"
-                      /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Pan"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path
-                        d="M8 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1V4.5a1.5 1.5 0 0 1 3 0V11m0-.5V6a1.5 1.5 0 0 1 3 0v6.2c0 4.1-2.5 6.8-6 6.8-2.3 0-3.7-1-4.8-2.8L4.4 13a1.7 1.7 0 0 1 2.9-1.7l.7 1.1"
-                      /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Zoom"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <circle cx="10.5" cy="10.5" r="6.5" />
-                      <path d="m15.5 15.5 5 5M10.5 7v7M7 10.5h7" /></svg
-                  ></span>
-                  <span class="hiw-rail-divider"></span>
-                  <span class="hiw-rail-btn" title="Scale"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="m4 15 11-11 5 5L9 20l-5-5Z" />
-                      <path d="m7 14 2 2m1-5 2 2m1-5 2 2m-9 3 2 2" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Length"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M4 17 20 7" />
-                      <circle cx="4" cy="17" r="2.2" />
-                      <circle cx="20" cy="7" r="2.2" />
-                      <path d="M9 12h6" opacity=".55" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn is-active" data-hiw-rail="area" title="Area"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="m4 16 3-10 10-2 3 10-8 5-8-3Z" />
-                      <circle cx="7" cy="6" r="1.4" fill="currentColor" />
-                      <circle cx="17" cy="4" r="1.4" fill="currentColor" />
-                      <circle cx="20" cy="14" r="1.4" fill="currentColor" />
-                      <circle cx="12" cy="19" r="1.4" fill="currentColor" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" data-hiw-rail="count" title="Count"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <circle cx="8" cy="8" r="2.2" />
-                      <circle cx="16" cy="8" r="2.2" />
-                      <circle cx="8" cy="16" r="2.2" />
-                      <circle cx="16" cy="16" r="2.2" /></svg
-                  ></span>
-                  <span class="hiw-rail-divider"></span>
-                  <span class="hiw-rail-btn" title="Rectangle"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <rect x="4" y="6" width="16" height="12" rx="1" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Ellipse"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <ellipse cx="12" cy="12" rx="8.5" ry="6.5" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Polyline"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M4 18h6V8h5v7h5" />
-                      <circle cx="4" cy="18" r="1.3" fill="currentColor" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Text"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M5 6V4h14v2M12 4v16M8 20h8" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Symbol"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path
-                        d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"
-                      /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Image"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <rect x="3" y="4" width="18" height="16" rx="2" />
-                      <circle cx="8.5" cy="9" r="1.5" />
-                      <path d="m4 18 5-5 4 4 3-3 4 4" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Cloud"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path
-                        d="M7 18h10a4 4 0 0 0 .7-7.9A5.5 5.5 0 0 0 7 8.2 4.5 4.5 0 0 0 7 18Z"
-                      /></svg
-                  ></span>
-                  <span class="hiw-rail-divider"></span>
-                  <span class="hiw-rail-btn hiw-rail-bottom" title="Symbol library"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="m12 3 9 5-9 5-9-5 9-5Z" />
-                      <path d="m3 12 9 5 9-5M3 16l9 5 9-5" /></svg
-                  ></span>
-                </aside>
-
-                <aside class="hiw-pages" aria-hidden="true">
-                  <div class="hiw-panel-tabs">
-                    <span class="hiw-panel-tab is-active">Pages</span>
-                    <span class="hiw-panel-tab">Layers</span>
-                  </div>
-                  <div class="hiw-pages-body">
-                    <div class="hiw-page-card is-active">
-                      <img
-                        class="hiw-page-thumb"
-                        src="assets/industrial-plan.webp"
-                        width="60"
-                        height="42"
-                        loading="lazy"
-                        alt=""
-                        aria-hidden="true"
-                      />
-                      <div class="hiw-page-meta">
-                        <strong>Ground floor</strong>
-                        <span>Page 1 · 1191 × 842</span>
-                        <span>industriplan.pdf</span>
-                        <em class="hiw-page-badge" data-hiw-page-calibrated style="opacity: 1"
-                          >Calibrated</em
-                        >
-                      </div>
-                    </div>
-                    <div class="hiw-page-card is-muted">
-                      <img
-                        class="hiw-page-thumb"
-                        src="assets/industrial-plan.webp"
-                        width="60"
-                        height="42"
-                        loading="lazy"
-                        alt=""
-                        aria-hidden="true"
-                      />
-                      <div class="hiw-page-meta">
-                        <strong>Mezzanine</strong>
-                        <span>Page 2 · 1191 × 842</span>
-                        <span>industriplan.pdf</span>
-                      </div>
-                    </div>
-
-                    <div class="hiw-layers-title"><span>Drawing layers</span><span>12</span></div>
-                    <div class="hiw-layer-row">
-                      <i class="hiw-swatch hiw-swatch--draw"></i> Site markups
-                      <span class="hiw-layer-count">12</span>
-                    </div>
-                    <div class="hiw-layers-title">
-                      <span>Measurement layers</span><span data-hiw-layer-count>1</span>
-                    </div>
-                    <div class="hiw-layer-row is-active">
-                      <i class="hiw-swatch hiw-swatch--measure"></i> Measurements
-                      <span class="hiw-layer-count" data-hiw-layer-items>1 item</span>
-                    </div>
-                  </div>
-                </aside>
-
-                <div class="hiw-canvas">
-                  <div class="hiw-sheet">
-                    <img
-                      class="hiw-plan"
-                      src="assets/industrial-plan.webp"
-                      width="2151"
-                      height="1521"
-                      loading="lazy"
-                      decoding="async"
-                      alt="Industrial ground-floor plan of Northgate Logistics Hub with the warehouse, workshop, open office, meeting rooms, reception and breakroom."
-                    />
-                    <svg class="hiw-overlay" viewBox="0 0 2151 1521" aria-hidden="true">
-                      <g class="hiw-rooms-layer" data-hiw-rooms-layer>
-                        <path
-                          class="hiw-room-path"
-                          data-hiw-room="office"
-                          pathLength="1"
-                          d="M1402 592H1748V845H1402Z"
-                        />
-                        <path
-                          class="hiw-room-path"
-                          data-hiw-room="meetingTop"
-                          pathLength="1"
-                          d="M1758 592H1878V845H1758Z"
-                        />
-                        <path
-                          class="hiw-room-path"
-                          data-hiw-room="wc"
-                          pathLength="1"
-                          d="M1888 592H2000V845H1888Z"
-                        />
-                        <path
-                          class="hiw-room-path"
-                          data-hiw-room="reception"
-                          pathLength="1"
-                          d="M1402 952H1642V1195H1402Z"
-                        />
-                        <path
-                          class="hiw-room-path"
-                          data-hiw-room="meetingBottom"
-                          pathLength="1"
-                          d="M1652 952H1848V1195H1652Z"
-                        />
-                        <path
-                          class="hiw-room-path"
-                          data-hiw-room="breakroom"
-                          pathLength="1"
-                          d="M1858 952H2000V1195H1858Z"
-                        />
-                      </g>
-                      <path
-                        class="hiw-area-fill"
-                        data-hiw-area-fill
-                        d="M282 97H1360V1180H282Z"
-                        style="fill-opacity: 0.2"
-                      />
-                      <path
-                        class="hiw-area-outline"
-                        data-hiw-area-outline
-                        pathLength="1"
-                        stroke-dasharray="1"
-                        stroke-dashoffset="0"
-                        d="M282 97H1360V1180H282Z"
-                      />
-                      <line
-                        class="hiw-leader"
-                        data-hiw-leader
-                        x1="760"
-                        y1="285"
-                        x2="820"
-                        y2="610"
-                        pathLength="1"
-                        stroke-dasharray="1"
-                        stroke-dashoffset="0"
-                      />
-                      <g data-hiw-calib-group>
-                        <line
-                          class="hiw-calib-line is-on"
-                          data-hiw-calib-line
-                          x1="330"
-                          y1="1148"
-                          x2="850"
-                          y2="1148"
-                        />
-                        <g
-                          class="hiw-calib-chip"
-                          data-hiw-calib-chip
-                          transform="translate(590 1105)"
-                          style="opacity: 1"
-                        >
-                          <rect x="-80" y="-22" width="160" height="42" rx="21" />
-                          <text x="0" y="4">Calibrated</text>
-                        </g>
-                      </g>
-                      <g data-hiw-handles>
-                        <g
-                          class="hiw-handle"
-                          data-hiw-handle="0"
-                          transform="translate(282 97)"
-                          style="opacity: 1"
-                        >
-                          <rect x="-13" y="-13" width="26" height="26" rx="2" />
-                        </g>
-                        <g
-                          class="hiw-handle"
-                          data-hiw-handle="1"
-                          transform="translate(1360 97)"
-                          style="opacity: 1"
-                        >
-                          <rect x="-13" y="-13" width="26" height="26" rx="2" />
-                        </g>
-                        <g
-                          class="hiw-handle"
-                          data-hiw-handle="2"
-                          transform="translate(1360 1180)"
-                          style="opacity: 1"
-                        >
-                          <rect x="-13" y="-13" width="26" height="26" rx="2" />
-                        </g>
-                        <g
-                          class="hiw-handle"
-                          data-hiw-handle="3"
-                          transform="translate(282 1180)"
-                          style="opacity: 1"
-                        >
-                          <rect x="-13" y="-13" width="26" height="26" rx="2" />
-                        </g>
-                      </g>
-                      <g class="hiw-crosshair" data-hiw-crosshair>
-                        <circle r="9" />
-                        <path d="M-18 0H18M0 -18V18" />
-                      </g>
-                    </svg>
-
-                    <button
-                      class="hiw-measure is-shown"
-                      type="button"
-                      data-hiw-measure
-                      disabled
-                      aria-label="Show the measurement as quantities"
-                    >
-                      <span class="hiw-measure-primary">Warehouse floor</span>
-                      <span class="hiw-measure-secondary">484 m² · Perimeter 88 m</span>
-                    </button>
-
-                    <div class="hiw-room-label" data-hiw-room-label hidden aria-hidden="true">
-                      <span class="hiw-room-label-name" data-hiw-room-name>Open Office</span>
-                      <span class="hiw-room-label-value" data-hiw-room-value
-                        >35 m² · Perimeter 19 m</span
-                      >
-                    </div>
-
-                    <span
-                      class="hiw-cursor-status"
-                      data-hiw-cursor-status
-                      hidden
-                      aria-hidden="true"
-                    ></span>
-
-                    <div class="hiw-cursor" data-hiw-cursor hidden aria-hidden="true">
-                      <svg viewBox="0 0 24 24">
-                        <path
-                          d="M5 3.5 19 11l-6.1 1.9L11 19 5 3.5Z"
-                          fill="#ffffff"
-                          stroke="#0b1114"
-                          stroke-width="1.4"
-                          stroke-linejoin="round"
-                        />
-                      </svg>
-                      <span class="hiw-cursor-ring" data-hiw-cursor-ring></span>
-                    </div>
-
-                    <span
-                      class="hiw-badge hiw-badge--door is-shown"
-                      data-hiw-badge="door"
-                      aria-hidden="true"
-                    >
-                      <svg viewBox="0 0 16 16" aria-hidden="true">
-                        <path
-                          d="M4 2v12M4 2a7 7 0 0 1 7 7M4 9h7"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.3"
-                          stroke-linecap="round"
-                        />
-                      </svg>
-                      6 doors
-                    </span>
-                    <span
-                      class="hiw-badge hiw-badge--window"
-                      data-hiw-badge="window"
-                      aria-hidden="true"
-                    >
-                      <svg viewBox="0 0 16 16" aria-hidden="true">
-                        <rect
-                          x="3"
-                          y="4"
-                          width="10"
-                          height="8"
-                          rx="1"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.3"
-                        />
-                        <path d="M8 4v8" stroke="currentColor" stroke-width="1.3" />
-                      </svg>
-                      9 windows
-                    </span>
-                    <span class="hiw-doornum" data-hiw-doornum="1" aria-hidden="true">1</span>
-                    <span class="hiw-doornum" data-hiw-doornum="2" aria-hidden="true">2</span>
-                    <span class="hiw-doornum" data-hiw-doornum="3" aria-hidden="true">3</span>
-                    <span class="hiw-doornum" data-hiw-doornum="4" aria-hidden="true">4</span>
-                    <span class="hiw-doornum" data-hiw-doornum="5" aria-hidden="true">5</span>
-                    <span class="hiw-doornum" data-hiw-doornum="6" aria-hidden="true">6</span>
-                  </div>
-                </div>
-
-                <aside class="hiw-right" aria-hidden="true">
-                  <div class="hiw-tabs">
-                    <span class="hiw-tab is-active" data-hiw-tab="props">Properties</span>
-                    <span class="hiw-tab" data-hiw-tab="takeoff">Takeoff</span>
-                    <span class="hiw-tab">Project</span>
-                  </div>
-
-                  <div class="hiw-panel" data-hiw-panel="props">
-                    <div class="hiw-selection">
-                      <div class="hiw-selection-head">
-                        <span class="hiw-tag">Selection</span>
-                        <span class="hiw-kind" data-hiw-selection-kind>Area</span>
-                      </div>
-                      <strong class="hiw-area-big" data-hiw-area-big>484 m²</strong>
-                      <span class="hiw-area-sub" data-hiw-area-sub
-                        >Perimeter 88 m · Page 1 · Measurements · 4 points</span
-                      >
-                    </div>
-
-                    <div class="hiw-field">
-                      <span>Label size</span><strong data-hiw-field="labelSize">6 pt</strong>
-                    </div>
-                    <div class="hiw-field">
-                      <span>Category</span><strong data-hiw-field="category">Floor</strong>
-                    </div>
-                    <div class="hiw-field">
-                      <span>Room</span><strong data-hiw-field="room">Warehouse</strong>
-                    </div>
-                    <div class="hiw-field">
-                      <span>Colour</span>
-                      <span class="hiw-swatch-inline"
-                        ><i></i><strong data-hiw-field="colour">#4cc9f0</strong></span
-                      >
-                    </div>
-                    <div class="hiw-field">
-                      <span>Stroke width</span><strong data-hiw-field="stroke">0,75 pt</strong>
-                    </div>
-                    <div class="hiw-field"><span>Visible on page</span><strong>Yes</strong></div>
-                    <div class="hiw-field"><span>Locked</span><strong>No</strong></div>
-                  </div>
-
-                  <div class="hiw-panel hiw-takeoff-panel" data-hiw-panel="takeoff" hidden>
-                    <div class="hiw-takeoff-head"><span>Quantities</span><em>Live</em></div>
-                    <div class="hiw-qrow" data-hiw-row>
-                      <span>Floor</span>
-                      <strong><span data-hiw-value data-target="484">0.0</span> m²</strong>
-                    </div>
-                    <div class="hiw-qrow" data-hiw-row>
-                      <span>Doors</span>
-                      <strong><span data-hiw-value data-target="6">0</span> pcs</strong>
-                    </div>
-                    <div class="hiw-qrow" data-hiw-row>
-                      <span>Windows</span>
-                      <strong><span data-hiw-value data-target="9">0</span> pcs</strong>
-                    </div>
-                    <div class="hiw-qrow" data-hiw-row>
-                      <span>Order · 5 % waste</span>
-                      <strong><span data-hiw-value data-target="508.2">0.0</span> m²</strong>
-                    </div>
-                    <div class="hiw-export-row">
-                      <span data-hiw-export="3400">CSV</span>
-                      <span data-hiw-export="3500">XLSX</span>
-                      <span data-hiw-export="3600">PDF</span>
-                    </div>
-                    <p class="hiw-note">
-                      Quantities are calculated from the measurement and stay on your machine.
-                    </p>
-                  </div>
-
-                  <div class="hiw-panel" data-hiw-panel="rooms" hidden>
-                    <div class="hiw-rooms-head"><span>Room areas</span><em>6 rooms</em></div>
-                    <div class="hiw-selection">
-                      <div class="hiw-selection-head">
-                        <span class="hiw-tag">Selection</span>
-                        <span class="hiw-kind" data-hiw-room-kind>Area</span>
-                      </div>
-                      <strong class="hiw-area-big" data-hiw-room-area>35 m²</strong>
-                      <span class="hiw-area-sub" data-hiw-room-sub
-                        >Open Office · Perimeter 19 m</span
-                      >
-                    </div>
-                    <div class="hiw-room-list">
-                      <span class="hiw-room-row" data-hiw-room-row="office"
-                        ><span>Open Office</span><strong>35 m²</strong></span
-                      >
-                      <span class="hiw-room-row" data-hiw-room-row="meetingTop"
-                        ><span>Meeting · norr</span><strong>12,5 m²</strong></span
-                      >
-                      <span class="hiw-room-row" data-hiw-room-row="wc"
-                        ><span>WC / Shower</span><strong>12,5 m²</strong></span
-                      >
-                      <span class="hiw-room-row" data-hiw-room-row="reception"
-                        ><span>Reception</span><strong>25 m²</strong></span
-                      >
-                      <span class="hiw-room-row" data-hiw-room-row="meetingBottom"
-                        ><span>Meeting · söder</span><strong>20 m²</strong></span
-                      >
-                      <span class="hiw-room-row" data-hiw-room-row="breakroom"
-                        ><span>Breakroom</span><strong>15 m²</strong></span
-                      >
-                    </div>
-                    <div class="hiw-room-total">
-                      <span>Total</span><strong data-hiw-room-total>120 m²</strong>
-                    </div>
-                    <p class="hiw-note">
-                      Each row is one measured room. The total updates while the demo draws.
-                    </p>
-                  </div>
-
-                  <div class="hiw-panel" data-hiw-panel="qty" hidden>
-                    <div class="hiw-takeoff-head"><span>Quantities</span><em>Live</em></div>
-                    <div class="hiw-qty-section">Room areas</div>
-                    <div class="hiw-qty-row"><span>Open Office</span><strong>35 m²</strong></div>
-                    <div class="hiw-qty-row">
-                      <span>Meeting · norr</span><strong>12,5 m²</strong>
-                    </div>
-                    <div class="hiw-qty-row"><span>WC / Shower</span><strong>12,5 m²</strong></div>
-                    <div class="hiw-qty-row"><span>Reception</span><strong>25 m²</strong></div>
-                    <div class="hiw-qty-row">
-                      <span>Meeting · söder</span><strong>20 m²</strong>
-                    </div>
-                    <div class="hiw-qty-row"><span>Breakroom</span><strong>15 m²</strong></div>
-                    <div class="hiw-qty-section">Objects</div>
-                    <div class="hiw-qty-row">
-                      <span>Doors</span><strong><span data-hiw-qty-doors>0</span> pcs</strong>
-                    </div>
-                    <div class="hiw-qty-row">
-                      <span>Windows</span><strong><span data-hiw-qty-windows>0</span> pcs</strong>
-                    </div>
-                    <div class="hiw-qty-row">
-                      <span>Fixtures</span><strong><span data-hiw-qty-fixtures>0</span> pcs</strong>
-                    </div>
-                    <div class="hiw-qty-total">
-                      <span>Total</span><strong data-hiw-qty-total>120 m² · 0 objects</strong>
-                    </div>
-                    <div class="hiw-export-row">
-                      <span data-hiw-qexport>CSV</span>
-                      <span data-hiw-qexport>XLSX</span>
-                      <span data-hiw-qexport>PDF</span>
-                    </div>
-                    <p class="hiw-note">
-                      The Quantities mode shows the rooms on the right and counts doors, windows and
-                      fixtures. Everything stays local.
-                    </p>
-                  </div>
-                </aside>
-              </div>
-
-              <div class="hiw-status" aria-hidden="true">
-                <span class="hiw-status-chip is-ok" data-hiw-status
-                  ><i class="hiw-status-dot"></i
-                  ><span data-hiw-status-text>Calibrated · 1:100</span></span
-                >
-                <span class="hiw-status-unsaved">Unsaved changes</span>
-                <span>Autosave 15 s</span>
-                <span class="hiw-status-spacer"></span>
-                <span>Zoom 101 %</span>
-                <span>Page 1 / 4</span>
-              </div>
-
-              <div class="hiw-chip-layer" data-hiw-chips aria-hidden="true"></div>
-              <div class="hiw-stamp" data-hiw-stamp aria-hidden="true">READY</div>
-            </div>
-
-            <div class="hiw-compact" data-hiw-ui aria-hidden="true">
-              <span class="hiw-compact-status" data-hiw-compact-status>Calibrated · 1:100</span>
-              <strong class="hiw-compact-total" data-hiw-compact-total>484 m²</strong>
-            </div>
-          </div>
-
-          <ol class="steps">
-            <li>
-              <span class="step-number" aria-hidden="true">1</span>
-              <h3>Open and calibrate</h3>
+          <div class="process">
+            <div>
+              <span class="step-num">STEP 01</span>
+              <h3>Calibrate the page</h3>
               <p>
-                Open a PDF plan or import a scanned TIF. Calibrate against a known dimension or
-                enter the printed 1:N scale, then lock it.
+                Measure a known dimension or enter the scale. Check against a second dimension and
+                lock.
               </p>
-            </li>
-            <li>
-              <span class="step-number" aria-hidden="true">2</span>
-              <h3>Measure, count and annotate</h3>
-              <p>
-                Measure lengths and areas, count doors and fixtures, organise by category and room,
-                and add the notes your team needs.
-              </p>
-            </li>
-            <li>
-              <span class="step-number" aria-hidden="true">3</span>
+            </div>
+            <div>
+              <span class="step-num">STEP 02</span>
+              <h3>Measure and link</h3>
+              <p>Draw the area, add deductions and link the measurement to the room.</p>
+            </div>
+            <div>
+              <span class="step-num">STEP 03</span>
               <h3>Review and export</h3>
-              <p>
-                Check gross, deduction, net, waste and order quantities, then export CSV, XLSX, a
-                print-friendly PDF report or a marked-up drawing.
-              </p>
-            </li>
-          </ol>
-
-          <p class="section-link"><a href="features/">See the full feature tour →</a></p>
+              <p>Check net, waste and revision. Export the drawing, the quantities or both.</p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section class="section use-cases" id="use-cases">
+      <section class="section" id="roles">
         <div class="wrap">
           <div class="section-head">
-            <p class="eyebrow">Built for site work and property management</p>
-            <h2>For the people who maintain the building</h2>
-            <p>
-              Use one takeoff for area follow-up, inventories, schedules, maintenance planning and
-              contractor handoff instead of copying numbers between spreadsheets.
-            </p>
+            <p class="eyebrow">Two roles, one project</p>
+            <h2>What you hand over differs — the data does not</h2>
           </div>
-
-          <div class="card-grid four">
-            <article class="card">
-              <p class="card-kicker">Facilities operations</p>
-              <h3>For drifttekniker</h3>
+          <div class="roles-flat">
+            <article>
+              <p class="role-kicker">Operations technician</p>
+              <h3>From site visit to work order</h3>
               <p>
-                Measure room areas, inventory fixtures and equipment, add condition notes and keep
-                drawing updates tied to the plan.
+                Mark the deviation on the right page, measure the area that changes in a rebuild and
+                update the operation card when a unit or sensor is replaced.
               </p>
+              <ul>
+                <li>A marked drawing with the action, location and status</li>
+                <li>Area per room after a change of use</li>
+                <li>An operation card that matches what is installed</li>
+                <li>Touch and pen input for the site round</li>
+              </ul>
             </article>
-            <article class="card">
-              <p class="card-kicker">Technical property management</p>
-              <h3>For tekniska förvaltare</h3>
+            <article>
+              <p class="role-kicker">Technical property manager</p>
+              <h3>From area to order</h3>
               <p>
-                Follow up areas, prepare a count schedule for doors, windows and fixtures, review
-                revision changes and prepare procurement quantities.
+                Track areas per building and floor, produce door and window lists and review the
+                revision before the order goes out.
               </p>
-            </article>
-            <article class="card">
-              <p class="card-kicker">Procurement</p>
-              <h3>One quantity set for the order</h3>
-              <p>
-                Review gross, deduction, net, waste and order quantities, then hand off CSV, XLSX or
-                a print-friendly PDF report.
-              </p>
-            </article>
-            <article class="card">
-              <p class="card-kicker">Drawing updates</p>
-              <h3>Review before you order</h3>
-              <p>
-                Compare a saved revision with the current plan, follow changed, added and removed
-                markups and keep both drawings read-only.
-              </p>
+              <ul>
+                <li>Area per room, floor and building</li>
+                <li>Door, window and equipment lists by type</li>
+                <li>Order quantities with waste and rounding</li>
+                <li>Revision comparison with both files untouched</li>
+              </ul>
             </article>
           </div>
-        </div>
-      </section>
-
-      <section class="section features" id="features">
-        <div class="wrap">
-          <div class="section-head">
-            <p class="eyebrow">One takeoff, every sheet</p>
-            <h2>Measure, count and export from the same project</h2>
-            <p>
-              PDF takeoff and PDF measurement share the same item data, so the quantities, schedules
-              and exports stay in sync. There is no second spreadsheet to update.
-            </p>
-          </div>
-
-          <div class="card-grid three">
-            <article class="card">
-              <h3>Measure with confidence</h3>
-              <p>
-                Calibrate once, lock the scale and measure lengths, areas, radius, diameter, arcs,
-                angles, slopes and volumes with snapping.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Count once, schedule everywhere</h3>
-              <p>
-                Create your own count types, count pieces per object and review a count schedule per
-                type in the Markups table.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Compare revisions safely</h3>
-              <p>
-                Open a saved revision or PDF drawing beside the plan, compare changes and export a
-                comparison PDF without merging either file.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Export what the order needs</h3>
-              <p>
-                Produce CSV, a six-sheet XLSX workbook, a print-friendly quantity report and a
-                labelled drawing PDF.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Operation cards</h3>
-              <p>
-                Build driftkort sheets with A3 templates, sheet fields and the schematic symbol
-                library, on page-scoped layers beside the drawings.
-              </p>
-            </article>
-            <article class="card">
-              <h3>English and Swedish</h3>
-              <p>
-                Work in English or Svenska. The interface, reports and export headings switch
-                immediately, and numbers, dates and CSV follow the selected language.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Report-ready branding</h3>
-              <p>
-                Add facility, client, project number, revision, author and notes, plus a logo, to
-                the quantity PDF and Excel summary.
-              </p>
-            </article>
-          </div>
-
-          <p class="section-link"><a href="features/">See all features and screenshots →</a></p>
-        </div>
-      </section>
-
-      <section class="section screenshots" id="screenshots">
-        <div class="wrap">
-          <div class="section-head">
-            <p class="eyebrow">The real interface</p>
-            <h2>See the workflow on a real drawing</h2>
-            <p>
-              These screenshots come from the current code and the bundled demo project. Click any
-              image to inspect the interface at full size.
-            </p>
-          </div>
-
-          <div class="shot-grid">
-            <figure class="shot">
-              <a
-                class="shot-link"
-                href="screenshots/measure.png"
-                data-lightbox
-                aria-label="Enlarge screenshot: measurement and annotation tools"
-              >
-                <img
-                  src="screenshots/measure.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer and New measurement options, with Properties on the right."
-                />
-                <span class="zoom-hint">Click to enlarge</span>
-              </a>
-              <figcaption>
-                <strong>Measure and annotate.</strong> Measurement and drawing tools share one
-                canvas but stay on separate layer types.
-              </figcaption>
-            </figure>
-            <figure class="shot">
-              <a
-                class="shot-link"
-                href="screenshots/operation-card.png"
-                data-lightbox
-                aria-label="Enlarge screenshot: operation card sheet with schematic symbols"
-              >
-                <img
-                  src="screenshots/operation-card.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr showing an A3 operation card sheet with schematic symbols for a heat exchanger, fans, valves and dampers, the drawing layers and the sheet title block."
-                />
-                <span class="zoom-hint">Click to enlarge</span>
-              </a>
-              <figcaption>
-                <strong>Operation cards.</strong> Draw driftkort sheets with the schematic symbol
-                library, templates and sheet fields.
-              </figcaption>
-            </figure>
-            <figure class="shot">
-              <a
-                class="shot-link"
-                href="screenshots/count-schedule.png"
-                data-lightbox
-                aria-label="Enlarge screenshot: count schedule grouped by count type"
-              >
-                <img
-                  src="screenshots/count-schedule.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="The GridScalr Markups table grouped by count type with the Count type column visible and count rows for doors, windows and fixtures."
-                />
-                <span class="zoom-hint">Click to enlarge</span>
-              </a>
-              <figcaption>
-                <strong>Count schedule.</strong> Group the Markups table by count type to review a
-                count schedule for doors, windows or fixtures.
-              </figcaption>
-            </figure>
-            <figure class="shot">
-              <a
-                class="shot-link"
-                href="screenshots/quantities.png"
-                data-lightbox
-                aria-label="Enlarge screenshot: quantities dialog"
-              >
-                <img
-                  src="screenshots/quantities.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="The GridScalr Quantities dialog showing gross, deduction, net, waste and order quantities by category and room."
-                />
-                <span class="zoom-hint">Click to enlarge</span>
-              </a>
-              <figcaption>
-                <strong>Procurement quantities.</strong> Live quantities with deductions, waste and
-                rounding for orders.
-              </figcaption>
-            </figure>
-            <figure class="shot">
-              <a
-                class="shot-link"
-                href="screenshots/split-view.png"
-                data-lightbox
-                aria-label="Enlarge screenshot: reference pane and revision comparison"
-              >
-                <img
-                  src="screenshots/split-view.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr with a primary editable canvas and a read-only reference pane showing the same calibrated floor plan at the same pan and zoom, with a source selector for Same page, Revision and Drawing."
-                />
-                <span class="zoom-hint">Click to enlarge</span>
-              </a>
-              <figcaption>
-                <strong>Reference view.</strong> Compare the same page, a revision or a PDF drawing
-                while edits stay in one place.
-              </figcaption>
-            </figure>
-          </div>
-        </div>
-      </section>
-
-      <section class="section themes" id="themes">
-        <div class="wrap">
-          <div class="section-head">
-            <p class="eyebrow">Seven interface themes</p>
-            <h2>Work in the light that suits the room</h2>
-            <p>
-              Medium Gray is the default. Switch to Light for bright rooms, or pick Dark Gray, Dark
-              Jade, Navy, Slate or Graphite for a darker workspace. Themes change the interface
-              chrome and the canvas surround only; drawings and PDF exports keep their colours.
-            </p>
-          </div>
-
-          <div class="theme-grid">
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="screenshots/theme-medium-grey.png"
-                data-lightbox
-                aria-label="Enlarge screenshot: default medium gray theme"
-              >
-                <img
-                  src="screenshots/theme-medium-grey.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr with the medium gray interface theme, a calibrated industrial floor plan and the Properties panel."
-                />
-                <span class="zoom-hint">Click to enlarge</span>
-              </a>
-              <figcaption>
-                <strong>Default (medium gray)</strong> Neutral mid-gray chrome with a darker canvas
-                surround.
-              </figcaption>
-            </figure>
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="screenshots/theme-light-green.png"
-                data-lightbox
-                aria-label="Enlarge screenshot: light theme"
-              >
-                <img
-                  src="screenshots/theme-light-green.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr with the light interface theme, a calibrated industrial floor plan and the Properties panel."
-                />
-                <span class="zoom-hint">Click to enlarge</span>
-              </a>
-              <figcaption>
-                <strong>Light</strong> Cool light chrome and white panels for daylight work.
-              </figcaption>
-            </figure>
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="screenshots/theme-dark-grey.png"
-                data-lightbox
-                aria-label="Enlarge screenshot: dark gray theme"
-              >
-                <img
-                  src="screenshots/theme-dark-grey.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr with the dark gray interface theme, a calibrated industrial floor plan and the Properties panel."
-                />
-                <span class="zoom-hint">Click to enlarge</span>
-              </a>
-              <figcaption>
-                <strong>Dark Gray</strong> Low-chroma dark chrome with the jade accent.
-              </figcaption>
-            </figure>
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="screenshots/theme-jade.png"
-                data-lightbox
-                aria-label="Enlarge screenshot: dark jade theme"
-              >
-                <img
-                  src="screenshots/theme-jade.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr with the original dark jade interface theme, a calibrated industrial floor plan and the Properties panel."
-                />
-                <span class="zoom-hint">Click to enlarge</span>
-              </a>
-              <figcaption>
-                <strong>Dark Jade</strong> The original dark palette with the jade accent.
-              </figcaption>
-            </figure>
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="screenshots/theme-navy.png"
-                data-lightbox
-                aria-label="Enlarge screenshot: navy theme"
-              >
-                <img
-                  src="screenshots/theme-navy.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr with the navy interface theme, a calibrated industrial floor plan and the Properties panel."
-                />
-                <span class="zoom-hint">Click to enlarge</span>
-              </a>
-              <figcaption>
-                <strong>Navy</strong> Blue-shifted dark chrome with the jade accent.
-              </figcaption>
-            </figure>
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="screenshots/theme-slate.png"
-                data-lightbox
-                aria-label="Enlarge screenshot: slate theme"
-              >
-                <img
-                  src="screenshots/theme-slate.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr with the slate interface theme, a calibrated industrial floor plan and the Properties panel."
-                />
-                <span class="zoom-hint">Click to enlarge</span>
-              </a>
-              <figcaption>
-                <strong>Slate</strong> Blue-grey chrome with white text and a muted steel accent.
-              </figcaption>
-            </figure>
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="screenshots/theme-graphite.png"
-                data-lightbox
-                aria-label="Enlarge screenshot: graphite theme"
-              >
-                <img
-                  src="screenshots/theme-graphite.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr with the graphite interface theme, a calibrated industrial floor plan and the Properties panel."
-                />
-                <span class="zoom-hint">Click to enlarge</span>
-              </a>
-              <figcaption>
-                <strong>Graphite</strong> Near-black neutral chrome with a muted steel accent.
-              </figcaption>
-            </figure>
-          </div>
-        </div>
-      </section>
-
-      <section class="section demo" id="demo">
-        <div class="wrap demo-grid">
-          <div>
-            <p class="eyebrow">Try before you download</p>
-            <h2>Open the demo project</h2>
-            <p>
-              Explore a calibrated three-sheet takeoff with categories, rooms, deductions,
-              annotations and a saved revision. The sample drawing is the same industrial plan used
-              in the screenshots.
-            </p>
-          </div>
-          <div class="demo-actions">
+          <p>
             <a
-              class="button primary"
-              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
-              >Download demo project</a
+              class="more-link"
+              href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+              >Read the role workflows</a
             >
-            <a
-              class="button secondary"
-              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/industrial-plan.pdf"
-              >Download sample PDF</a
-            >
-            <p class="muted">
-              Install GridScalr first, then open the <code>.gridscalr</code> project. The source PDF
-              is referenced, not copied into the project.
-            </p>
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="traceability">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Data you can trust</p>
+            <h2>Traceability without a cloud</h2>
+          </div>
+          <div class="trust-flat">
+            <div>
+              <span class="k">Source</span>
+              <h3>The drawing is never modified</h3>
+              <p>Referenced by path and SHA-256. Both saving and export refuse to overwrite it.</p>
+            </div>
+            <div>
+              <span class="k">Saving</span>
+              <h3>Conditional writes</h3>
+              <p>
+                A file changed on disk is never overwritten silently. Both versions are preserved.
+              </p>
+            </div>
+            <div>
+              <span class="k">Revision</span>
+              <h3>Compare before ordering</h3>
+              <p>A saved revision against the current plan, side by side. Nothing is merged.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="exports">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">The rest of the workflow</p>
+            <h2>Calibrate, then export what the order needs</h2>
+          </div>
+          <div class="two-shots">
+            <figure class="big-shot">
+              <div class="big-shot-bar">
+                <span><b>Calibration</b> · known dimension 10 m</span>
+              </div>
+              <a
+                class="shot-link"
+                href="screenshots/site/en/calibration.webp"
+                data-lightbox
+                aria-label="Click to enlarge: The page scale is stored per sheet and each measurement keeps the scale it was created with."
+              >
+                <img
+                  src="screenshots/site/en/calibration.webp"
+                  width="1920"
+                  height="1080"
+                  loading="lazy"
+                  alt="Calibration dialog in GridScalr where a known 10 m dimension sets the page scale, with a per-page lock option."
+                />
+              </a>
+              <figcaption>
+                <span
+                  >The page scale is stored per sheet and each measurement keeps the scale it was
+                  created with.</span
+                >
+              </figcaption>
+            </figure>
+            <figure class="big-shot">
+              <div class="big-shot-bar">
+                <span><b>Drawing export</b> · pages, area and visible content</span>
+              </div>
+              <a
+                class="shot-link"
+                href="screenshots/site/en/export.webp"
+                data-lightbox
+                aria-label="Click to enlarge: Export a flattened PDF with labels and legend, or optional layers for a reader that supports them."
+              >
+                <img
+                  src="screenshots/site/en/export.webp"
+                  width="1920"
+                  height="1080"
+                  loading="lazy"
+                  alt="Drawing export dialog in GridScalr with page selection, crop area, layer selection, optional OCG layers and a legend."
+                />
+              </a>
+              <figcaption>
+                <span
+                  >Export a flattened PDF with labels and legend, or optional layers for a reader
+                  that supports them.</span
+                >
+              </figcaption>
+            </figure>
           </div>
         </div>
       </section>
@@ -1829,7 +884,7 @@ npm run tauri build</code></pre>
             <span>GridScalr</span>
           </a>
           <p class="muted">
-            Local-first PDF and TIF takeoff for drawing measurement and procurement quantities.
+            Local area measurement, operation cards and quantity takeoff for PDF and TIF drawings.
           </p>
           <p class="footer-version">
             Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed

@@ -3,27 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GridScalr — mängdning av PDF- och TIF-ritningar</title>
+    <title>GridScalr — mät area, driftkort och mängdning</title>
     <meta
       name="description"
-      content="Mät och mängda PDF- och TIF-ritningar lokalt. Kalibrera planer, räkna dörrar, fönster och inventarier samt exportera inköpsunderlag för drift och förvaltning."
+      content="Mät area i PDF- och TIF-ritningar, rita driftkort och ta fram beställningsmängder lokalt. Kalibrera en gång, dra av schakt och exportera till Excel eller PDF."
     />
     <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/sv/" />
     <link rel="alternate" hreflang="en" href="https://majorjohndoe.github.io/gridscalr/" />
     <link rel="alternate" hreflang="sv" href="https://majorjohndoe.github.io/gridscalr/sv/" />
     <link rel="alternate" hreflang="x-default" href="https://majorjohndoe.github.io/gridscalr/" />
     <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#14181b" />
+    <meta name="theme-color" content="#f4f6f8" />
     <link rel="icon" href="../assets/favicon.ico" sizes="any" />
     <link rel="icon" href="../assets/app-icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="../assets/app-icon-128.png" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="GridScalr" />
-    <meta property="og:title" content="GridScalr — mängdning av PDF- och TIF-ritningar" />
+    <meta property="og:title" content="GridScalr — mät area, driftkort och mängdning" />
     <meta
       property="og:description"
-      content="Mät och mängda PDF- och TIF-ritningar lokalt. Kalibrera planer, räkna dörrar, fönster och inventarier samt exportera inköpsunderlag för drift och förvaltning."
+      content="Mät area i PDF- och TIF-ritningar, rita driftkort och ta fram beställningsmängder lokalt. Kalibrera en gång, dra av schakt och exportera till Excel eller PDF."
     />
     <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/sv/" />
     <meta
@@ -40,10 +40,10 @@
     <meta property="og:locale:alternate" content="en_US" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="GridScalr — mängdning av PDF- och TIF-ritningar" />
+    <meta name="twitter:title" content="GridScalr — mät area, driftkort och mängdning" />
     <meta
       name="twitter:description"
-      content="Mät och mängda PDF- och TIF-ritningar lokalt. Kalibrera planer, räkna dörrar, fönster och inventarier samt exportera inköpsunderlag för drift och förvaltning."
+      content="Mät area i PDF- och TIF-ritningar, rita driftkort och ta fram beställningsmängder lokalt. Kalibrera en gång, dra av schakt och exportera till Excel eller PDF."
     />
     <meta
       name="twitter:image"
@@ -51,9 +51,7 @@
     />
 
     <link rel="stylesheet" href="../assets/site.css" />
-    <link rel="stylesheet" href="../assets/how-it-works.css" />
     <script src="../assets/site.js" defer></script>
-    <script src="../assets/how-it-works.js" defer></script>
 
     <script type="application/ld+json">
       {
@@ -67,7 +65,7 @@
         "license": "https://opensource.org/licenses/MIT",
         "downloadUrl": "{{RELEASE_URL}}",
         "releaseNotes": "{{RELEASE_NOTES_URL}}",
-        "description": "Lokal skrivbordsapp för mätning av PDF- och TIF-ritningar, räkning av objekt och framtagning av inköpsunderlag för drifttekniker och tekniska förvaltare.",
+        "description": "Lokal skrivbordsapp för att mäta area, rita driftkort och ta fram mängder i PDF- och TIF-ritningar, byggd för drifttekniker och tekniska förvaltare.",
         "offers": {
           "@type": "Offer",
           "price": "0",
@@ -167,11 +165,12 @@
         </a>
 
         <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="#areas">Areor</a>
+          <a href="#operation-cards">Driftkort</a>
+          <a href="#quantities">Mängder</a>
           <a href="funktioner/">Funktioner</a>
-          <a href="#themes">Teman</a>
           <a href="#download">Ladda ner</a>
           <a href="#docs">Dokumentation</a>
-          <a href="#faq">Frågor</a>
         </nav>
 
         <nav class="lang-switch" aria-label="Språk" data-lang-switch>
@@ -182,1424 +181,474 @@
     </header>
 
     <main id="main">
-      <section class="hero" id="hero">
-        <div class="wrap hero-grid">
-          <div class="hero-copy">
-            <p class="eyebrow">Lokal mängdning av PDF- och TIF-ritningar</p>
-            <h1>Gör inköpsunderlag av PDF- och TIF-ritningar — lokalt.</h1>
+      <section class="hero hero-tasks" id="hero">
+        <div class="wrap">
+          <div class="hero-center">
+            <p class="eyebrow">För drifttekniker och tekniska förvaltare</p>
+            <h1>Mät area, rita driftkort och ta fram mängden — på samma ritning.</h1>
             <p class="lede">
-              Kalibrera planen, mät areor, räkna dörrar och inventarier och exportera CSV, Excel
-              eller PDF. Inget konto, inget moln, ingen uppladdning.
+              GridScalr är ett lokalt skrivbordsprogram för PDF- och TIF-ritningar. Kalibrera en
+              gång, mät rumsarea med avdrag, dokumentera driftkortet och ta fram
+              beställningsmängder. Inget konto, inget moln, ingen uppladdning.
             </p>
-
-            <div class="release-badge">
-              <span class="version-pill" data-release-version>{{RELEASE_VERSION}}</span>
-              <span>Publicerad {{RELEASE_DATE}}</span>
-              <a href="{{RELEASE_NOTES_URL}}">Nyheter i {{RELEASE_VERSION}}</a>
-            </div>
-
             <div class="actions">
               <a class="button primary" data-installer href="{{INSTALLER_URL}}"
                 >Ladda ner GridScalr {{RELEASE_VERSION}}</a
               >
-              <a class="button secondary" href="funktioner/">Se alla funktioner</a>
-              <a class="button secondary" href="#how-it-works">Se demon</a>
+              <a class="button secondary" href="#areas">Se hur area mäts</a>
+              <a
+                class="button secondary"
+                href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+                >Hämta demoprojektet</a
+              >
             </div>
-            <p class="download-note">
-              Windows 10/11, macOS och Linux x86_64.
-              <a data-release-page href="{{RELEASE_URL}}">Alla nedladdningar och kontrollsummor</a>
+            <p class="hero-meta">
+              <span>Windows 10/11</span><span>macOS</span><span>Linux</span
+              ><span>Öppen källkod (MIT)</span><span>Fungerar offline</span>
             </p>
-
-            <ul class="trust">
-              <li>Inget konto</li>
-              <li>Inget moln</li>
-              <li>Ingen telemetri</li>
-              <li>Källritningar ändras aldrig</li>
-            </ul>
           </div>
 
-          <figure class="hero-shot">
+          <figure class="big-shot">
+            <div class="big-shot-bar">
+              <span><b>Demoprojekt</b> · Northgate Logistics Hub · industriplan.pdf</span>
+              <span class="bar-right"
+                ><span>Sida 1/4</span><span>Area 484 m²</span><span>Skala 1:100</span></span
+              >
+            </div>
             <a
               class="shot-link"
-              href="../screenshots/hero.png"
+              href="../screenshots/site/sv/hero.webp"
               data-lightbox
-              aria-label="Förstora skärmbild: kalibrerad industrimängdning"
+              aria-label="Klicka för full storlek: <b>Area 484 m²</b> markerad i lagret Mätningar, med rum, kategori och avdrag i egenskapspanelen."
             >
               <img
-                src="../screenshots/hero.png"
+                src="../screenshots/site/sv/hero.webp"
                 width="1920"
                 height="1080"
                 fetchpriority="high"
-                alt="GridScalr visar en kalibrerad industriplan med mätningar för lager, kontor och verkstad samt panelen Egenskaper."
+                alt="GridScalr med en kalibrerad industriritning i 100 % zoom. En area på 484 m² är markerad, egenskapspanelen visar area, omkrets och rum, och sidlistan innehåller driftkort LB01."
               />
-              <span class="zoom-hint">Klicka för att förstora</span>
             </a>
             <figcaption>
-              En kalibrerad industrimängdning med rektangelareor, antal, ett avdrag och
-              ritningsanteckningar.
+              <span
+                ><b>Area 484 m²</b> markerad i lagret Mätningar, med rum, kategori och avdrag i
+                egenskapspanelen.</span
+              ><span>Klicka för full storlek</span>
             </figcaption>
           </figure>
         </div>
       </section>
 
-      <section class="section local-first" id="local-first">
+      <section class="kpi-section" aria-label="Nyckeltal">
         <div class="wrap">
-          <div class="section-head">
-            <p class="eyebrow">Privat från början</p>
-            <h2>Dina ritningar lämnar aldrig datorn</h2>
-            <p>
-              GridScalr läser ritningen från disk, sparar mängdningen lokalt och skriver bara de
-              exporter du ber om. Det finns inget konto, inget moln och ingen bakgrundstjänst
-              emellan.
-            </p>
-          </div>
-
-          <div class="flow" aria-label="Lokalt arbetsflöde">
-            <div class="flow-step">
-              <span class="flow-kicker">Källa</span>
-              <strong>PDF- eller TIF-ritning</strong>
-              <span>Refereras via sökväg och SHA-256. Ändras aldrig.</span>
-            </div>
-            <span class="flow-arrow" aria-hidden="true">→</span>
-            <div class="flow-step">
-              <span class="flow-kicker">Projekt</span>
-              <strong>Mängdning på din dator</strong>
-              <span>Lager, mätningar, antal, mängder och autosparning.</span>
-            </div>
-            <span class="flow-arrow" aria-hidden="true">→</span>
-            <div class="flow-step">
-              <span class="flow-kicker">Resultat</span>
-              <strong>CSV, Excel eller PDF</strong>
-              <span>Skrivs där du väljer. Inget laddas upp.</span>
-            </div>
-          </div>
-
-          <div class="card-grid three">
-            <article class="card">
-              <h3>Inget konto, moln eller telemetri</h3>
-              <p>
-                Mätning, räkning, projektfiler och exporter fungerar utan nätanslutning. Det finns
-                ingen telemetri och ingen automatisk uppdateringstjänst.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Källritningarna skyddas</h3>
-              <p>
-                Varje sparning och export vägrar skriva över en ritning som tillhör projektet.
-                Källfilen och dess kontrollsumma förblir under din kontroll.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Ett lokalt projekt, alla sidor</h3>
-              <p>
-                Flera PDF-filer och TIF-skanningar delar ett projekt. Nya ritningar läggs till efter
-                de befintliga sidorna i stället för att ersätta paketet du redan mätt.
-              </p>
-            </article>
+          <div class="kpi">
+            <div><strong>484 m²</strong><span>Area i demoprojektet</span></div>
+            <div><strong>1:100</strong><span>Kalibrerad skala, låsbar</span></div>
+            <div><strong>532,5 m²</strong><span>Beställning vid 10 % spill</span></div>
+            <div><strong>0</strong><span>Konton, uppladdningar, telemetri</span></div>
           </div>
         </div>
       </section>
 
-      <section class="section how" id="how-it-works">
+      <section class="section" id="areas">
+        <div class="wrap">
+          <p class="task-index"><span class="num">01</span><span class="label">Areor</span></p>
+          <div class="task-head">
+            <h2>Mät area med avdrag, rum och nettoarea</h2>
+            <div class="task-body">
+              <p>
+                Kalibrera mot ett känt mått eller ange utskriven skala. Rita rummet som rektangel
+                eller polygon, dra av schakt och öppningar och koppla arean till rummet så att den
+                räknas om när geometrin ändras.
+              </p>
+              <a class="more-link" href="funktioner/#calibrate-measure">Se areamätning</a>
+            </div>
+          </div>
+          <div class="inline-facts">
+            <div><b>Skala</b><span>Känt mått eller utskriven 1:N, låsbar per sida</span></div>
+            <div><b>Area</b><span>Rektangel och polygon med fästpunkter</span></div>
+            <div><b>Avdrag</b><span>Egen rad som dras från nettot</span></div>
+            <div><b>Rum</b><span>Arean räknas om från kopplade mätningar</span></div>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar">
+              <span><b>Utrymmen</b> · byggnad, våningar och rum</span>
+              <span class="bar-right"
+                ><span>Uppmätt och manuell area</span><span>Saknad area flaggas</span></span
+              >
+            </div>
+            <a
+              class="shot-link"
+              href="../screenshots/site/sv/spaces.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: <b>Area per rum</b>, med byggnad och våning ovanför. Uppmätt area kommer från de kopplade mätningarna."
+            >
+              <img
+                src="../screenshots/site/sv/spaces.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Utrymmesregistret i GridScalr med byggnad, våning och rum, där lagret visar uppmätt area 484 m² och kontoret en manuell area."
+              />
+            </a>
+            <figcaption>
+              <span
+                ><b>Area per rum</b>, med byggnad och våning ovanför. Uppmätt area kommer från de
+                kopplade mätningarna.</span
+              >
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="operation-cards">
+        <div class="wrap">
+          <p class="task-index"><span class="num">02</span><span class="label">Driftkort</span></p>
+          <div class="task-head">
+            <h2>Rita driftkortet i samma projekt som planen</h2>
+            <div class="task-body">
+              <p>
+                A3-mallar med bladfält, schemasymboler och sidbundna lager. Driftkortet är en egen
+                sida bredvid planen, så ventilation, värme och styr följer samma projektnummer och
+                revision.
+              </p>
+              <a class="more-link" href="funktioner/#operation-cards">Se driftkort</a>
+            </div>
+          </div>
+          <div class="inline-facts">
+            <div><b>Blad</b><span>A3- och A2-mall med bladfält</span></div>
+            <div><b>Symboler</b><span>Ventilation, värme, styr och el</span></div>
+            <div><b>Lager</b><span>Egna lager per sida, lås per objekt</span></div>
+            <div><b>Export</b><span>PDF med lager, etiketter och teckenförklaring</span></div>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar">
+              <span><b>Driftkort LB01</b> · ventilationsaggregat · sida 4/4</span>
+              <span class="bar-right"><span>Bladfält ifyllt</span><span>146 objekt</span></span>
+            </div>
+            <a
+              class="shot-link"
+              href="../screenshots/site/sv/operation-card.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: <b>LB01</b> med aggregat, kanaler och givare. Lagren för uteluft, frånluft och aggregat syns till vänster."
+            >
+              <img
+                src="../screenshots/site/sv/operation-card.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Driftkort LB01 för ett ventilationsaggregat på en A3-mall, med kanaler, givare, schemasymboler och lager för uteluft, frånluft och aggregat."
+              />
+            </a>
+            <figcaption>
+              <span
+                ><b>LB01</b> med aggregat, kanaler och givare. Lagren för uteluft, frånluft och
+                aggregat syns till vänster.</span
+              >
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="quantities">
+        <div class="wrap">
+          <p class="task-index"><span class="num">03</span><span class="label">Mängder</span></p>
+          <div class="task-head">
+            <h2>Från area till beställningsmängd</h2>
+            <div class="task-body">
+              <p>
+                Mängden räknas från objekten i projektet, inte från ett andra kalkylark. Brutto,
+                avdrag, netto, spill och beställningsmängd visas per rum och kategori — och
+                exporteras till Excel, CSV eller en utskriftsvänlig rapport.
+              </p>
+              <a class="more-link" href="funktioner/#quantities">Se mängdning</a>
+            </div>
+          </div>
+          <div class="inline-facts">
+            <div><b>Netto</b><span>Brutto minus avdrag, per rum</span></div>
+            <div><b>Spill</b><span>Procent och avrundning per objekt</span></div>
+            <div><b>Antal</b><span>Dörrar, fönster och utrustning per typ</span></div>
+            <div><b>Export</b><span>XLSX med sex blad, CSV och PDF</span></div>
+          </div>
+          <figure class="big-shot">
+            <div class="big-shot-bar">
+              <span><b>Beställning</b> · live-sammanställning per rum</span>
+              <span class="bar-right"
+                ><span>Netto 484 m²</span><span>Beställning 532,5 m²</span></span
+              >
+            </div>
+            <a
+              class="shot-link"
+              href="../screenshots/site/sv/order.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: <b>Lager: 484 m² brutto</b>, 0 avdrag, 48,4 m² spill och 532,5 m² att beställa."
+            >
+              <img
+                src="../screenshots/site/sv/order.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Beställningsdialogen i GridScalr med brutto, avdrag, netto, spill och beställningsmängd per rum, samt exportknappar för CSV, Excel och PDF."
+              />
+            </a>
+            <figcaption>
+              <span
+                ><b>Lager: 484 m² brutto</b>, 0 avdrag, 48,4 m² spill och 532,5 m² att
+                beställa.</span
+              >
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="worked-example">
+        <div class="wrap">
+          <div class="example">
+            <div>
+              <p class="eyebrow">Räkneexempel</p>
+              <h2>Siffrorna går att kontrollera</h2>
+              <p>
+                Varje mängd går att spåra till en geometri på en sida. Avdraget dras från
+                bruttoarean, spelet läggs på nettot och avrundningen sker sist — per objekt, inte
+                per rapport.
+              </p>
+              <p class="note">
+                Öppna demoprojektet och jämför samma fyra tal. Det följer med appen och innehåller
+                ritning, driftkort och mängder.
+              </p>
+            </div>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th>Rum</th>
+                    <th>Brutto</th>
+                    <th>Avdrag</th>
+                    <th>Netto</th>
+                    <th>Spill 10 %</th>
+                    <th>Beställning</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Lager</td>
+                    <td>484,00</td>
+                    <td>0</td>
+                    <td>484,00</td>
+                    <td>48,40</td>
+                    <td class="order">532,50</td>
+                  </tr>
+                  <tr>
+                    <td>Mellanbjälklag</td>
+                    <td>120,00</td>
+                    <td>6,25</td>
+                    <td>113,75</td>
+                    <td>11,38</td>
+                    <td class="order">125,50</td>
+                  </tr>
+                  <tr class="total">
+                    <td>Våning 1, netto</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>597,75</td>
+                    <td>—</td>
+                    <td>—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <figure class="big-shot">
+            <div class="big-shot-bar">
+              <span><b>Mängdschema</b> · grupperat per kategori</span>
+              <span class="bar-right"><span>Filter per rum</span><span>Summa per grupp</span></span>
+            </div>
+            <a
+              class="shot-link"
+              href="../screenshots/site/sv/table.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Schemat i panelen och rapporten läser samma data. Det finns ingen andra kopia att hålla uppdaterad."
+            >
+              <img
+                src="../screenshots/site/sv/table.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Mängdschemat i GridScalr med grupper per kategori och rader för etikett, rum och kategori, bredvid en plan över mellanbjälklaget i skala 1:50."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Schemat i panelen och rapporten läser samma data. Det finns ingen andra kopia att
+                hålla uppdaterad.</span
+              >
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="workflow">
         <div class="wrap">
           <div class="section-head">
-            <p class="eyebrow">Från ritning till beställning</p>
-            <h2>Tre steg från plan till inköpsunderlag</h2>
-            <p>
-              Testa själv: rita de sex rumsytorna på planen eller räkna dörrar, fönster och
-              inventarier och se mängderna fyllas i Takeoff-panelen.
-            </p>
+            <p class="eyebrow">Så fungerar det</p>
+            <h2>Tre steg från ritning till beställning</h2>
           </div>
-
-          <div class="hiw" data-hiw>
-            <div class="hiw-bar" data-hiw-ui>
-              <button class="hiw-play" type="button" data-hiw-play>Spela upp demon</button>
-              <span class="hiw-try" aria-hidden="true">
-                <span class="hiw-try-label">Testa själv</span>
-                <svg class="hiw-try-arrow" viewBox="0 0 54 22" fill="none" aria-hidden="true">
-                  <path
-                    d="M2 12h7c6 0 7-8 14-8s6 9 13 9h7m-3-4 4 4-4 4"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </span>
-              <button class="hiw-mode" type="button" data-hiw-mode="area" aria-pressed="false">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m4 16 3-10 10-2 3 10-8 5-8-3Z" />
-                  <circle cx="7" cy="6" r="1.4" fill="currentColor" />
-                  <circle cx="17" cy="4" r="1.4" fill="currentColor" />
-                  <circle cx="20" cy="14" r="1.4" fill="currentColor" />
-                  <circle cx="12" cy="19" r="1.4" fill="currentColor" />
-                </svg>
-                <span>Areamätning</span>
-              </button>
-              <button class="hiw-mode" type="button" data-hiw-mode="qty" aria-pressed="false">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <circle cx="8" cy="8" r="2.2" />
-                  <circle cx="16" cy="8" r="2.2" />
-                  <circle cx="8" cy="16" r="2.2" />
-                  <circle cx="16" cy="16" r="2.2" />
-                </svg>
-                <span>Mängder</span>
-              </button>
-              <button class="hiw-replay" type="button" data-hiw-replay hidden>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v5h5" />
-                </svg>
-                <span>Spela upp igen</span>
-              </button>
-              <button
-                class="hiw-sound"
-                type="button"
-                data-hiw-sound
-                aria-pressed="true"
-                aria-label="Stäng av demoljudet"
-              >
-                <svg
-                  class="hiw-sound-on"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M4 9v6h4l5 4V5L8 9H4Z" />
-                  <path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a9 9 0 0 1 0 12" />
-                </svg>
-                <svg
-                  class="hiw-sound-off"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M4 9v6h4l5 4V5L8 9H4Z" />
-                  <path d="m16 9 5 6m0-6-5 6" />
-                </svg>
-                <span class="hiw-sound-label" data-hiw-sound-label>Ljud på</span>
-              </button>
-              <p class="hiw-bar-hint">
-                Demon är interaktiv – klicka på det aktiva läget för att spela om.
-              </p>
-              <p class="hiw-live" role="status" aria-live="polite" data-hiw-live></p>
-            </div>
-
-            <div class="hiw-app" data-hiw-app tabindex="-1">
-              <div class="hiw-top" aria-hidden="true">
-                <div class="hiw-menu">
-                  <span class="hiw-brand-dot">
-                    <svg viewBox="0 0 32 32" aria-hidden="true">
-                      <rect width="32" height="32" rx="7" fill="#35c2a1" />
-                      <rect x="1" y="1" width="30" height="30" rx="6" fill="#0f1a1c" />
-                      <path
-                        d="M7.88 18 10.38 8.88 19.63 7.5 24.13 16.25 16.63 24.5Z"
-                        fill="#5fe6c9"
-                        fill-opacity=".3"
-                        stroke="#5fe6c9"
-                        stroke-width="1.6"
-                        stroke-linejoin="round"
-                      />
-                      <circle cx="7.88" cy="18" r="1.5" fill="#9bf7e2" />
-                      <circle cx="10.38" cy="8.88" r="1.5" fill="#9bf7e2" />
-                      <circle cx="19.63" cy="7.5" r="1.5" fill="#9bf7e2" />
-                      <circle cx="24.13" cy="16.25" r="1.5" fill="#9bf7e2" />
-                      <circle cx="16.63" cy="24.5" r="1.5" fill="#9bf7e2" />
-                    </svg>
-                    GridScalr
-                  </span>
-                  <span>File</span><span>Edit</span><span>View</span><span>Settings</span
-                  ><span>Help</span>
-                </div>
-
-                <div class="hiw-title">
-                  <strong>Northgate Logistics Hub · Takeoff</strong>
-                  <span>industriplan.pdf · Sida 1 av 4 · Bottenvåning</span>
-                </div>
-
-                <span class="hiw-local">Lokalt · ingen molntjänst</span>
-              </div>
-
-              <div class="hiw-context" aria-hidden="true">
-                <span class="hiw-tool" data-hiw-tool="scale">
-                  <svg
-                    class="hiw-tool-icon hiw-tool-icon--scale"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m4 15 11-11 5 5L9 20l-5-5Z" />
-                    <path d="m7 14 2 2m1-5 2 2m1-5 2 2m-9 3 2 2" />
-                  </svg>
-                  <svg
-                    class="hiw-tool-icon hiw-tool-icon--area"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m4 16 3-10 10-2 3 10-8 5-8-3Z" />
-                    <circle cx="7" cy="6" r="1.4" fill="currentColor" />
-                    <circle cx="17" cy="4" r="1.4" fill="currentColor" />
-                    <circle cx="20" cy="14" r="1.4" fill="currentColor" />
-                    <circle cx="12" cy="19" r="1.4" fill="currentColor" />
-                  </svg>
-                  <svg
-                    class="hiw-tool-icon hiw-tool-icon--count"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <circle cx="8" cy="8" r="2.2" />
-                    <circle cx="16" cy="8" r="2.2" />
-                    <circle cx="8" cy="16" r="2.2" />
-                    <circle cx="16" cy="16" r="2.2" />
-                  </svg>
-                  <span data-hiw-tool-label>Kalibrera</span>
-                </span>
-                <p class="hiw-tool-hint" data-hiw-tool-hint>
-                  Markera ett känt mått eller ange 1:N-skalan
-                </p>
-                <span class="hiw-layer-select"
-                  ><i aria-hidden="true"></i> Lager <strong>Measurements</strong> ▾</span
-                >
-              </div>
-
-              <div class="hiw-main">
-                <aside class="hiw-rail" aria-hidden="true">
-                  <span class="hiw-rail-btn" title="Välj"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path
-                        d="M5 3.5 19 11l-6.1 1.9L11 19 5 3.5Z"
-                        fill="currentColor"
-                        stroke="none"
-                      /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Panorera"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path
-                        d="M8 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1V4.5a1.5 1.5 0 0 1 3 0V11m0-.5V6a1.5 1.5 0 0 1 3 0v6.2c0 4.1-2.5 6.8-6 6.8-2.3 0-3.7-1-4.8-2.8L4.4 13a1.7 1.7 0 0 1 2.9-1.7l.7 1.1"
-                      /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Zoom"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <circle cx="10.5" cy="10.5" r="6.5" />
-                      <path d="m15.5 15.5 5 5M10.5 7v7M7 10.5h7" /></svg
-                  ></span>
-                  <span class="hiw-rail-divider"></span>
-                  <span class="hiw-rail-btn" title="Skala"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="m4 15 11-11 5 5L9 20l-5-5Z" />
-                      <path d="m7 14 2 2m1-5 2 2m1-5 2 2m-9 3 2 2" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Längd"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M4 17 20 7" />
-                      <circle cx="4" cy="17" r="2.2" />
-                      <circle cx="20" cy="7" r="2.2" />
-                      <path d="M9 12h6" opacity=".55" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn is-active" data-hiw-rail="area" title="Area"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="m4 16 3-10 10-2 3 10-8 5-8-3Z" />
-                      <circle cx="7" cy="6" r="1.4" fill="currentColor" />
-                      <circle cx="17" cy="4" r="1.4" fill="currentColor" />
-                      <circle cx="20" cy="14" r="1.4" fill="currentColor" />
-                      <circle cx="12" cy="19" r="1.4" fill="currentColor" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" data-hiw-rail="count" title="Räkna"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <circle cx="8" cy="8" r="2.2" />
-                      <circle cx="16" cy="8" r="2.2" />
-                      <circle cx="8" cy="16" r="2.2" />
-                      <circle cx="16" cy="16" r="2.2" /></svg
-                  ></span>
-                  <span class="hiw-rail-divider"></span>
-                  <span class="hiw-rail-btn" title="Rektangel"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <rect x="4" y="6" width="16" height="12" rx="1" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Ellips"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <ellipse cx="12" cy="12" rx="8.5" ry="6.5" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Polylinje"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M4 18h6V8h5v7h5" />
-                      <circle cx="4" cy="18" r="1.3" fill="currentColor" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Text"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="M5 6V4h14v2M12 4v16M8 20h8" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Symbol"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path
-                        d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"
-                      /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Bild"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <rect x="3" y="4" width="18" height="16" rx="2" />
-                      <circle cx="8.5" cy="9" r="1.5" />
-                      <path d="m4 18 5-5 4 4 3-3 4 4" /></svg
-                  ></span>
-                  <span class="hiw-rail-btn" title="Moln"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path
-                        d="M7 18h10a4 4 0 0 0 .7-7.9A5.5 5.5 0 0 0 7 8.2 4.5 4.5 0 0 0 7 18Z"
-                      /></svg
-                  ></span>
-                  <span class="hiw-rail-divider"></span>
-                  <span class="hiw-rail-btn hiw-rail-bottom" title="Symbolbibliotek"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="m12 3 9 5-9 5-9-5 9-5Z" />
-                      <path d="m3 12 9 5 9-5M3 16l9 5 9-5" /></svg
-                  ></span>
-                </aside>
-
-                <aside class="hiw-pages" aria-hidden="true">
-                  <div class="hiw-panel-tabs">
-                    <span class="hiw-panel-tab is-active">Sidor</span>
-                    <span class="hiw-panel-tab">Lager</span>
-                  </div>
-                  <div class="hiw-pages-body">
-                    <div class="hiw-page-card is-active">
-                      <img
-                        class="hiw-page-thumb"
-                        src="../assets/industrial-plan.webp"
-                        width="60"
-                        height="42"
-                        loading="lazy"
-                        alt=""
-                        aria-hidden="true"
-                      />
-                      <div class="hiw-page-meta">
-                        <strong>Bottenvåning</strong>
-                        <span>Sida 1 · 1191 × 842</span>
-                        <span>industriplan.pdf</span>
-                        <em class="hiw-page-badge" data-hiw-page-calibrated style="opacity: 1"
-                          >Kalibrerad</em
-                        >
-                      </div>
-                    </div>
-                    <div class="hiw-page-card is-muted">
-                      <img
-                        class="hiw-page-thumb"
-                        src="../assets/industrial-plan.webp"
-                        width="60"
-                        height="42"
-                        loading="lazy"
-                        alt=""
-                        aria-hidden="true"
-                      />
-                      <div class="hiw-page-meta">
-                        <strong>Mezzanin</strong>
-                        <span>Sida 2 · 1191 × 842</span>
-                        <span>industriplan.pdf</span>
-                      </div>
-                    </div>
-
-                    <div class="hiw-layers-title"><span>Ritlager</span><span>12</span></div>
-                    <div class="hiw-layer-row">
-                      <i class="hiw-swatch hiw-swatch--draw"></i> Platsmarkeringar
-                      <span class="hiw-layer-count">12</span>
-                    </div>
-                    <div class="hiw-layers-title">
-                      <span>Mätlager</span><span data-hiw-layer-count>1</span>
-                    </div>
-                    <div class="hiw-layer-row is-active">
-                      <i class="hiw-swatch hiw-swatch--measure"></i> Measurements
-                      <span class="hiw-layer-count" data-hiw-layer-items>1 objekt</span>
-                    </div>
-                  </div>
-                </aside>
-
-                <div class="hiw-canvas">
-                  <div class="hiw-sheet">
-                    <img
-                      class="hiw-plan"
-                      src="../assets/industrial-plan.webp"
-                      width="2151"
-                      height="1521"
-                      loading="lazy"
-                      decoding="async"
-                      alt="Industriplan, bottenvåning, för Northgate Logistics Hub med lager, verkstad, öppet kontor, mötesrum, reception och pausrum."
-                    />
-                    <svg class="hiw-overlay" viewBox="0 0 2151 1521" aria-hidden="true">
-                      <g class="hiw-rooms-layer" data-hiw-rooms-layer>
-                        <path
-                          class="hiw-room-path"
-                          data-hiw-room="office"
-                          pathLength="1"
-                          d="M1402 592H1748V845H1402Z"
-                        />
-                        <path
-                          class="hiw-room-path"
-                          data-hiw-room="meetingTop"
-                          pathLength="1"
-                          d="M1758 592H1878V845H1758Z"
-                        />
-                        <path
-                          class="hiw-room-path"
-                          data-hiw-room="wc"
-                          pathLength="1"
-                          d="M1888 592H2000V845H1888Z"
-                        />
-                        <path
-                          class="hiw-room-path"
-                          data-hiw-room="reception"
-                          pathLength="1"
-                          d="M1402 952H1642V1195H1402Z"
-                        />
-                        <path
-                          class="hiw-room-path"
-                          data-hiw-room="meetingBottom"
-                          pathLength="1"
-                          d="M1652 952H1848V1195H1652Z"
-                        />
-                        <path
-                          class="hiw-room-path"
-                          data-hiw-room="breakroom"
-                          pathLength="1"
-                          d="M1858 952H2000V1195H1858Z"
-                        />
-                      </g>
-                      <path
-                        class="hiw-area-fill"
-                        data-hiw-area-fill
-                        d="M282 97H1360V1180H282Z"
-                        style="fill-opacity: 0.2"
-                      />
-                      <path
-                        class="hiw-area-outline"
-                        data-hiw-area-outline
-                        pathLength="1"
-                        stroke-dasharray="1"
-                        stroke-dashoffset="0"
-                        d="M282 97H1360V1180H282Z"
-                      />
-                      <line
-                        class="hiw-leader"
-                        data-hiw-leader
-                        x1="760"
-                        y1="285"
-                        x2="820"
-                        y2="610"
-                        pathLength="1"
-                        stroke-dasharray="1"
-                        stroke-dashoffset="0"
-                      />
-                      <g data-hiw-calib-group>
-                        <line
-                          class="hiw-calib-line is-on"
-                          data-hiw-calib-line
-                          x1="330"
-                          y1="1148"
-                          x2="850"
-                          y2="1148"
-                        />
-                        <g
-                          class="hiw-calib-chip"
-                          data-hiw-calib-chip
-                          transform="translate(590 1105)"
-                          style="opacity: 1"
-                        >
-                          <rect x="-80" y="-22" width="160" height="42" rx="21" />
-                          <text x="0" y="4">Kalibrerad</text>
-                        </g>
-                      </g>
-                      <g data-hiw-handles>
-                        <g
-                          class="hiw-handle"
-                          data-hiw-handle="0"
-                          transform="translate(282 97)"
-                          style="opacity: 1"
-                        >
-                          <rect x="-13" y="-13" width="26" height="26" rx="2" />
-                        </g>
-                        <g
-                          class="hiw-handle"
-                          data-hiw-handle="1"
-                          transform="translate(1360 97)"
-                          style="opacity: 1"
-                        >
-                          <rect x="-13" y="-13" width="26" height="26" rx="2" />
-                        </g>
-                        <g
-                          class="hiw-handle"
-                          data-hiw-handle="2"
-                          transform="translate(1360 1180)"
-                          style="opacity: 1"
-                        >
-                          <rect x="-13" y="-13" width="26" height="26" rx="2" />
-                        </g>
-                        <g
-                          class="hiw-handle"
-                          data-hiw-handle="3"
-                          transform="translate(282 1180)"
-                          style="opacity: 1"
-                        >
-                          <rect x="-13" y="-13" width="26" height="26" rx="2" />
-                        </g>
-                      </g>
-                      <g class="hiw-crosshair" data-hiw-crosshair>
-                        <circle r="9" />
-                        <path d="M-18 0H18M0 -18V18" />
-                      </g>
-                    </svg>
-
-                    <button
-                      class="hiw-measure is-shown"
-                      type="button"
-                      data-hiw-measure
-                      disabled
-                      aria-label="Visa mätningen som mängder"
-                    >
-                      <span class="hiw-measure-primary">Warehouse floor</span>
-                      <span class="hiw-measure-secondary">484 m² · Omkrets 88 m</span>
-                    </button>
-
-                    <div class="hiw-room-label" data-hiw-room-label hidden aria-hidden="true">
-                      <span class="hiw-room-label-name" data-hiw-room-name>Open Office</span>
-                      <span class="hiw-room-label-value" data-hiw-room-value
-                        >35 m² · Omkrets 19 m</span
-                      >
-                    </div>
-
-                    <span
-                      class="hiw-cursor-status"
-                      data-hiw-cursor-status
-                      hidden
-                      aria-hidden="true"
-                    ></span>
-
-                    <div class="hiw-cursor" data-hiw-cursor hidden aria-hidden="true">
-                      <svg viewBox="0 0 24 24">
-                        <path
-                          d="M5 3.5 19 11l-6.1 1.9L11 19 5 3.5Z"
-                          fill="#ffffff"
-                          stroke="#0b1114"
-                          stroke-width="1.4"
-                          stroke-linejoin="round"
-                        />
-                      </svg>
-                      <span class="hiw-cursor-ring" data-hiw-cursor-ring></span>
-                    </div>
-
-                    <span
-                      class="hiw-badge hiw-badge--door is-shown"
-                      data-hiw-badge="door"
-                      aria-hidden="true"
-                    >
-                      <svg viewBox="0 0 16 16" aria-hidden="true">
-                        <path
-                          d="M4 2v12M4 2a7 7 0 0 1 7 7M4 9h7"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.3"
-                          stroke-linecap="round"
-                        />
-                      </svg>
-                      6 dörrar
-                    </span>
-                    <span
-                      class="hiw-badge hiw-badge--window"
-                      data-hiw-badge="window"
-                      aria-hidden="true"
-                    >
-                      <svg viewBox="0 0 16 16" aria-hidden="true">
-                        <rect
-                          x="3"
-                          y="4"
-                          width="10"
-                          height="8"
-                          rx="1"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.3"
-                        />
-                        <path d="M8 4v8" stroke="currentColor" stroke-width="1.3" />
-                      </svg>
-                      9 fönster
-                    </span>
-                    <span class="hiw-doornum" data-hiw-doornum="1" aria-hidden="true">1</span>
-                    <span class="hiw-doornum" data-hiw-doornum="2" aria-hidden="true">2</span>
-                    <span class="hiw-doornum" data-hiw-doornum="3" aria-hidden="true">3</span>
-                    <span class="hiw-doornum" data-hiw-doornum="4" aria-hidden="true">4</span>
-                    <span class="hiw-doornum" data-hiw-doornum="5" aria-hidden="true">5</span>
-                    <span class="hiw-doornum" data-hiw-doornum="6" aria-hidden="true">6</span>
-                  </div>
-                </div>
-
-                <aside class="hiw-right" aria-hidden="true">
-                  <div class="hiw-tabs">
-                    <span class="hiw-tab is-active" data-hiw-tab="props">Egenskaper</span>
-                    <span class="hiw-tab" data-hiw-tab="takeoff">Takeoff</span>
-                    <span class="hiw-tab">Projekt</span>
-                  </div>
-
-                  <div class="hiw-panel" data-hiw-panel="props">
-                    <div class="hiw-selection">
-                      <div class="hiw-selection-head">
-                        <span class="hiw-tag">Markering</span>
-                        <span class="hiw-kind" data-hiw-selection-kind>Area</span>
-                      </div>
-                      <strong class="hiw-area-big" data-hiw-area-big>484 m²</strong>
-                      <span class="hiw-area-sub" data-hiw-area-sub
-                        >Omkrets 88 m · Sida 1 · Measurements · 4 punkter</span
-                      >
-                    </div>
-
-                    <div class="hiw-field">
-                      <span>Etikettstorlek</span><strong data-hiw-field="labelSize">6 pt</strong>
-                    </div>
-                    <div class="hiw-field">
-                      <span>Kategori</span><strong data-hiw-field="category">Golv</strong>
-                    </div>
-                    <div class="hiw-field">
-                      <span>Rum</span><strong data-hiw-field="room">Lager</strong>
-                    </div>
-                    <div class="hiw-field">
-                      <span>Färg</span>
-                      <span class="hiw-swatch-inline"
-                        ><i></i><strong data-hiw-field="colour">#4cc9f0</strong></span
-                      >
-                    </div>
-                    <div class="hiw-field">
-                      <span>Linjebredd</span><strong data-hiw-field="stroke">0,75 pt</strong>
-                    </div>
-                    <div class="hiw-field"><span>Synlig på sida</span><strong>Ja</strong></div>
-                    <div class="hiw-field"><span>Låst</span><strong>Nej</strong></div>
-                  </div>
-
-                  <div class="hiw-panel hiw-takeoff-panel" data-hiw-panel="takeoff" hidden>
-                    <div class="hiw-takeoff-head"><span>Mängder</span><em>Live</em></div>
-                    <div class="hiw-qrow" data-hiw-row>
-                      <span>Golv</span>
-                      <strong><span data-hiw-value data-target="484">0.0</span> m²</strong>
-                    </div>
-                    <div class="hiw-qrow" data-hiw-row>
-                      <span>Dörrar</span>
-                      <strong><span data-hiw-value data-target="6">0</span> st</strong>
-                    </div>
-                    <div class="hiw-qrow" data-hiw-row>
-                      <span>Fönster</span>
-                      <strong><span data-hiw-value data-target="9">0</span> st</strong>
-                    </div>
-                    <div class="hiw-qrow" data-hiw-row>
-                      <span>Order · 5 % svinn</span>
-                      <strong><span data-hiw-value data-target="508.2">0.0</span> m²</strong>
-                    </div>
-                    <div class="hiw-export-row">
-                      <span data-hiw-export="3400">CSV</span>
-                      <span data-hiw-export="3500">XLSX</span>
-                      <span data-hiw-export="3600">PDF</span>
-                    </div>
-                    <p class="hiw-note">
-                      Mängderna räknas fram från mätningen och stannar på din dator.
-                    </p>
-                  </div>
-
-                  <div class="hiw-panel" data-hiw-panel="rooms" hidden>
-                    <div class="hiw-rooms-head"><span>Rumsytor</span><em>6 rum</em></div>
-                    <div class="hiw-selection">
-                      <div class="hiw-selection-head">
-                        <span class="hiw-tag">Markering</span>
-                        <span class="hiw-kind" data-hiw-room-kind>Area</span>
-                      </div>
-                      <strong class="hiw-area-big" data-hiw-room-area>35 m²</strong>
-                      <span class="hiw-area-sub" data-hiw-room-sub>Open Office · Omkrets 19 m</span>
-                    </div>
-                    <div class="hiw-room-list">
-                      <span class="hiw-room-row" data-hiw-room-row="office"
-                        ><span>Open Office</span><strong>35 m²</strong></span
-                      >
-                      <span class="hiw-room-row" data-hiw-room-row="meetingTop"
-                        ><span>Meeting · norr</span><strong>12,5 m²</strong></span
-                      >
-                      <span class="hiw-room-row" data-hiw-room-row="wc"
-                        ><span>WC / Shower</span><strong>12,5 m²</strong></span
-                      >
-                      <span class="hiw-room-row" data-hiw-room-row="reception"
-                        ><span>Reception</span><strong>25 m²</strong></span
-                      >
-                      <span class="hiw-room-row" data-hiw-room-row="meetingBottom"
-                        ><span>Meeting · söder</span><strong>20 m²</strong></span
-                      >
-                      <span class="hiw-room-row" data-hiw-room-row="breakroom"
-                        ><span>Breakroom</span><strong>15 m²</strong></span
-                      >
-                    </div>
-                    <div class="hiw-room-total">
-                      <span>Summa</span><strong data-hiw-room-total>120 m²</strong>
-                    </div>
-                    <p class="hiw-note">
-                      Varje rad är ett uppmätt rum. Summan uppdateras medan demon ritar.
-                    </p>
-                  </div>
-
-                  <div class="hiw-panel" data-hiw-panel="qty" hidden>
-                    <div class="hiw-takeoff-head"><span>Mängder</span><em>Live</em></div>
-                    <div class="hiw-qty-section">Rumsytor</div>
-                    <div class="hiw-qty-row"><span>Open Office</span><strong>35 m²</strong></div>
-                    <div class="hiw-qty-row">
-                      <span>Meeting · norr</span><strong>12,5 m²</strong>
-                    </div>
-                    <div class="hiw-qty-row"><span>WC / Shower</span><strong>12,5 m²</strong></div>
-                    <div class="hiw-qty-row"><span>Reception</span><strong>25 m²</strong></div>
-                    <div class="hiw-qty-row">
-                      <span>Meeting · söder</span><strong>20 m²</strong>
-                    </div>
-                    <div class="hiw-qty-row"><span>Breakroom</span><strong>15 m²</strong></div>
-                    <div class="hiw-qty-section">Objekt</div>
-                    <div class="hiw-qty-row">
-                      <span>Dörrar</span><strong><span data-hiw-qty-doors>0</span> st</strong>
-                    </div>
-                    <div class="hiw-qty-row">
-                      <span>Fönster</span><strong><span data-hiw-qty-windows>0</span> st</strong>
-                    </div>
-                    <div class="hiw-qty-row">
-                      <span>Inventarier</span
-                      ><strong><span data-hiw-qty-fixtures>0</span> st</strong>
-                    </div>
-                    <div class="hiw-qty-total">
-                      <span>Summa</span><strong data-hiw-qty-total>120 m² · 0 objekt</strong>
-                    </div>
-                    <div class="hiw-export-row">
-                      <span data-hiw-qexport>CSV</span>
-                      <span data-hiw-qexport>XLSX</span>
-                      <span data-hiw-qexport>PDF</span>
-                    </div>
-                    <p class="hiw-note">
-                      Läget Mängder visar rummen till höger och räknar dörrar, fönster och
-                      inventarier. Allt stannar lokalt.
-                    </p>
-                  </div>
-                </aside>
-              </div>
-
-              <div class="hiw-status" aria-hidden="true">
-                <span class="hiw-status-chip is-ok" data-hiw-status
-                  ><i class="hiw-status-dot"></i
-                  ><span data-hiw-status-text>Kalibrerad · 1:100</span></span
-                >
-                <span class="hiw-status-unsaved">Osparade ändringar</span>
-                <span>Autosave 15 s</span>
-                <span class="hiw-status-spacer"></span>
-                <span>Zoom 101 %</span>
-                <span>Sida 1 / 4</span>
-              </div>
-
-              <div class="hiw-chip-layer" data-hiw-chips aria-hidden="true"></div>
-              <div class="hiw-stamp" data-hiw-stamp aria-hidden="true">KLAR</div>
-            </div>
-
-            <div class="hiw-compact" data-hiw-ui aria-hidden="true">
-              <span class="hiw-compact-status" data-hiw-compact-status>Kalibrerad · 1:100</span>
-              <strong class="hiw-compact-total" data-hiw-compact-total>484 m²</strong>
-            </div>
-          </div>
-
-          <ol class="steps">
-            <li>
-              <span class="step-number" aria-hidden="true">1</span>
-              <h3>Öppna och kalibrera</h3>
+          <div class="process">
+            <div>
+              <span class="step-num">STEG 01</span>
+              <h3>Kalibrera sidan</h3>
               <p>
-                Öppna en PDF-plan eller importera en skannad TIF. Kalibrera mot ett känt mått eller
-                ange tryckskalan 1:N och lås den sedan.
+                Mät mot ett känt mått eller ange skalan. Kontrollera mot ett andra mått och lås.
               </p>
-            </li>
-            <li>
-              <span class="step-number" aria-hidden="true">2</span>
-              <h3>Mät, räkna och annotera</h3>
-              <p>
-                Mät längder och areor, räkna dörrar och inventarier, gruppera efter kategori och rum
-                och lägg till anteckningarna teamet behöver.
-              </p>
-            </li>
-            <li>
-              <span class="step-number" aria-hidden="true">3</span>
+            </div>
+            <div>
+              <span class="step-num">STEG 02</span>
+              <h3>Mät och koppla</h3>
+              <p>Rita arean, lägg till avdrag och koppla mätningen till rummet.</p>
+            </div>
+            <div>
+              <span class="step-num">STEG 03</span>
               <h3>Granska och exportera</h3>
               <p>
-                Kontrollera bruttomängd, avdrag, nettomängd, spill och beställningsmängd och
-                exportera CSV, XLSX, en utskriftsvänlig PDF-rapport eller en markerad ritning.
+                Kontrollera netto, spill och revision. Exportera ritningen, mängderna eller båda.
               </p>
-            </li>
-          </ol>
-
-          <p class="section-link"><a href="funktioner/">Se hela funktionsgenomgången →</a></p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section class="section use-cases" id="use-cases">
+      <section class="section" id="roles">
         <div class="wrap">
           <div class="section-head">
-            <p class="eyebrow">För drift och teknisk förvaltning</p>
-            <h2>För dem som förvaltar byggnaden</h2>
-            <p>
-              Använd samma mängdning för areauppföljning, inventering, förteckningar,
-              underhållsplanering och överlämning till entreprenör i stället för att kopiera siffror
-              mellan kalkylark.
-            </p>
+            <p class="eyebrow">Två roller, samma projekt</p>
+            <h2>Det du lämnar ifrån dig skiljer sig — underlaget gör det inte</h2>
           </div>
-
-          <div class="card-grid four">
-            <article class="card">
-              <p class="card-kicker">Drift och underhåll</p>
-              <h3>För drifttekniker</h3>
+          <div class="roles-flat">
+            <article>
+              <p class="role-kicker">Drifttekniker</p>
+              <h3>Från platsbesök till åtgärd</h3>
               <p>
-                Mät rumsareor, inventera fasta installationer och utrustning, lägg till
-                skickanteckningar och håll ritningsuppdateringar knutna till planen.
+                Markera avvikelsen på rätt sida, mät arean som ändras vid en ombyggnad och uppdatera
+                driftkortet när ett aggregat eller en givare byts.
               </p>
+              <ul>
+                <li>Markerad ritning med åtgärd, läge och status</li>
+                <li>Area per rum efter ändrad användning</li>
+                <li>Driftkort som stämmer med det som sitter i drift</li>
+                <li>Touch och penna vid rundvandring</li>
+              </ul>
             </article>
-            <article class="card">
-              <p class="card-kicker">Teknisk förvaltning</p>
-              <h3>För tekniska förvaltare</h3>
+            <article>
+              <p class="role-kicker">Teknisk förvaltare</p>
+              <h3>Från area till beställning</h3>
               <p>
-                Följ upp areor, ta fram en dörrlista och en fönsterlista, granska revisioner och
-                förbered inköpsunderlag.
+                Följ upp areor per byggnad och våning, ta fram dörr- och fönsterlistor och granska
+                revisionen innan beställningen går ut.
               </p>
-            </article>
-            <article class="card">
-              <p class="card-kicker">Inköp</p>
-              <h3>En mängd för beställningen</h3>
-              <p>
-                Granska bruttomängd, avdrag, nettomängd, spill och beställningsmängd och lämna över
-                CSV, XLSX eller en utskriftsvänlig PDF-rapport.
-              </p>
-            </article>
-            <article class="card">
-              <p class="card-kicker">Ritningsuppdateringar</p>
-              <h3>Granska innan du beställer</h3>
-              <p>
-                Jämför en sparad revision med aktuell plan, följ ändrade, tillagda och borttagna
-                markeringar och håll båda ritningarna skrivskyddade.
-              </p>
+              <ul>
+                <li>Area per rum, våning och byggnad</li>
+                <li>Dörr-, fönster- och utrustningslistor per typ</li>
+                <li>Beställningsmängder med spill och avrundning</li>
+                <li>Revisionsjämförelse med båda filerna orörda</li>
+              </ul>
             </article>
           </div>
-        </div>
-      </section>
-
-      <section class="section features" id="features">
-        <div class="wrap">
-          <div class="section-head">
-            <p class="eyebrow">En mängdning för hela ritningspaketet</p>
-            <h2>Mät, räkna och exportera från samma projekt</h2>
-            <p>
-              PDF-mätning och mängdning delar samma objektdata, så mängder, förteckningar och
-              exporter hålls i synk. Det finns inget andra kalkylark att uppdatera.
-            </p>
-          </div>
-
-          <div class="card-grid three">
-            <article class="card">
-              <h3>Mät med kontroll</h3>
-              <p>
-                Kalibrera en gång, lås skalan och mät längder, areor, radie, diameter, bågar,
-                vinklar, lutningar och volymer med fästpunkter.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Räkna en gång, sammanställ överallt</h3>
-              <p>
-                Skapa egna antalstyper, räkna stycken per objekt och granska en antalstabell per typ
-                i Markeringar-tabellen.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Jämför revisioner säkert</h3>
-              <p>
-                Öppna en sparad revision eller PDF-ritning bredvid planen, jämför ändringar och
-                exportera en jämförelse-PDF utan att slå samman någon fil.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Exportera det beställningen kräver</h3>
-              <p>
-                Ta fram CSV, en XLSX-arbetsbok med sex blad, en utskriftsvänlig mängdrapport och en
-                ritnings-PDF med etiketter.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Driftkortsmallar</h3>
-              <p>
-                Bygg driftkort med A3-mallar, bladfält och schemasymbolbiblioteket, på sidbundna
-                lager vid sidan av ritningarna.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Engelska och svenska</h3>
-              <p>
-                Arbeta på engelska eller svenska. Gränssnitt, rapporter och exporthuvuden byter
-                direkt, och tal, datum och CSV följer det valda språket.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Rapportklar profil</h3>
-              <p>
-                Lägg till fastighet, kund, projektnummer, revision, författare och anteckningar,
-                samt en logga, i mängdrapporten och Excel-sammanfattningen.
-              </p>
-            </article>
-          </div>
-
-          <p class="section-link"><a href="funktioner/">Se alla funktioner och skärmbilder →</a></p>
-        </div>
-      </section>
-
-      <section class="section screenshots" id="screenshots">
-        <div class="wrap">
-          <div class="section-head">
-            <p class="eyebrow">Det riktiga gränssnittet</p>
-            <h2>Se arbetsflödet på en riktig ritning</h2>
-            <p>
-              Skärmbilderna kommer från aktuell kod och demoprojektet. Klicka på en bild för att
-              granska gränssnittet i full storlek.
-            </p>
-          </div>
-
-          <div class="shot-grid">
-            <figure class="shot">
-              <a
-                class="shot-link"
-                href="../screenshots/measure.png"
-                data-lightbox
-                aria-label="Förstora skärmbild: mät- och annoteringsverktyg"
-              >
-                <img
-                  src="../screenshots/measure.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr med Längd-verktyget aktivt, Lagerpanelen öppen och kontextraden som visar mållager och alternativ för ny mätning, med Egenskaper till höger."
-                />
-                <span class="zoom-hint">Klicka för att förstora</span>
-              </a>
-              <figcaption>
-                <strong>Mät och annotera.</strong> Mät- och ritverktyg delar en yta men ligger på
-                separata lagertyper.
-              </figcaption>
-            </figure>
-            <figure class="shot">
-              <a
-                class="shot-link"
-                href="../screenshots/operation-card.png"
-                data-lightbox
-                aria-label="Förstora skärmbild: driftkortsblad med schemasymboler"
-              >
-                <img
-                  src="../screenshots/operation-card.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr visar ett A3-driftkortsblad med schemasymboler för värmeväxlare, fläktar, ventiler och spjäll, ritningslagren och bladets titelblock."
-                />
-                <span class="zoom-hint">Klicka för att förstora</span>
-              </a>
-              <figcaption>
-                <strong>Driftkortsmallar.</strong> Rita driftkort med schemasymbolbiblioteket,
-                mallar och bladfält.
-              </figcaption>
-            </figure>
-            <figure class="shot">
-              <a
-                class="shot-link"
-                href="../screenshots/count-schedule.png"
-                data-lightbox
-                aria-label="Förstora skärmbild: antalstabell grupperat efter antalstyp"
-              >
-                <img
-                  src="../screenshots/count-schedule.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalrs Markeringar-tabell grupperad efter antalstyp med kolumnen Antalstyp synlig och rader för dörrar, fönster och inventarier."
-                />
-                <span class="zoom-hint">Klicka för att förstora</span>
-              </a>
-              <figcaption>
-                <strong>Antalstabell.</strong> Gruppera Markeringar-tabellen efter antalstyp för att
-                granska en dörr-, fönster- eller inventarielista.
-              </figcaption>
-            </figure>
-            <figure class="shot">
-              <a
-                class="shot-link"
-                href="../screenshots/quantities.png"
-                data-lightbox
-                aria-label="Förstora skärmbild: mängddialogen"
-              >
-                <img
-                  src="../screenshots/quantities.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalrs mängddialog som visar bruttomängd, avdrag, nettomängd, spill och beställningsmängd per kategori och rum."
-                />
-                <span class="zoom-hint">Klicka för att förstora</span>
-              </a>
-              <figcaption>
-                <strong>Inköpsunderlag.</strong> Live-mängder med avdrag, spill och avrundning för
-                beställningar.
-              </figcaption>
-            </figure>
-            <figure class="shot">
-              <a
-                class="shot-link"
-                href="../screenshots/split-view.png"
-                data-lightbox
-                aria-label="Förstora skärmbild: referenspanel och revisionsjämförelse"
-              >
-                <img
-                  src="../screenshots/split-view.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr med en redigerbar huvudvy och en skrivskyddad referenspanel som visar samma kalibrerade plan vid samma panorering och zoom, med val av källa för Same page, Revision och Drawing."
-                />
-                <span class="zoom-hint">Klicka för att förstora</span>
-              </a>
-              <figcaption>
-                <strong>Referensvy.</strong> Jämför samma sida, en revision eller en PDF-ritning
-                medan redigeringen sker på ett ställe.
-              </figcaption>
-            </figure>
-          </div>
-        </div>
-      </section>
-
-      <section class="section themes" id="themes">
-        <div class="wrap">
-          <div class="section-head">
-            <p class="eyebrow">Sju gränssnittsteman</p>
-            <h2>Arbeta i det ljus som passar rummet</h2>
-            <p>
-              Mellangrå är standard. Byt till Ljus för ljusa rum, eller välj Mörkgrå, Mörk jade,
-              Marinblå, Skiffer eller Grafit för en mörkare arbetsyta. Teman ändrar bara
-              gränssnittet och canvasens omgivning; ritningar och PDF-exporter behåller sina färger.
-            </p>
-          </div>
-
-          <div class="theme-grid">
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="../screenshots/theme-medium-grey.png"
-                data-lightbox
-                aria-label="Förstora skärmbild: standardtemat mellangrå"
-              >
-                <img
-                  src="../screenshots/theme-medium-grey.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr med det mellangrå gränssnittstemat, en kalibrerad industriplan och panelen Egenskaper."
-                />
-                <span class="zoom-hint">Klicka för att förstora</span>
-              </a>
-              <figcaption>
-                <strong>Standard (mellangrå)</strong> Neutralt mellangrått gränssnitt med mörkare
-                omgivning runt canvasen.
-              </figcaption>
-            </figure>
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="../screenshots/theme-light-green.png"
-                data-lightbox
-                aria-label="Förstora skärmbild: ljust tema"
-              >
-                <img
-                  src="../screenshots/theme-light-green.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr med det ljusa gränssnittstemat, en kalibrerad industriplan och panelen Egenskaper."
-                />
-                <span class="zoom-hint">Klicka för att förstora</span>
-              </a>
-              <figcaption>
-                <strong>Ljus</strong> Svalt ljust gränssnitt och vita paneler för arbete i dagsljus.
-              </figcaption>
-            </figure>
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="../screenshots/theme-dark-grey.png"
-                data-lightbox
-                aria-label="Förstora skärmbild: mörkgrått tema"
-              >
-                <img
-                  src="../screenshots/theme-dark-grey.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr med det mörkgrå gränssnittstemat, en kalibrerad industriplan och panelen Egenskaper."
-                />
-                <span class="zoom-hint">Klicka för att förstora</span>
-              </a>
-              <figcaption>
-                <strong>Mörkgrå</strong> Lågkromatiskt mörkt gränssnitt med jadeaccent.
-              </figcaption>
-            </figure>
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="../screenshots/theme-jade.png"
-                data-lightbox
-                aria-label="Förstora skärmbild: mörkt jadetema"
-              >
-                <img
-                  src="../screenshots/theme-jade.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr med det ursprungliga mörka jadetemat, en kalibrerad industriplan och panelen Egenskaper."
-                />
-                <span class="zoom-hint">Klicka för att förstora</span>
-              </a>
-              <figcaption>
-                <strong>Mörk jade</strong> Den ursprungliga mörka paletten med jadeaccent.
-              </figcaption>
-            </figure>
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="../screenshots/theme-navy.png"
-                data-lightbox
-                aria-label="Förstora skärmbild: marinblått tema"
-              >
-                <img
-                  src="../screenshots/theme-navy.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr med det marinblå gränssnittstemat, en kalibrerad industriplan och panelen Egenskaper."
-                />
-                <span class="zoom-hint">Klicka för att förstora</span>
-              </a>
-              <figcaption>
-                <strong>Marinblå</strong> Blåtonat mörkt gränssnitt med jadeaccent.
-              </figcaption>
-            </figure>
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="../screenshots/theme-slate.png"
-                data-lightbox
-                aria-label="Förstora skärmbild: skiffertema"
-              >
-                <img
-                  src="../screenshots/theme-slate.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr med skiffertemat, en kalibrerad industriplan och panelen Egenskaper."
-                />
-                <span class="zoom-hint">Klicka för att förstora</span>
-              </a>
-              <figcaption>
-                <strong>Skiffer</strong> Blågrått gränssnitt med vit text och en dämpad stålaccent.
-              </figcaption>
-            </figure>
-            <figure class="theme-card">
-              <a
-                class="shot-link"
-                href="../screenshots/theme-graphite.png"
-                data-lightbox
-                aria-label="Förstora skärmbild: grafit-tema"
-              >
-                <img
-                  src="../screenshots/theme-graphite.png"
-                  width="1920"
-                  height="1080"
-                  loading="lazy"
-                  alt="GridScalr med grafittemat, en kalibrerad industriplan och panelen Egenskaper."
-                />
-                <span class="zoom-hint">Klicka för att förstora</span>
-              </a>
-              <figcaption>
-                <strong>Grafit</strong> Nära svart neutralt gränssnitt med en dämpad stålaccent.
-              </figcaption>
-            </figure>
-          </div>
-        </div>
-      </section>
-
-      <section class="section demo" id="demo">
-        <div class="wrap demo-grid">
-          <div>
-            <p class="eyebrow">Prova innan du laddar ner</p>
-            <h2>Öppna demoprojektet</h2>
-            <p>
-              Utforska en kalibrerad mängdning med tre sidor, kategorier, rum, avdrag, anteckningar
-              och en sparad revision. Exempelritningen är samma industriplan som används i
-              skärmbilderna.
-            </p>
-          </div>
-          <div class="demo-actions">
+          <p>
             <a
-              class="button primary"
-              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
-              >Ladda ner demoprojekt</a
+              class="more-link"
+              href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+              >Läs arbetsflödena</a
             >
-            <a
-              class="button secondary"
-              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/industrial-plan.pdf"
-              >Ladda ner exempel-PDF</a
-            >
-            <p class="muted">
-              Installera GridScalr först och öppna sedan <code>.gridscalr</code>-projektet.
-              Käll-PDF:en refereras och kopieras inte in i projektet.
-            </p>
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="traceability">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Underlag du kan lita på</p>
+            <h2>Spårbarhet utan moln</h2>
+          </div>
+          <div class="trust-flat">
+            <div>
+              <span class="k">Källa</span>
+              <h3>Ritningen ändras aldrig</h3>
+              <p>
+                Refereras via sökväg och SHA-256. Både sparande och export vägrar skriva över den.
+              </p>
+            </div>
+            <div>
+              <span class="k">Sparande</span>
+              <h3>Villkorad skrivning</h3>
+              <p>En fil som ändrats på disk skrivs inte över tyst. Båda versionerna bevaras.</p>
+            </div>
+            <div>
+              <span class="k">Revision</span>
+              <h3>Jämför före beställning</h3>
+              <p>Sparad revision mot aktuell plan, sida vid sida. Inget slås samman.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="exports">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Resten av arbetsgången</p>
+            <h2>Kalibrera, och exportera det beställningen kräver</h2>
+          </div>
+          <div class="two-shots">
+            <figure class="big-shot">
+              <div class="big-shot-bar">
+                <span><b>Kalibrering</b> · känt mått 10 m</span>
+              </div>
+              <a
+                class="shot-link"
+                href="../screenshots/site/sv/calibration.webp"
+                data-lightbox
+                aria-label="Klicka för full storlek: Skalan sparas per sida och varje mätning behåller den skala den skapades med."
+              >
+                <img
+                  src="../screenshots/site/sv/calibration.webp"
+                  width="1920"
+                  height="1080"
+                  loading="lazy"
+                  alt="Kalibreringsdialogen i GridScalr där ett känt mått på 10 m sätter sidans skala, med möjlighet att låsa per sida."
+                />
+              </a>
+              <figcaption>
+                <span
+                  >Skalan sparas per sida och varje mätning behåller den skala den skapades
+                  med.</span
+                >
+              </figcaption>
+            </figure>
+            <figure class="big-shot">
+              <div class="big-shot-bar">
+                <span><b>Export av ritning</b> · sidor, område och synligt innehåll</span>
+              </div>
+              <a
+                class="shot-link"
+                href="../screenshots/site/sv/export.webp"
+                data-lightbox
+                aria-label="Klicka för full storlek: Exportera en platt PDF med etiketter och teckenförklaring, eller valfria lager för läsare som stödjer dem."
+              >
+                <img
+                  src="../screenshots/site/sv/export.webp"
+                  width="1920"
+                  height="1080"
+                  loading="lazy"
+                  alt="Exportdialogen i GridScalr med val av sidor, beskärning, lager, valfria OCG-lager och teckenförklaring."
+                />
+              </a>
+              <figcaption>
+                <span
+                  >Exportera en platt PDF med etiketter och teckenförklaring, eller valfria lager
+                  för läsare som stödjer dem.</span
+                >
+              </figcaption>
+            </figure>
           </div>
         </div>
       </section>
@@ -1819,7 +868,7 @@ npm run tauri build</code></pre>
             <span>GridScalr</span>
           </a>
           <p class="muted">
-            Lokal mängdning av PDF- och TIF-ritningar för ritningsmätning och inköpsunderlag.
+            Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.
           </p>
           <p class="footer-version">
             Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens

@@ -732,6 +732,7 @@ src/model/pathText.ts      shared absolute-path sanitizer for diagnostics and er
 scripts/docs-fingerprint.mjs UI fingerprint for screenshot staleness checks
 scripts/build-site.mjs     builds site-dist from site/, icons, screenshots and release metadata
 scripts/check-site.mjs     link, asset, language parity, release and SEO checks for the built site
+scripts/capture-site-shots.mjs Playwright capture of the website's per-language marketing screenshots
 site/                      bilingual landing page and feature tour; English at /, Swedish at /sv/
 site/features/index.html   English feature tour
 site/sv/funktioner/index.html Swedish feature tour
@@ -788,6 +789,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npx playwright install chromium` installs the browser once for `test:ui` and `docs:capture`.
 - `npm run docs:capture` regenerates `docs/screenshots/` and its manifest with Playwright. Run it after a visible UI change. `npm run test:docs-capture` runs the same steps into a temporary folder and fails on a broken locator without touching the committed screenshots; CI runs it weekly, on demand and on a `docs-capture` label.
 - `npm run site:build` copies `site/`, the app icon, all selected screenshots and `docs/social-preview.png` into `site-dist/`, injects `site/release.json`, and generates `sitemap.xml` and `robots.txt`; `npm run site:check` validates all four pages, release metadata, links and structured data. Preview it with `python3 -m http.server -d site-dist 8080`.
+- `npm run site:capture` regenerates the marketing screenshots under `docs/screenshots/site/<locale>/` from the demo project with Playwright, in both languages, and writes WebP. They are separate from the in-app help screenshots and are never touched by `docs:capture`. Run it after a visible UI change that the website shows.
 - `npm run fixture` regenerates `fixtures/industrial-plan.pdf` from `scripts/make-industrial-fixture.mjs`.
 - The industrial sample has three A3 landscape pages: ground floor at 1:100, mezzanine at 1:50, and site plan at 1:400. Page 1 contains a 10.00 m calibration dimension.
 - `npm run fixture:legacy` regenerates the older A4 `fixtures/sample-plan.pdf`; it is kept for the historical Milestone 3 checklist only.
