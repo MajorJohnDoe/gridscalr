@@ -203,3 +203,125 @@ authoritative for the full suite.
 - Phase 3, #350 — reuse the gesture-time content raster; compare `draw-items`
   p95/total and the frame distribution (F-146).
 
+## Phase 3 — Gesture-time content reuse
+
+- Issue: [#350](https://github.com/MajorJohnDoe/gridscalr/issues/350)
+- PR: [#357](https://github.com/MajorJohnDoe/gridscalr/pull/357), opened from
+  `perf/3-gesture-reuse`, base `main` (`e56fa71`, phase 2 merged). Not merged.
+- Commit: `d3c907e` (implementation, tests and phase docs) plus a docs-only
+  commit that records this entry.
+- Schema: unchanged (28)
+
+### Completed
+
+- New `src/features/gestureRender/` (ADR 0013): `model.ts` is the pure settle
+  rule (`GESTURE_SETTLE_MS` 120 ms, `clampSettleMs`, `settleDelay`,
+  `settleDue`); `controller.ts` owns gesture state, `rasterTransform`, the
+  offscreen capture and the paint; `index.ts` is the public surface and the
+  feature is now in `FOUNDATION_FEATURES`, so `check:modules` blocks deep
+  imports.
+- During a pointer pan, a wheel pan or a wheel zoom the content canvas paints the
+  previous item raster with one uniform scale and translation instead of running
+  `drawContent()`. The base viewport is latched when the gesture begins and the
+  pixels are captured on the first frame, so frames never compound the transform;
+  a canvas resized mid-gesture abandons reuse and draws for real.
+- Settle: pointerup for a pan, 120 ms after the last wheel event for a wheel
+  stream, the two-finger end for a touch pinch. The settle drops the raster and
+  runs the unchanged real redraw plus the unchanged PDF raster schedule.
+- The `interaction` canvas is untouched: selection handles, marquee, snapping and
+  the draft overlay still draw on every frame, and no hit-test, selection or
+  snap code changed.
+- `FrameWindow` gained `overGoodMs` (frames at or above `FRAME_GOOD_MS`, 20 ms)
+  and `perf:probe` prints it, so phase 3 is judged on `draw-items` plus that
+  counter instead of the vsync-clamped frame p95 (F-146).
+- Measured `draw-items` p95 20.4 → 4.9 ms and total 2 130.8 → 71.6 ms on the CI
+  shape, 21.8 → 4.9 ms and 2 083.0 → 76.4 ms on the reference shape; frame max
+  33.4 → 33.3 / 49.9 → 33.4 ms and frames over 20 ms 1 → 1 / 3 → 1. Full rows in
+  [`docs/performance/history.md`](../performance/history.md).
+
+### Modules
+
+- `src/features/gestureRender/{index,model,controller}.ts` (new, 263 lines
+  total).
+- `src/canvas/CanvasView.ts` — one adapter call in `drawContentStage`, one
+  controller field and construction, two pointer-host delegates and
+  `dispose()` in `destroy()`. 1550 → 1543 lines, inside the unchanged budget.
+  The pure `itemFocusBounds()` helper moved to `src/model/geometry.ts` to make
+  room; no behaviour change.
+- `src/canvas/pointer/navigation.ts`, `touchInput.ts` — begin/end edges only;
+  `PointerHost.ts` gains the two delegates. `TouchNavigation` gains an optional
+  `onGestureEnd`.
+- `src/canvas/pointer/PointerController.ts` — two context arrows and removal of
+  the uncalled `cancelPan()` (the cancellation path now ends the gesture in
+  `cancelAll()`, which also fixes Escape during a pan).
+- `src/features/perfMonitor/model.ts` — `FrameWindow.overGoodMs`; `perf:probe`
+  passes it through.
+- `tests/gestureRender.test.ts` (new), `tests/perfMonitor.test.ts`,
+  `scripts/check-module-boundaries.mjs`, `AGENTS.md`, `README.md`,
+  `docs/architecture.md`, `docs/performance/history.md`,
+  `docs/plan/foundation-findings.md`.
+
+### Decisions
+
+- The base viewport is latched in `begin()` and the pixels are captured lazily on
+  the first paint. Capturing both in `paint()` would record the already-updated
+  viewport against pixels drawn at the previous one and offset the raster by the
+  first gesture delta; `tests/gestureRender.test.ts` pins the transform, and the
+  ad-hoc held-pan check found 0 differing pixels against the settled redraw.
+- A wheel stream (both Ctrl + wheel zoom and delta wheel pan) settles on the same
+  120 ms idle rule. Touch and space-pan are pointer gestures and settle at
+  pointerup. Nothing new is persisted or exposed in the UI.
+- `CanvasView` stays inside its 1550-line budget without a budget raise: the
+  unrelated-looking `focusBoundsForItem` extraction is mechanical (same inputs,
+  same numbers) and exists only to pay for the adapter wiring.
+- The split-view divider wheel (`zoomAtScreen`) and the read-only reference pane
+  stay on the real redraw path. The reference pane attaches no pointer gestures
+  at all, so it cannot begin one; giving it a follow signal is bigger than this
+  phase and is recorded as F-147. This is why the phase 3 reduction applies to
+  the primary canvas and the probe's numbers do not include split view.
+- The settle redraw adds one `draw-items` and one PDF-raster schedule per
+  gesture; the probe shows `pdf-render` 4 → 6 spans in the same time and p95
+  band, which is the intended refresh after a zoom settles.
+- `cancelAll()` now ends the view gesture, so Escape (or crop entry) during a pan
+  cannot leave the canvas reusing a raster forever. This also allowed deleting the
+  uncalled `cancelPan()` wrappers.
+
+### Findings
+
+- F-146 — updated with the outcome: `overGoodMs` exists, frame p95 stayed
+  clamped at 16.7–16.8 ms, and `draw-items` fell 76–78 % p95 with no frame
+  regression.
+- F-147 — new: the reference pane still redraws every item during a primary pan
+  because a read-only canvas never begins a gesture. Split view therefore keeps
+  its old pan item cost; decide with the phase 4 tile cache, not before it.
+- No open question.
+
+### Checks
+
+Run locally on the branch:
+
+- `check:versions`, `check:file-budgets`, `check:modules`, `check:security`,
+  `check:themes`, `check:i18n`, `check:docs`, `format:check`, `lint`,
+  `npx tsc --noEmit`;
+- `npx vitest run` over `gestureRender`, `perfMonitor`, `canvasGeometry`,
+  `culling`, `modelBoundary`, `fileBudgetRules`, `listInteraction`, `pageMenu`
+  (106 tests);
+- `npm run test:visual` — 4 screens, 0 differing pixels, no baseline change;
+- `npm run test:canvas` and `npm run test:touch` — green;
+- `GRIDSCALR_PERF_PROFILE=reference npm run check:performance` — every budget
+  passes (p95 edit 49.8 ms, open 37.6 ms, autosave 983.2 ms, page switch
+  31.4 ms, UI freeze 211.1 ms, heap 97.3 MB);
+- `npm run perf:probe` with `GRIDSCALR_PERF_PROBE_SHAPE=ci` and `=reference`,
+  before and after, three runs each; plus an ad-hoc mid-gesture pixel-alignment
+  check (not committed).
+
+Not run locally: the full `npm test`, `test:ui`, `test:import`, `test:count`,
+`test:csp`, `test:a11y`, `test:touch-targets`, `test:ui-scale`, the Rust builds
+and `check:dependencies`. CI remains authoritative. No `docs:capture`: no visible
+screen changed at rest.
+
+### Next
+
+- Phase 4, #351 — tile cache for the primary canvas; compare time-to-first-tile
+  and steady-state bytes, keep the resting output pixel-identical.
+
