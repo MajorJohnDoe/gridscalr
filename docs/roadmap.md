@@ -5,7 +5,7 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.32.0** · Project-file schema: **28, in development**
+Current version: **0.33.0** · Project-file schema: **28, in development**
 
 1.0 is **deferred** and remains a quality gate, not a target date. Work is
 organised by foundation slices so the product can release pre-1.0 minors while
@@ -149,6 +149,21 @@ development schema. Issue
 [#345](https://github.com/MajorJohnDoe/gridscalr/issues/345); the file-budget
 gap it exposed is recorded as F-144 in
 [`plan/foundation-findings.md`](plan/foundation-findings.md).
+
+**Performance 1** shipped as **0.33.0** on 2026-11-24
+([`release-notes/0.33.0.md`](release-notes/0.33.0.md)): a repeatable probe
+([#352](https://github.com/MajorJohnDoe/gridscalr/issues/352)), a cheaper store
+snapshot per edit and gesture ([#354](https://github.com/MajorJohnDoe/gridscalr/issues/354)),
+gesture-time content raster reuse ([#357](https://github.com/MajorJohnDoe/gridscalr/issues/357))
+and a 64 MiB tile cache for the primary canvas
+([#364](https://github.com/MajorJohnDoe/gridscalr/issues/364)). The same release
+regroups the File menu ([#369](https://github.com/MajorJohnDoe/gridscalr/issues/369)),
+adds **File → Send & share → Send by e-mail…**
+([#370](https://github.com/MajorJohnDoe/gridscalr/issues/370)) and updates the
+website feature tour and guide pair
+([#371](https://github.com/MajorJohnDoe/gridscalr/issues/371)). No schema field
+changed; schema 28 stays the current development schema. The measured rows are in
+[`performance/history.md`](performance/history.md).
 
 Schema 28 shipped in 0.29.0, not in the released 0.28.0 binary. The quality gate
 for 1.0 is unchanged: Windows, macOS and Linux artifacts, the two interface
