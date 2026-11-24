@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mät i en skannad TIF-ritning utan konvertering</title>
+    <meta
+      name="description"
+      content="Importera en skannad TIF som sidor, behåll CCITT G3/G4 förlustfritt, kalibrera bladet och förstå färgcachen. Originalfilen ändras aldrig."
+    />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/sv/guider/tif-ritning/" />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/tif-drawing/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/tif-ritning/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/tif-drawing/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Mät i en skannad TIF-ritning utan konvertering" />
+    <meta
+      property="og:description"
+      content="Importera en skannad TIF som sidor, behåll CCITT G3/G4 förlustfritt, kalibrera bladet och förstå färgcachen. Originalfilen ändras aldrig."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/sv/guider/tif-ritning/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Mät i en skannad TIF-ritning utan konvertering" />
+    <meta
+      name="twitter:description"
+      content="Importera en skannad TIF som sidor, behåll CCITT G3/G4 förlustfritt, kalibrera bladet och förstå färgcachen. Originalfilen ändras aldrig."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Mät i en skannad TIF-ritning utan konvertering",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/guider/tif-ritning/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Mät i en skannad TIF-ritning utan konvertering",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/tif-ritning/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Konverteras en TIF till PDF?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja, internt. Den konverterade PDF:en är en återbyggbar cache bredvid projektet; originalskanningen ändras aldrig."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Kodas CCITT-skanningar om?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nej. CCITT Group 3 och Group 4 bäddas in förlustfritt, och JPEG-i-TIFF behåller sin ursprungliga JPEG-ström."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Vad händer om cachen saknas?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "GridScalr bygger om den från originalskanningen när skanningen går att nå. Om båda saknas ber det dig lokalisera skanningen."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}guides/tif-drawing/" hreflang="en" lang="en">English</a>
+          <a href="{{ROOT}}sv/guider/tif-ritning/" hreflang="sv" lang="sv" aria-current="page"
+            >Svenska</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}sv/guider/">Guider</a
+            ><span>/</span>
+            <span>Mät i en skannad TIF-ritning utan konvertering</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Mät i en skannad TIF-ritning utan konvertering</h1>
+          <p class="lede">
+            En skanning är också en ritning. Importera den som sidor, kalibrera och lämna
+            originalfilen orörd.
+          </p>
+          <p class="guide-meta">
+            Uppdaterad 24 november 2026 · 5 min läsning · Granskad mot GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>På den här sidan</p>
+          <ol>
+            <li><a href="#import">Importera skanningen som sidor</a></li>
+            <li><a href="#lossless">Förlustfri CCITT och JPEG i TIFF</a></li>
+            <li><a href="#calibrate">Kalibrera och mät som en PDF</a></li>
+            <li><a href="#cache">Cachen för färgskanningar</a></li>
+            <li><a href="#source">Källan ändras aldrig</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Ladda ner GridScalr {RELEASE_VERSION} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Kort svar</h2>
+            <p>
+              Importera TIF-filen med Arkiv → Öppna ritning… och välj sidorna du behöver. GridScalr
+              bäddar in CCITT Group 3 och Group 4 förlustfritt, kalibrerar sidan som en PDF och
+              håller en färgskanning i en återbyggbar cache bredvid projektet. Original-TIF:en
+              ändras aldrig.
+            </p>
+          </div>
+
+          <h2 id="import">Importera skanningen som sidor</h2>
+          <p>
+            Använd <b>Arkiv → Öppna ritning…</b> eller släpp TIF-filen på panelen Sidor. En
+            flersidig TIFF blir flera sidor, var och en med egen pappersstorlek och skala. Formatet
+            känns igen på filinnehållet, inte på filändelsen, och förhandsbilder i lägre upplösning
+            hoppas över. En en-sidig skanning hoppar över sidväljaren; en flersidig fil visar
+            förhandsvisningar så att du kan rensa blad du inte behöver.
+          </p>
+          <h2 id="lossless">Förlustfri CCITT och JPEG i TIFF</h2>
+          <p>
+            En 1-bitars CCITT Group 3 eller Group 4-skanning bäddas in utan omkodning, så linjerna
+            behåller skanningens skärpa. JPEG-i-TIFF behåller sin ursprungliga JPEG-ström, med en
+            delad JPEGTables som fogas till varje remsa. Gråskala, RGB och CMYK JPEG stöds; YCCK,
+            JPEG 2000, tiled JPEG och tiled CCITT avvisas med ett meddelande som anger orsaken i
+            stället för att ge en halv sida.
+          </p>
+          <h2 id="calibrate">Kalibrera och mät som en PDF</h2>
+          <p>
+            En skanning saknar textlager och pålitlig sidskala, så kalibreringen betyder mer än på
+            en digital PDF. Mät ett känt mått på bladet, kontrollera mot ett andra mått och lås
+            skalan. Därefter fungerar längd, area, antal och volym precis som på en PDF.
+            Fästpunkterna hjälper på rena linjer; på en sned eller brusig skanning bör du jämföra
+            resultatet med en utskriven måttsättning innan du litar på det.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Kalibrera och mät som en PDF</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/hero.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Den kalibrerade demoplanen. En skannad TIF importeras som en sida och kalibreras på samma sätt."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Den kalibrerade demoplanen. En skannad TIF importeras som en sida och kalibreras på samma sätt."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Den kalibrerade demoplanen. En skannad TIF importeras som en sida och kalibreras på
+                samma sätt.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="cache">Cachen för färgskanningar</h2>
+          <p>
+            En avkodad färgskanning är det största ett projekt kan innehålla, så den hålls utanför
+            projektets JSON. Den konverterade PDF:en ligger i mappen
+            <b>&lt;projekt&gt;.derived/</b> bredvid projektet, namngiven av skanningens checksumma,
+            konverterarens version och sidantalet; projektfilen bär bara en markör. Håll mappen
+            bredvid projektet när du flyttar eller kopierar det. Om cachen saknas och
+            originalskanningen finns kvar där projektet förväntar sig den byggs sidan om tyst. Om
+            båda är borta namnger en dialog sidan och erbjuder <b>Lokalisera skanningen…</b>.
+          </p>
+          <p>
+            En uppmätt sexbladig A2-färguppsättning tog cirka 59 MB i cachen och bara 10 kB
+            projekt-JSON. GridScalr varnar en gång när cachen når 160 MB eller när filen plus cachen
+            närmar sig projektgränsen på 256 MB, men varningen stoppar aldrig en sparning. Dela en
+            stor färguppsättning i ett projekt per byggnad eller våning.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Cachen för färgskanningar</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/calibration.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Kalibrering mot ett känt mått på 10 m, med skalan sparad per sida."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/calibration.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Kalibrering mot ett känt mått på 10 m, med skalan sparad per sida."
+              />
+            </a>
+            <figcaption>
+              <span>Kalibrering mot ett känt mått på 10 m, med skalan sparad per sida.</span>
+            </figcaption>
+          </figure>
+          <h2 id="source">Källan ändras aldrig</h2>
+          <p>
+            GridScalr läser TIF-filen och skriver en härledd PDF bredvid projektet; den skriver
+            aldrig till skanningen. En sparning eller export som pekar på ett källdokument avvisas,
+            även via en symbolisk länk eller en annan stavning. Om skanningen kommer i en ny
+            revision använder du <b>Byt källa…</b> på sidkortet: den nya TIF:en konverteras och
+            jämförs mot råfilens checksumma, och sidorna mappas i stället för att gissas. En
+            skanning som inte matchar projektets checksumma avvisas, eftersom en annan revision
+            skulle ändra vad projektet mäter.
+          </p>
+
+          <h2 id="mistakes">Vanliga fel</h2>
+          <ul class="checklist">
+            <li>
+              Flytta projektet utan <b>.derived</b>-mappen och sedan radera originalskanningen.
+            </li>
+            <li>Kalibrera mot ett mått som hör till en annan vy på samma blad.</li>
+            <li>Anta att en färgskanning är liten för att projektets JSON är liten.</li>
+            <li>
+              Byta ut en skanning mot en annan revision och förvänta sig att mätningarna följer med.
+            </li>
+          </ul>
+
+          <h2 id="faq">Frågor</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Konverteras en TIF till PDF?</summary>
+              <p>
+                Ja, internt. Den konverterade PDF:en är en återbyggbar cache bredvid projektet;
+                originalskanningen ändras aldrig.
+              </p>
+            </details>
+            <details>
+              <summary>Kodas CCITT-skanningar om?</summary>
+              <p>
+                Nej. CCITT Group 3 och Group 4 bäddas in förlustfritt, och JPEG-i-TIFF behåller sin
+                ursprungliga JPEG-ström.
+              </p>
+            </details>
+            <details>
+              <summary>Vad händer om cachen saknas?</summary>
+              <p>
+                GridScalr bygger om den från originalskanningen när skanningen går att nå. Om båda
+                saknas ber det dig lokalisera skanningen.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Relaterat</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}sv/guider/kalibrera-ritning/"
+              ><b>Kalibrera en ritning</b
+              ><span>Känt mått, utskriven skala och låset per sida.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/mata-area-pdf/"
+              ><b>Mäta area i en PDF</b
+              ><span>Samma arbetsgång när skanningen är kalibrerad.</span></a
+            >
+            <a href="{{ROOT}}sv/mata-area/"
+              ><b>Mäta area på ritning</b
+              ><span>Uppgiftssidan för kalibrerade mätningar och rum.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Prova en skanning i demot</h2>
+            <p>
+              Öppna demoprojektet och importera sedan ett eget skannat blad och upprepa
+              kalibreringen på en egen sida.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Hämta demoprojektet</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>

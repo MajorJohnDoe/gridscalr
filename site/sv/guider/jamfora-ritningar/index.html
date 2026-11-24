@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jämför två ritningsrevisioner före beställning</title>
+    <meta
+      name="description"
+      content="Öppna en tidigare revision som skrivskyddad referens, jämför sida vid sida eller med överlagring, läs skillnadslistan och exportera en jämförelse-PDF."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/jamfora-ritningar/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/compare-revisions/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/jamfora-ritningar/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/compare-revisions/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Jämför två ritningsrevisioner före beställning" />
+    <meta
+      property="og:description"
+      content="Öppna en tidigare revision som skrivskyddad referens, jämför sida vid sida eller med överlagring, läs skillnadslistan och exportera en jämförelse-PDF."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/sv/guider/jamfora-ritningar/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Jämför två ritningsrevisioner före beställning" />
+    <meta
+      name="twitter:description"
+      content="Öppna en tidigare revision som skrivskyddad referens, jämför sida vid sida eller med överlagring, läs skillnadslistan och exportera en jämförelse-PDF."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Jämför två ritningsrevisioner före beställning",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/guider/jamfora-ritningar/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Jämför två ritningsrevisioner före beställning",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/jamfora-ritningar/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Slår jämförelsen samman de två projekten?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nej. Referensen är skrivskyddad och ingen fil ändras. Inget slås samman eller skrivs tillbaka."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Kan jag jämföra en rå PDF i stället för ett projekt?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Arkiv → Jämför med ritning… stöder sida vid sida, överlagring, opacitet och jämförelse-PDF, men har ingen markup-lista eller skillnadstabell."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Vad jämförs egentligen?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Mätningar, ritobjekt, symboler och deras egenskaper samt de renderade källsidorna. Det är inte en semantisk diff av PDF:ens råa vektoroperationer."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}guides/compare-revisions/" hreflang="en" lang="en">English</a>
+          <a href="{{ROOT}}sv/guider/jamfora-ritningar/" hreflang="sv" lang="sv" aria-current="page"
+            >Svenska</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}sv/guider/">Guider</a
+            ><span>/</span>
+            <span>Jämför två ritningsrevisioner före beställning</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Jämför två ritningsrevisioner före beställning</h1>
+          <p class="lede">
+            Kontrollera vad som ändrats mellan två revisioner utan att röra mängdningen du ska
+            beställa från.
+          </p>
+          <p class="guide-meta">
+            Uppdaterad 24 november 2026 · 5 min läsning · Granskad mot GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>På den här sidan</p>
+          <ol>
+            <li><a href="#open">Öppna referensen</a></li>
+            <li><a href="#modes">Sida vid sida eller överlagring</a></li>
+            <li><a href="#diff">Skillnadslistan och varningarna</a></li>
+            <li><a href="#export">Exportera jämförelse-PDF:en</a></li>
+            <li><a href="#merge">Inget slås samman</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Ladda ner GridScalr {RELEASE_VERSION} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Kort svar</h2>
+            <p>
+              Öppna den tidigare filen som skrivskyddad referens med Arkiv → Jämför med revision…
+              och granska den sida vid sida eller med överlagring. Panelen listar ändrade, tillagda
+              och borttagna mätningar, varnar för skillnader i sidantal och skala och kan exportera
+              en jämförelse-PDF. Inget slås samman eller ändras.
+            </p>
+          </div>
+
+          <h2 id="open">Öppna referensen</h2>
+          <p>
+            Behåll den aktuella mängdningen öppen och välj <b>Arkiv → Jämför med revision…</b>. Välj
+            den tidigare <b>.gridscalr</b>-filen. Referensen öppnas som en skrivskyddad session
+            bredvid det aktuella projektet. Du kan också trycka <b>Ctrl/Cmd+Shift+2</b> för
+            <b>Visa → Referensvy (samma sida)</b>, välja <b>Revision</b> i panelens verktygsrad och
+            använda <b>Öppna…</b>. För en rå PDF-revision väljer du
+            <b>Arkiv → Jämför med ritning…</b> i stället.
+          </p>
+          <h2 id="modes">Sida vid sida eller överlagring</h2>
+          <p>
+            <b>Sida vid sida</b> lägger de två sidorna bredvid varandra, vilket är bäst för att
+            kontrollera geometri, rumsnamn och bladlayout. <b>Överlagring</b> staplar referensen
+            över den aktuella ritningen och ger en opacitetsreglage; vita sidytor blir
+            genomskinliga, så flyttade väggar och utrustning syns. Referenspanelen har egna
+            sidkontroller och <b>Följ primär</b>, så du kan behålla ett detaljblad bredvid bladet du
+            mäter på.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Sida vid sida eller överlagring</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/hero.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Det aktuella projektet på den kalibrerade planen. Referensen öppnas bredvid i en skrivskyddad panel."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/hero.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Det aktuella projektet på den kalibrerade planen. Referensen öppnas bredvid i en skrivskyddad panel."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Det aktuella projektet på den kalibrerade planen. Referensen öppnas bredvid i en
+                skrivskyddad panel.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="diff">Skillnadslistan och varningarna</h2>
+          <p>
+            För en revision listar panelen <b>Ändrade</b>, <b>Tillagda</b> och
+            <b>Borttagna</b> mätningar, ritobjekt, symboler och deras egenskaper. Klicka på en rad
+            för att hoppa till sidan och objektet; tillagda och borttagna objekt öppnar sin sida i
+            referenspanelen. Läs varningarna för skillnader i sidantal, ritningsnamn och skala innan
+            du litar på jämförelsen. Det är en jämförelse av mätnings- och markupdata plus de
+            renderade källsidorna, inte en semantisk diff av PDF:ens vektoroperationer.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Skillnadslistan och varningarna</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/layers.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Lagerpanelen hör till det redigerbara projektet. Referenspanelen ändrar inte dess lager eller objekt."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Lagerpanelen hör till det redigerbara projektet. Referenspanelen ändrar inte dess lager eller objekt."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Lagerpanelen hör till det redigerbara projektet. Referenspanelen ändrar inte dess
+                lager eller objekt.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="export">Exportera jämförelse-PDF:en</h2>
+          <p>
+            <b>Exportera PDF</b> skriver <b>&lt;projekt&gt;-jamforelse.pdf</b> med en sammanfattning
+            och sida-för-sida-bilder. För en revision ingår även varningarna och skillnadstabellen.
+            Exporten vägrar skriva över en källritning, så granskningsfilen kan delas utan risk för
+            originalen.
+          </p>
+          <h2 id="merge">Inget slås samman</h2>
+          <p>
+            Referensen är endast för jämförelse. Markering, redigering, lager och ångra hör till den
+            primära ritytan, och att stänga panelen ändrar inte ritningen, projektet eller
+            historiken. Referensens tillstånd sparas inte i projektfilen. När granskningen är klar
+            stänger du jämförelsen eller sparar det aktuella projektet som ny arbetsrevision; den
+            tidigare filen förblir orörd.
+          </p>
+
+          <h2 id="mistakes">Vanliga fel</h2>
+          <ul class="checklist">
+            <li>Jämföra två projekt med olika sid skala utan att läsa varningen.</li>
+            <li>Radera den tidigare revisionen innan jämförelse-PDF:en exporterats.</li>
+            <li>Förvänta sig att referenspanelen går att redigera; den är skrivskyddad.</li>
+            <li>Behandla skillnadslistan som bevis för att mängderna är kommersiellt korrekta.</li>
+          </ul>
+
+          <h2 id="faq">Frågor</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Slår jämförelsen samman de två projekten?</summary>
+              <p>
+                Nej. Referensen är skrivskyddad och ingen fil ändras. Inget slås samman eller skrivs
+                tillbaka.
+              </p>
+            </details>
+            <details>
+              <summary>Kan jag jämföra en rå PDF i stället för ett projekt?</summary>
+              <p>
+                Ja. Arkiv → Jämför med ritning… stöder sida vid sida, överlagring, opacitet och
+                jämförelse-PDF, men har ingen markup-lista eller skillnadstabell.
+              </p>
+            </details>
+            <details>
+              <summary>Vad jämförs egentligen?</summary>
+              <p>
+                Mätningar, ritobjekt, symboler och deras egenskaper samt de renderade källsidorna.
+                Det är inte en semantisk diff av PDF:ens råa vektoroperationer.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Relaterat</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}sv/mangdning/"
+              ><b>Mängdning</b
+              ><span>Beställningen som bygger på revisionen du just kontrollerat.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/mata-area-pdf/"
+              ><b>Mäta area i en PDF</b><span>Mätarbetsgången bakom skillnadslistan.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/vad-ar-mangdning/"
+              ><b>Vad är mängdning?</b><span>Varför varje mängd behöver en spårbar källa.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Jämför demot med din mängdning</h2>
+            <p>
+              Öppna demoprojektet som referens och jämför det med ditt eget projekt för att se
+              skillnadslistan och jämförelse-PDF:en.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Hämta demoprojektet</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>

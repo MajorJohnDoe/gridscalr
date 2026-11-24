@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Markera en avvikelse på ritningen och exportera</title>
+    <meta
+      name="description"
+      content="Markera en avvikelse på ett ritlager med moln, hänvisning och stämpel och exportera en tydlig PDF till entreprenören. Källritningen ändras aldrig."
+    />
+    <link
+      rel="canonical"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/markera-avvikelse/"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://majorjohndoe.github.io/gridscalr/guides/mark-a-deviation/"
+    />
+    <link
+      rel="alternate"
+      hreflang="sv"
+      href="https://majorjohndoe.github.io/gridscalr/sv/guider/markera-avvikelse/"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/guides/mark-a-deviation/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <link rel="icon" href="{{ROOT}}assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="{{ROOT}}assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="{{ROOT}}assets/app-icon-128.png" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Markera en avvikelse på ritningen och exportera" />
+    <meta
+      property="og:description"
+      content="Markera en avvikelse på ett ritlager med moln, hänvisning och stämpel och exportera en tydlig PDF till entreprenören. Källritningen ändras aldrig."
+    />
+    <meta
+      property="og:url"
+      content="https://majorjohndoe.github.io/gridscalr/sv/guider/markera-avvikelse/"
+    />
+    <meta
+      property="og:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure areas, draw operation cards and take off quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Markera en avvikelse på ritningen och exportera" />
+    <meta
+      name="twitter:description"
+      content="Markera en avvikelse på ett ritlager med moln, hänvisning och stämpel och exportera en tydlig PDF till entreprenören. Källritningen ändras aldrig."
+    />
+    <meta
+      name="twitter:image"
+      content="https://majorjohndoe.github.io/gridscalr/social-preview.png"
+    />
+
+    <link rel="stylesheet" href="{{ROOT}}assets/site.css" />
+    <script src="{{ROOT}}assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Markera en avvikelse på ritningen och exportera",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/guider/markera-avvikelse/",
+        "inLanguage": "sv",
+        "dateModified": "2026-11-24",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Guider",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Markera en avvikelse på ritningen och exportera",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/guider/markera-avvikelse/"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Vilket lager ska en avvikelse ligga på?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ett ritlager. Mätningar stannar på mätlager, och ritlager ritas under dem så att etiketterna förblir läsbara."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Kan entreprenören slå lager på och av i PDF:en?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja, om Valfria lager (OCG) är aktiverat. Kompatibla läsare kan då slå exporterade lager på och av utan att den sammanslagna ritningen ändras."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Ändras källritningen av exporten?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nej. GridScalr skriver aldrig till ett källdokument och vägrar en export som pekar på ett."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="{{ROOT}}" aria-label="GridScalr home">
+          <img
+            class="logo"
+            src="{{ROOT}}assets/app-icon.svg"
+            width="30"
+            height="30"
+            alt=""
+            aria-hidden="true"
+          />
+          <span>GridScalr</span>
+        </a>
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="{{ROOT}}sv/mata-area/">Areor</a>
+          <a href="{{ROOT}}sv/driftkort/">Driftkort</a>
+          <a href="{{ROOT}}sv/mangdning/">Mängder</a>
+          <a href="{{ROOT}}sv/guider/" aria-current="page">Guider</a>
+          <a href="{{ROOT}}sv/funktioner/">Funktioner</a>
+          <a href="{{ROOT}}#download">Ladda ner</a>
+          <a href="{{ROOT}}#docs">Dokumentation</a>
+        </nav>
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="{{ROOT}}guides/mark-a-deviation/" hreflang="en" lang="en">English</a>
+          <a href="{{ROOT}}sv/guider/markera-avvikelse/" hreflang="sv" lang="sv" aria-current="page"
+            >Svenska</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero subhero guide-hero">
+        <div class="wrap">
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="{{ROOT}}">GridScalr</a><span>/</span> <a href="{{ROOT}}sv/guider/">Guider</a
+            ><span>/</span>
+            <span>Markera en avvikelse på ritningen och exportera</span>
+          </nav>
+          <p class="eyebrow">Guide</p>
+          <h1>Markera en avvikelse på ritningen och exportera</h1>
+          <p class="lede">
+            Ett moln, en hänvisning och en statusstämpel gör en platsnotering till en ritning
+            entreprenören kan agera på.
+          </p>
+          <p class="guide-meta">
+            Uppdaterad 24 november 2026 · 5 min läsning · Granskad mot GridScalr 0.32.0
+          </p>
+        </div>
+      </section>
+
+      <div class="wrap guide-layout">
+        <aside class="guide-toc">
+          <p>På den här sidan</p>
+          <ol>
+            <li><a href="#layer">Börja på ett ritlager</a></li>
+            <li><a href="#mark">Rita revideringsmolnet</a></li>
+            <li><a href="#annotate">Lägg till hänvisning och stämpel</a></li>
+            <li><a href="#export">Exportera till entreprenören</a></li>
+          </ol>
+          <a class="toc-cta" href="{{ROOT}}#download">Ladda ner GridScalr {RELEASE_VERSION} →</a>
+        </aside>
+
+        <article class="guide-body">
+          <div class="answer-box">
+            <h2>Kort svar</h2>
+            <p>
+              Rita avvikelsen på ett ritlager, inte på ett mätlager. Sätt ett revideringsmoln runt
+              området, lägg till en hänvisning med åtgärden och en statusstämpel och exportera en
+              ritnings-PDF med de lager entreprenören behöver. Dolda objekt följer inte med och
+              källritningen ändras aldrig.
+            </p>
+          </div>
+
+          <h2 id="layer">Börja på ett ritlager</h2>
+          <p>
+            Ritverktygen ligger på ritlager, skilda från mätningarna. Lägg till ett ritlager för
+            platsbesöket, namnge det tydligt och gör det aktivt innan du ritar. Ritlager ritas under
+            mätlager, så mätetiketterna förblir läsbara. Varje objekt kan fortfarande döljas eller
+            låsas individuellt utan att lagret ändras, och ett dolt lager utesluts från varje export
+            precis som dolda objekt.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Börja på ett ritlager</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/layers.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Ritlager och mätlager listas separat. Molnet, hänvisningen och stämpeln på planen ligger på ett ritlager."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/layers.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Ritlager och mätlager listas separat. Molnet, hänvisningen och stämpeln på planen ligger på ett ritlager."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Ritlager och mätlager listas separat. Molnet, hänvisningen och stämpeln på planen
+                ligger på ett ritlager.</span
+              >
+            </figcaption>
+          </figure>
+          <h2 id="mark">Rita revideringsmolnet</h2>
+          <p>
+            Välj <b>Revideringsmoln</b> (<b>D</b>) och klicka varje hörn; stäng på första punkten
+            eller tryck <b>Enter</b>. Molnet kan formas om med sina hörnhandtag. Välj
+            <b>Moln + text</b> i verktygets variant om anteckningen ska följa med molnet, och använd
+            en ljus fyllning på cirka 20–30 % opacitet så att ritningen under förblir läsbar. Text,
+            teckenstorlek och textboxens bredd kan redigeras senare i Egenskaper.
+          </p>
+          <h2 id="annotate">Lägg till hänvisning och stämpel</h2>
+          <p>
+            Använd <b>Hänvisning</b> (<b>N</b>) när anteckningen behöver en ledare till en specifik
+            komponent: klicka på objektet, klicka sedan där textrutan ska sitta och skriv
+            observationen. Använd <b>Stämpel</b> (<b>S</b>) för status som <b>BESIKTIGAD</b>,
+            <b>EJ GODKÄND</b> eller en egen status. Stämpelpresets följer vanliga statusfärger, och
+            en placerad stämpel kan behålla sin egen färg. En revisionsdelta finns när ändringen hör
+            till en numrerad revision.
+          </p>
+          <h2 id="export">Exportera till entreprenören</h2>
+          <p>
+            Välj <b>Arkiv → Exportera → Ritning som PDF…</b>. Välj aktuell sida, alla sidor eller
+            ett sidintervall, och hela sidor eller ett valt beskuret område. Ta med de synliga lager
+            entreprenören behöver, plus etiketter, kalibreringslinjen och vid behov en
+            teckenförklaring. <b>Valfria lager (OCG)</b> och <b>Granskningsanteckningar</b> är av
+            som standard och behåller den sammanslagna ritningen intakt. Dolda lager och dolda
+            objekt exporteras aldrig; låsta objekt följer med.
+          </p>
+          <p>
+            Källritningen ändras aldrig, och GridScalr vägrar spara en export över ett källdokument
+            i projektet. Spara PDF:en under ett namn som anger byggnad, blad och besiktningsdatum.
+          </p>
+          <figure class="big-shot">
+            <div class="big-shot-bar"><span>Exportera till entreprenören</span></div>
+            <a
+              class="shot-link"
+              href="{{ROOT}}screenshots/site/sv/export.webp"
+              data-lightbox
+              aria-label="Klicka för full storlek: Exportdialogen för ritnings-PDF med sidintervall, lagerval och inställningen för valfria lager (OCG)."
+            >
+              <img
+                src="{{ROOT}}screenshots/site/sv/export.webp"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="Exportdialogen för ritnings-PDF med sidintervall, lagerval och inställningen för valfria lager (OCG)."
+              />
+            </a>
+            <figcaption>
+              <span
+                >Exportdialogen för ritnings-PDF med sidintervall, lagerval och inställningen för
+                valfria lager (OCG).</span
+              >
+            </figcaption>
+          </figure>
+
+          <h2 id="mistakes">Vanliga fel</h2>
+          <ul class="checklist">
+            <li>Rita avvikelsen på ett mätlager, så att den blandas med mängdningen.</li>
+            <li>Lita på ett dolt lager som mottagaren inte ser eller inte öppnar.</li>
+            <li>Lämna bort stämpeln, så att läsaren inte kan avgöra om avvikelsen är godkänd.</li>
+            <li>Exportera över källritningen i stället för till ett nytt filnamn.</li>
+          </ul>
+
+          <h2 id="faq">Frågor</h2>
+          <div class="faq-list">
+            <details open>
+              <summary>Vilket lager ska en avvikelse ligga på?</summary>
+              <p>
+                Ett ritlager. Mätningar stannar på mätlager, och ritlager ritas under dem så att
+                etiketterna förblir läsbara.
+              </p>
+            </details>
+            <details>
+              <summary>Kan entreprenören slå lager på och av i PDF:en?</summary>
+              <p>
+                Ja, om Valfria lager (OCG) är aktiverat. Kompatibla läsare kan då slå exporterade
+                lager på och av utan att den sammanslagna ritningen ändras.
+              </p>
+            </details>
+            <details>
+              <summary>Ändras källritningen av exporten?</summary>
+              <p>
+                Nej. GridScalr skriver aldrig till ett källdokument och vägrar en export som pekar
+                på ett.
+              </p>
+            </details>
+          </div>
+
+          <h2 id="related">Relaterat</h2>
+          <div class="docs-links">
+            <a href="{{ROOT}}sv/guider/jamfora-ritningar/"
+              ><b>Jämför två revisioner</b
+              ><span>Kontrollera vad som ändrats före nästa platsbesök.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/vad-ar-ett-driftkort/"
+              ><b>Vad är ett driftkort?</b
+              ><span>Det andra ritningsblad en tekniker underhåller.</span></a
+            >
+            <a href="{{ROOT}}sv/guider/tif-ritning/"
+              ><b>Mät i en skannad TIF</b
+              ><span>Markera i en skanning utan att ändra originalet.</span></a
+            >
+          </div>
+        </article>
+      </div>
+
+      <section class="cta-band">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Prova själv</p>
+            <h2>Öva på demoplanen</h2>
+            <p>
+              Öppna demoprojektet, lägg till ett ritlager och placera ett moln, en hänvisning och en
+              besiktigad stämpel på planen.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Hämta demoprojektet</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="{{ROOT}}" aria-label="GridScalr startsida">
+            <img
+              class="logo"
+              src="{{ROOT}}assets/app-icon.svg"
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span>GridScalr</span>
+          </a>
+          <p>Lokal mätning av area, driftkort och mängder i PDF- och TIF-ritningar.</p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens ·
+            <a data-release-page href="{{RELEASE_URL}}">Versionsanteckningar</a>
+          </p>
+        </div>
+        <div>
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD-PARTY-NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/security-policy.md"
+                >Säkerhetspolicy</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="{{ROOT}}sv/funktioner/">Alla funktioner</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/"
+                >Release notes</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap footer-bottom">
+        <span>© 2026 MajorJohnDoe. GridScalr är före 1.0.</span>
+        <span>Windows-installationen är inte kodesignerad. Kontrollera SHA-256-checksummorna.</span>
+      </div>
+    </footer>
+  </body>
+</html>
