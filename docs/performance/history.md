@@ -170,3 +170,128 @@ the demo row, when comparing phases.
 - No long tasks were recorded in any run, and every budget passed with
   headroom. The baseline is not a regression story; it is the number every later
   phase is measured against.
+
+## Phase 2 — Snapshot cost per edit (2026-11-24)
+
+- Code measured: `perf/2-snapshot-cost`, implementation commit `f473b91`, cut
+  from `main` `9ec19b3` (phase 1 merged).
+- Schema: unchanged (28). No snapshot text, export or UI change.
+- Shape and viewport: identical to phase 1. The probe and benchmark still run
+  against the browser fallback.
+
+### What changed
+
+- `Store.mutate()`, page reorder and page insert cache the serialised text of
+  the state in memory and push that cached text, then serialise the new state
+  once. Undo and redo move cached text between the two stacks without
+  serialising; a cancelled gesture restores cached text. See
+  `src/state/snapshotHistory.ts`.
+- `endGesture()` compares the project revision captured in `beginGesture()`
+  instead of comparing snapshot strings, so a completed drag pays one
+  serialisation (the new state) instead of two. A gesture that changes nothing
+  still pushes no history entry. Drags announce their direct item edits through
+  `Store.noteGestureChange()`, one revision bump per gesture.
+- `Store.snapshot()` no longer passes a per-value replacer. Embedded image
+  payloads are cleared to `undefined` for one plain `JSON.stringify` and
+  restored immediately, which is byte-identical to the old replacer text (F-145,
+  `tests/storeSnapshot.test.ts`). See `src/state/snapshot.ts`.
+- One serialisation per discrete edit, one per completed gesture, none for a
+  cancelled or unchanged gesture and none for undo/redo are asserted by
+  `tests/storeSnapshot.test.ts`.
+
+### Edits: before and after
+
+`npm run perf:probe`, two sessions of 3 runs each, median reported. Session A is
+the phase 2 measurement; session B is the repeat used to check variance.
+
+| Measure | Phase 1 baseline | Phase 2 A | Phase 2 B | Change |
+| --- | --- | --- | --- | --- |
+| CI shape: edit p50 | 23.6 ms | 15.2 ms | 16.2 ms | −31 to −36 % |
+| CI shape: edit p95 | 26.8 ms | 17.8 ms | 19.6 ms | **−33.6 / −26.9 %** |
+| CI shape: `serialize` per edit | 11.54 ms | 3.02 ms | 3.35 ms | −71 to −74 % |
+| CI shape: `serialize` share of p95 | 43.0 % | 16.0 % | 16.2 % | −27 pt |
+| CI shape: `serialize` spans | 20 (1/edit) | 20 (1/edit) | 20 (1/edit) | unchanged |
+| Reference: edit p50 | 67.6 ms | 47.5 ms | 46.3 ms | −30 to −32 % |
+| Reference: edit p95 | 80.0 ms | 51.3 ms | 53.0 ms | **−35.9 / −33.8 %** |
+| Reference: `serialize` per edit | 43.47 ms | 22.1 ms | 21.79 ms | −49 to −50 % |
+| Reference: `serialize` share of p95 | 53.8 % | 42.2 % | 40.7 % | −12 to −13 pt |
+| Reference: `serialize` p95 / max | 50.4 / 60.5 ms | 23.9 / 24.8 ms | — | −53 % |
+
+The remaining `serialize` cost is the project text itself: the phase 1 plain
+`JSON.stringify` was 2.6 ms on the CI shape and 20.4 ms on the reference shape,
+so the replacer overhead is gone and only the JSON text is left. The CI-shape
+`serialize` p95 was 3.1 ms with a 6.5 ms max in session A.
+
+### Interaction and heap (session A)
+
+The pan and zoom are unchanged by this phase; the numbers are the health row.
+
+| Measure | CI shape | Reference shape |
+| --- | --- | --- |
+| Frame p50 / p95 | 16.7 / 16.8 ms | 16.7 / 16.8 ms |
+| Frame p99 / max | 16.8 / 33.4 ms | 16.8 / 33.4 ms |
+| Long-task windows | 0 | 0 |
+| JS heap | 123.0 MB | 188.0 MB |
+| `draw-items` p95 / total (124 redraws) | 20.9 ms / 1 970.3 ms | 21.1 ms / 1 864.1 ms |
+| `pdf-render` p95 / total (4 renders) | 29.4 ms / 95.9 ms | 24.8 ms / 80.4 ms |
+
+The reference heap matches phase 1 exactly. The CI row moved from 86.4 MB to
+123.0 MB in the browser heap counter, which is quantised and constant per shape
+across runs; the history cache retains one extra copy of the current text
+(1.9 MB) beyond the undo entries, so the rest is garbage awaiting collection,
+not a retained structure. The desktop working-set budget is still the manual
+packaged-app check.
+
+### Budget benchmark
+
+`npm run bench:large` on both profiles and
+`GRIDSCALR_PERF_PROFILE=reference npm run check:performance`:
+
+| Measure | ci (40 p / 4 000 i) | reference (150 p / 15 000 i) | Budget |
+| --- | --- | --- | --- |
+| Project open | 13.0 ms (was 9.1) | 38.3 ms (was 27.8) | under 10 s |
+| p95 edit latency | 21.4 ms (was 23.5) | 61.6 ms (was 73.3) | under 100 ms |
+| Serialization p50 / p95 (plain `JSON.stringify`) | 2.7 / 3.1 ms | 18.9 / 20.5 ms | — |
+| Page switch p95 | 7.8 ms (was 12.1) | 32.9 ms (was 31.7) | under 100 ms |
+| Autosave | 960.8 ms (was 937) | 1 002.9 ms (was 1 017) | under 2 s |
+| Markups open | 91.5 ms (was 123.5) | 220.5 ms (was 217.6) | under 2 s |
+| JS heap | 98.4 MB (was 114.3) | 97.1 MB (was 81.6) | 2 GB (desktop, manual) |
+
+Project open now includes one seed serialisation of the opened project, which
+is why it rose by about 4 ms (CI) and 11 ms (reference); both remain three
+orders of magnitude inside the budget. The gate run reported p95 edit 53.0 ms
+against the phase 1 gate run's 78.3 ms (**−32.3 %**) with every budget passing:
+open 40.4 ms, autosave 986.3 ms, page switch 22.1 ms, UI freeze 229.8 ms,
+serialization p95 24.0 ms, heap 90 MB.
+
+`bench:large`'s p95 edit row is the noisiest number in this table: the
+20-sample p95 is close to the maximum, and the reference row measured 61.6 and
+62.0 ms in two consecutive runs (15–16 % versus phase 1) while the probe and the
+budget gate on the same change measured 33–36 %. The probe's 20-edit median and
+the gate are the comparison rows; the benchmark stays as the absolute budget
+check.
+
+### Run-to-run variance
+
+| Row | Runs (p95 edit) | Variance |
+| --- | --- | --- |
+| Probe, CI shape, session A | 25.2, 17.8, 17.8 ms | 41.6 % |
+| Probe, CI shape, session B | 19.5, 21.4, 19.6 ms | 9.7 % |
+| Probe, reference, session A | 51.2, 51.3, 57.2 ms | 11.7 % |
+| Probe, reference, session B | 52.5, 53.0, 55.5 ms | 5.7 % |
+
+Session A's CI variance is one slow first run (the same run recorded the only
+long-task window); sessions A and B agree within 10 % of each other and both
+clear the 20 % improvement bar. Frame p95 is still vsync-clamped (F-146).
+
+### What phase 2 says
+
+- Removing the replacer and the second gesture snapshot cuts serialisation per
+  edit by half to three quarters and edit p95 by 27–36 % on both project shapes.
+  Per-page sharded snapshots (the phase plan's conditional fallback) were **not**
+  needed and are not added.
+- The byte-identity tests and the removed replacer answer F-145 without changing
+  the snapshot text.
+- Project open and the benchmark's absolute p95 remain inside every budget with
+  wide headroom.
+

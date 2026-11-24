@@ -172,6 +172,8 @@ src/
   model/symbolPaths.ts   shared SVG path parsing and transforms for symbol artwork
   state/store.ts         immutable project snapshots, undo/redo, multi-selection and read-only UI state
   state/history.ts       adaptive undo-history limits from the serialized snapshot size
+  state/snapshot.ts      undo-history text without embedded image payloads, one plain stringify per snapshot
+  state/snapshotHistory.ts undo/redo stacks, cached current text, gesture snapshot and image payload cache
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
   pdf/thumbnails.ts      lazily rendered, cached page previews for the Pages panel
   pdf/pdfExport.ts       flattened vector PDF export entry point and page orchestration
