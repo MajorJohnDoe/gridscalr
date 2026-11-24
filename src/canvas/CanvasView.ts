@@ -18,10 +18,12 @@ import {
 } from "../model/layers";
 import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { deleteItems, translateItems } from "../model/commands";
-import { perfMark, perfSpan, perfSpanAsync } from "../features/perfMonitor";
+import { perfSpan } from "../features/perfMonitor";
 import { GestureRenderController, type GestureKind } from "../features/gestureRender";
+import type { TileCacheStats } from "../features/tileCache";
 
-import { focusViewTransform, isCancellation, pointInBox } from "./geometry";
+import { focusViewTransform, pointInBox } from "./geometry";
+import { CanvasRasterController } from "./raster";
 import { CropController } from "./crop";
 import { PointerController } from "./pointer/PointerController";
 import { createItemInStore, type ItemOptions } from "./pointer/itemFactory";
@@ -72,7 +74,7 @@ import { openScheduleBuilder } from "../features/schedules";
 import { calloutLayout, cloudLabelLayout } from "../model/annotations";
 import type { ImageAsset, ItemKind, MarkupItem, PageSize, Point, Project } from "../model/types";
 import { formatNumber } from "../model/units";
-import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
+import { type PdfRenderer } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
 import {
   clampZoom,
@@ -125,6 +127,7 @@ export interface CanvasTestApi {
     page: number;
     rects: Array<{ x: number; y: number; width: number; height: number }>;
   } | null;
+  tileCacheStats(): TileCacheStats | null;
 }
 
 const FONT_STACK = TEXT_FONT_STACK;
@@ -157,10 +160,6 @@ export class CanvasView {
   private width = 0;
   private height = 0;
   private dpr = 1;
-  private lastRender: RenderResult | null = null;
-  private renderGeneration = 0;
-  private renderTimer: number | null = null;
-  private rendering = false;
   private drafts: DraftLifecycle;
   private pointers: PointerController;
   private snap: SnapResult | null = null;
@@ -184,6 +183,7 @@ export class CanvasView {
   /** Depth of a nested draw stage; a stage inside another stage is not timed twice. */
   private drawSpanDepth = 0;
   private readonly gestureRender: GestureRenderController;
+  private readonly raster: CanvasRasterController;
 
   constructor(host: HTMLElement, hooks: CanvasHooks, options: CanvasViewOptions = {}) {
     this.host = host;
@@ -223,6 +223,27 @@ export class CanvasView {
     this.loading.className = "canvas-loading";
     this.loading.textContent = t("canvas.renderingPage");
     host.append(this.loading);
+
+    this.raster = new CanvasRasterController(
+      {
+        renderer: () => this.hooks.getRenderer(),
+        pageSize: () => this.pageSize(),
+        page: () => this.viewPage,
+        pageId: () => this.viewPageId,
+        zoom: () => this.viewZoom,
+        panX: () => this.viewPanX,
+        panY: () => this.viewPanY,
+        dpr: () => this.dpr,
+        width: () => this.width,
+        height: () => this.height,
+        bounds: () => this.host.getBoundingClientRect(),
+        loading: () => this.loading,
+        drawBase: () => this.drawBase(),
+        onError: (error) =>
+          this.hooks.onError?.(t("canvas.renderPageFailed", { error: describeError(error) })),
+      },
+      { tiled: options.readOnly !== true },
+    );
 
     this.editors = new CanvasEditorController({
       host,
@@ -463,7 +484,7 @@ export class CanvasView {
     this.editors.handleStoreChange(reason);
     const page = this.viewPage;
     if (reason === "project" || reason === "undo") {
-      this.lastRender = null;
+      this.raster.reset();
       this.drafts.setDraft(null);
       this.pointers.cancelDrag();
       this.pointers.cancelMarquee();
@@ -484,7 +505,7 @@ export class CanvasView {
       this.updateCursor();
     }
     if (page !== this.renderedPage) {
-      this.lastRender = null;
+      this.raster.reset();
       this.drafts.setDraft(null);
       this.pointers.cancelLabelConnection();
       this.snap = null;
@@ -492,7 +513,7 @@ export class CanvasView {
     }
     this.drawAll();
     if (reason === "project" || reason === "view" || reason === "page" || reason === "undo") {
-      this.schedulePdfRender();
+      this.raster.schedule();
     }
   }
 
@@ -511,18 +532,18 @@ export class CanvasView {
     this.drawAll();
     this.editors.positionTextEditor();
     this.editors.positionLabelEditor();
-    this.schedulePdfRender();
+    this.raster.schedule();
   }
 
   invalidate(): void {
     if (this.readOnly && !this.isVisible) return;
     this.drawAll();
-    this.schedulePdfRender();
+    this.raster.schedule();
   }
 
   /** Drops raster and image caches when a comparison session replaces the scene. */
   resetScene(): void {
-    this.lastRender = null;
+    this.raster.reset();
     this.renderedPage = 0;
     this.imageCache.clear();
     this.imageLoading.clear();
@@ -851,7 +872,7 @@ export class CanvasView {
       "success",
     );
     this.drawAll();
-    this.schedulePdfRender();
+    this.raster.schedule();
   };
 
   private editCalibration = async (): Promise<void> => {
@@ -1041,58 +1062,6 @@ export class CanvasView {
     }, "change");
   }
 
-  private schedulePdfRender(): void {
-    if (!this.hooks.getRenderer()) return;
-    const bounds = this.host.getBoundingClientRect();
-    if (bounds.width < 2 || bounds.height < 2) return;
-    if (this.renderTimer !== null) window.clearTimeout(this.renderTimer);
-    this.renderTimer = window.setTimeout(() => {
-      this.renderTimer = null;
-      void this.renderPdf();
-    }, 90);
-  }
-
-  private async renderPdf(): Promise<void> {
-    const renderer = this.hooks.getRenderer();
-    const size = this.pageSize();
-    if (!renderer || !size) return;
-    const bounds = this.host.getBoundingClientRect();
-    if (bounds.width < 2 || bounds.height < 2) return;
-    const page = this.viewPage;
-    const crop = cropRectForView(
-      size,
-      this.viewZoom,
-      this.viewPanX,
-      this.viewPanY,
-      this.width,
-      this.height,
-      70,
-    );
-    const generation = ++this.renderGeneration;
-    this.rendering = true;
-    this.loading.classList.add("is-visible");
-    try {
-      const result = await perfSpanAsync("pdf-raster", () =>
-        renderer.renderCrop(page, crop, this.viewZoom * this.dpr),
-      );
-      perfMark("raster");
-      if (generation !== this.renderGeneration) return;
-      if (page !== this.viewPage) return;
-      this.lastRender = result;
-      this.drawBase();
-    } catch (error) {
-      if (isCancellation(error)) return;
-      if (generation === this.renderGeneration) {
-        this.hooks.onError?.(t("canvas.renderPageFailed", { error: describeError(error) }));
-      }
-    } finally {
-      if (generation === this.renderGeneration) {
-        this.rendering = false;
-        this.loading.classList.remove("is-visible");
-      }
-    }
-  }
-
   private prepare(ctx: CanvasRenderingContext2D): void {
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.clearRect(0, 0, this.width, this.height);
@@ -1151,16 +1120,17 @@ export class CanvasView {
     ctx.fillRect(x, y, w, h);
     ctx.restore();
 
-    if (this.lastRender && this.lastRender.pageNumber === this.viewPage) {
-      const rect = this.lastRender.rect;
+    const raster = this.raster.current;
+    if (raster && raster.pageNumber === this.viewPage) {
+      const rect = raster.rect;
       ctx.drawImage(
-        this.lastRender.canvas,
+        raster.canvas,
         panX + rect.x * zoom,
         panY + rect.y * zoom,
         rect.width * zoom,
         rect.height * zoom,
       );
-    } else if (this.rendering) {
+    } else if (this.raster.rendering) {
       ctx.save();
       ctx.fillStyle = "rgba(30, 40, 45, 0.35)";
       ctx.font = `500 12px ${FONT_STACK}`;
@@ -1504,6 +1474,7 @@ export class CanvasView {
         this.snap ? { kind: this.snap.kind, point: { ...this.snap.point } } : null,
       draftKind: () => this.drafts.draft?.kind ?? null,
       searchHighlights: () => this.searchHits,
+      tileCacheStats: () => this.raster.tileStats(),
       annotationScreenPoint: (itemId) => {
         const project = store.project;
         const found = project ? findItem(project, itemId) : undefined;
@@ -1535,7 +1506,7 @@ export class CanvasView {
     this.gestureRender.dispose();
     this.crop.destroy();
     this.observer.disconnect();
-    if (this.renderTimer !== null) window.clearTimeout(this.renderTimer);
+    this.raster.dispose();
     this.commitSheetField(false);
     this.editors.destroy();
     this.pointers.detach();

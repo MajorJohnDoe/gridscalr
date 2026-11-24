@@ -504,12 +504,18 @@ src/features/gestureRender/ gesture-time content raster reuse: pure settle rule,
 src/features/gestureRender/index.ts public surface: controller, settle rule and transform types
 src/features/gestureRender/model.ts pure settle rule: the idle window before the real redraw
 src/features/gestureRender/controller.ts gesture state, raster transform, capture and paint
+src/features/tileCache/  primary-canvas tile raster: pure grid, zoom bucket, visible-first queue, 64 MiB cache
+src/features/tileCache/index.ts public surface: controller, budget, grid, render adapter and stats
+src/features/tileCache/model.ts pure device-pixel grid, visible-first order, budget and distance eviction
+src/features/tileCache/controller.ts queue, cancellation, ImageBitmap/canvas fallback and composition paint
+src/features/tileCache/render.ts clipped-viewport render adapter shared with PdfRenderer.renderCrop
 src/features/schematics/   operation-card templates, sheet fields, symbol catalogue surface, fit and dialogs
 src/features/schematics/index.ts public surface for sheet templates, rendering, symbols and dialogs
 src/features/schematics/symbols/registry.ts localized symbol labels, search text and render-plan wrappers
 src/features/schematics/model/fitDrawing.ts drawing-area bounds, overflow warning and fit action
 src/features/schematics/ui/lineTypeDialog.ts project media-class editor
 src/canvas/CanvasView.ts   pointer events, rendering orchestration, hit testing, inline editing, resize/rotate, PNG composition
+src/canvas/raster.ts       primary canvas render scheduling, tile-cache selection and full-page fallback
 src/canvas/itemRenderer.ts thin public entry point; delegates item drawing to canvas/items/
 src/canvas/items/context.ts shared item render context, panel drawer and label helper
 src/canvas/items/dispatch.ts rotation, shared canvas setup and the item-family switch

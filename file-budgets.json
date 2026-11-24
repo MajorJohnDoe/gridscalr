@@ -20,7 +20,8 @@
     "src/features/spaces": 400,
     "src/features/schedules": 400,
     "src/features/takeoffSettings": 400,
-    "src/features/perfMonitor": 400
+    "src/features/perfMonitor": 400,
+    "src/features/tileCache": 400
   },
   "files": {
     "src/app/App.ts": 1100,

@@ -325,3 +325,123 @@ screen changed at rest.
 - Phase 4, #351 — tile cache for the primary canvas; compare time-to-first-tile
   and steady-state bytes, keep the resting output pixel-identical.
 
+## Phase 4 — Tile cache for the primary canvas
+
+- Issue: [#351](https://github.com/MajorJohnDoe/gridscalr/issues/351)
+- Branch: `perf/4-tile-cache`, cut from `main` `f44a213` (phase 3 merged). PR
+  opened against `main`. Not merged.
+- Schema: unchanged (28)
+- No version bump, tag or release artifact.
+
+### Completed
+
+- New `src/features/tileCache/`: `model.ts` (512 CSS px device-pixel grid, zoom
+  bucket, visible-first ordering, 64 MiB RGBA budget, distance-from-viewport
+  eviction and the capability check), `controller.ts` (visible-first queue,
+  cancellation on scene/zoom/page change, `createImageBitmap` with a canvas
+  fallback, composition paint and stats), `render.ts` (the clipped-viewport
+  adapter shared with `PdfRenderer.renderCrop`) and `index.ts` (public surface,
+  now in `FOUNDATION_FEATURES`).
+- `src/canvas/raster.ts` (new) owns render scheduling, the generation guard and
+  the tile/full-page choice. `CanvasView` forwards its viewport, draws
+  `raster.current` and exposes `tileCacheStats()` through the dev test API.
+  `CanvasView.ts` fell to 1516 lines, inside the unchanged 1550 budget.
+- `PdfRenderer.renderCrop` delegates to the shared adapter; new
+  `renderTileCanvas()` returns a cancellable tile task. The OCR path still calls
+  `renderCrop` unchanged.
+- Primary canvas only. The reference pane, comparison and every read-only canvas
+  keep the full-page path. A tile render error falls back to the full page for
+  the rest of the session; missing `createImageBitmap`/`OffscreenCanvas` keeps
+  the full page from the start.
+- The previous composition stays visible until the first new tile is painted, so
+  a zoom stream cannot flash a blank page.
+- `perfMonitor` gained `tile-render` and `tile-cache-hit`; `perf:probe` now
+  reports `raster.firstVisibleMs`, `raster.firstRenderMs`, cache bytes, tiles,
+  hits and misses without changing an existing JSON key.
+- `test:visual` 4/4 with 0 differing pixels and no baseline change; `test:canvas`
+  and `test:ui` green; `check:performance` green on both profiles.
+
+### Modules
+
+- `src/features/tileCache/{index,model,controller,render}.ts` (new, 665 lines
+  total; controller 304).
+- `src/canvas/raster.ts` (new, 238 lines); `src/canvas/CanvasView.ts` 1543 → 1514.
+- `src/pdf/pdfRenderer.ts` adapter only; `src/canvas/CanvasView.ts` draw path only.
+- `src/features/perfMonitor/model.ts` two span names.
+- `tests/tileCache.test.ts` (new), `scripts/perf-probe.mjs`,
+  `scripts/check-module-boundaries.mjs`, `file-budgets.json`,
+  `docs/performance/history.md`, `docs/limitations.md`,
+  `docs/plan/foundation-findings.md`, `docs/architecture.md`, `AGENTS.md`,
+  `README.md`.
+
+### Decisions
+
+- **Device-pixel tile grid, exact scale.** Tiles are whole device pixels aligned
+  to the crop origin and rendered at the same scale as the old crop, so the
+  composed raster matches the full-page output except for antialiased edges; a
+  page-space or zoom-bucket-scaled grid differed by 4 % of pixels in a controlled
+  comparison, so it was rejected. The zoom bucket groups tiles for eviction and
+  cancellation, not for a different render scale.
+- **64 MiB budget.** At 1440 × 900 that is about ten views at DPR 1 or two to
+  three at DPR 2, measured steady state 10.2 MiB. The desktop working-set budget
+  is unchanged; the cache is a bounded fraction of it.
+- **Full-page fallback stays the default where the APIs are missing.** WebKitGTK
+  could not be exercised here; `supportsTileCache()` requires both
+  `createImageBitmap` and `OffscreenCanvas`, and any tile error reverts the page
+  to the full-page path. This is an honest unverified limitation, F-149.
+- **The first tile is not faster on the probe's small crop.** PDF.js traverses
+  the operator list per tile. Measured time-to-first-visible moved +7.8 % (CI)
+  and −2.4 % (reference) inside a 5–13 % spread; per-tile `pdf-render` p95 fell
+  4–9 % and total raster work during a zoom stream fell 30–38 %. The phase ships
+  the bounded cache and earlier first paint for capped/heavy renders, not a
+  general raster speedup. Recorded as F-148.
+- **Resting output.** `test:visual` is 0/4 with no baseline change. The canvas
+  raster itself was compared against phase 3 at the same viewport and view:
+  1 075 of 639 856 pixels differ at zoom 1 (max channel delta 10), 73 at zoom 3
+  (max 3) and 185 at zoom 6 (max 27), all on antialiased edges with no seam or
+  offset. This is documented in the history and limitations.
+- **No visible UI change.** No new user-facing string, no schema field, no
+  export change.
+
+### Findings
+
+- F-147 — updated: phase 4 stays primary-only; the reference pane and split view
+  keep the full-page path, so the split-view pan cost is unchanged.
+- F-148 — new: PDF.js re-walks the page operator list for every tile, so the
+  first tile can cost about as much as the monolith on a small crop. Next step:
+  a renderer seam that shares one operator list, or gate tiles on planned raster
+  pixels / DPR.
+- F-149 — new: the WebKitGTK tile path is feature-detected but unverified in
+  this environment; a missing API keeps the full-page path.
+
+### Checks
+
+Run locally on the branch:
+
+- `check:versions`, `check:file-budgets`, `check:modules`, `check:i18n`,
+  `check:docs`, `format:check`, `lint`, `npx tsc --noEmit`;
+- `npx vitest run` over `tileCache`, `pdfRenderer`, `perfMonitor` and
+  `gestureRender` (47 tests);
+- `npm run test:visual` (4 screens, 0 differing pixels, no baseline change);
+- `npm run test:canvas` and `npm run test:ui`;
+- `npm run check:performance` on the CI profile and
+  `GRIDSCALR_PERF_PROFILE=reference npm run check:performance` — every budget
+  passes;
+- `npm run perf:probe` with `GRIDSCALR_PERF_PROBE_SHAPE=ci` and `=reference`,
+  five runs before (phase 3 tree plus the updated probe) and after, on the same
+  machine;
+- an ad-hoc base-canvas comparison against the phase 3 tree at zoom 1, 3 and 6
+  (not committed).
+
+Not run locally: the full `npm test`, `test:import`, `test:count`, `test:touch`,
+`test:csp`, `test:a11y`, `test:touch-targets`, `test:ui-scale`, the Rust builds
+and `check:dependencies`. CI remains authoritative. No `docs:capture`: no visible
+screen changed at rest.
+
+### Next
+
+- None. Phase 4 is the last phase of the effort. The deferred follow-ups are
+  F-148 (operator-list sharing or a size gate) and F-149 (WebKitGTK
+  verification).
+
+

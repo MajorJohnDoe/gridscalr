@@ -47,6 +47,12 @@ function spreadPercent(values) {
   return round(((Math.max(...clean) - Math.min(...clean)) / middle) * 100, 1);
 }
 
+/** Median of optional counts: a metric the run did not report stays null. */
+function medianCount(values) {
+  const value = median(values);
+  return Number.isFinite(value) ? Math.round(value) : null;
+}
+
 /** Sums the user-timing measures the recorder wrote, grouped by span name. */
 function measureTotals(raw) {
   const totals = {};
@@ -338,6 +344,69 @@ async function panAndZoom(page, box) {
   };
 }
 
+/**
+ * Measures one fresh raster after a zoom change: the first `pdf-render` (full
+ * page) or `tile-render` entry that ends after the request. That is the same
+ * quantity on the pre-tile and tiled paths, so the two phases compare like with
+ * like. Cache bytes come from the dev canvas test bridge when the tile cache
+ * exists.
+ */
+async function measureRasterLatency(page) {
+  const startedAt = await page.evaluate(() => {
+    window.__perfProbe.perf.clearPerfSamples();
+    performance.clearMeasures();
+    const start = performance.now();
+    const store = window.__gridscalr.store;
+    store.setView(store.ui.zoom * 1.25, store.ui.panX, store.ui.panY);
+    return start;
+  });
+  await page.waitForFunction(
+    (start) =>
+      performance
+        .getEntriesByType("measure")
+        .some(
+          (entry) =>
+            (entry.name === "tile-render" || entry.name === "pdf-render") &&
+            entry.startTime >= start,
+        ),
+    startedAt,
+    { timeout: 5000 },
+  );
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+  const captured = await page.evaluate((start) => {
+    const entries = performance
+      .getEntriesByType("measure")
+      .filter(
+        (entry) =>
+          (entry.name === "tile-render" || entry.name === "pdf-render") && entry.startTime >= start,
+      )
+      .map((entry) => ({
+        name: entry.name,
+        endTime: entry.startTime + entry.duration,
+        duration: entry.duration,
+      }));
+    const stats = window.__gridscalr?.canvas?.tileCacheStats?.() ?? null;
+    return { entries, stats };
+  }, startedAt);
+  const first = captured.entries.sort((a, b) => a.endTime - b.endTime)[0] ?? null;
+  const stats = captured.stats;
+  return {
+    firstVisibleMs: first ? round(first.endTime - startedAt) : null,
+    firstRenderMs: first ? round(first.duration) : null,
+    firstSpan: first?.name ?? null,
+    renderSpans: captured.entries.length,
+    tileFirstMs: stats ? round(stats.firstTileMs) : null,
+    cacheBytes: stats ? round(stats.bytes) : null,
+    cacheTiles: stats ? stats.tiles : null,
+    cacheBudgetBytes: stats ? stats.budgetBytes : null,
+    cacheSupported: stats ? stats.supported : null,
+    cacheHits: stats ? stats.hits : null,
+    cacheMisses: stats ? stats.misses : null,
+  };
+}
+
 async function runOnce(browser, base) {
   const page = await browser.newPage({
     viewport: VIEWPORT,
@@ -364,6 +433,7 @@ async function runOnce(browser, base) {
     const gesture = await panAndZoom(page, box);
     const interaction = await readWindow(page);
     if (!interaction.snapshot.frames) throw new Error("the recorder sampled no frames");
+    const raster = await measureRasterLatency(page);
     if (pageErrors.length) throw new Error(`page errors: ${pageErrors.join("; ")}`);
 
     const blockedTotal = interaction.longTasks.reduce((sum, entry) => sum + entry.ms, 0);
@@ -381,6 +451,7 @@ async function runOnce(browser, base) {
         edits.spans.serialize ? { serialize: edits.spans.serialize } : {},
       ),
       edits,
+      raster,
       heapBytes: interaction.heapBytes,
       shape: interaction.snapshot.project,
     };
@@ -436,6 +507,19 @@ const summary = {
   blockedTotalMs: round(median(results.map((entry) => entry.blockedTotalMs))),
   blockedMaxMs: round(median(results.map((entry) => entry.blockedMaxMs))),
   spans: medianSpans(results.map((entry) => entry.spans)),
+  raster: {
+    firstVisibleMs: round(median(results.map((entry) => entry.raster.firstVisibleMs))),
+    firstRenderMs: round(median(results.map((entry) => entry.raster.firstRenderMs))),
+    firstSpan: first.raster.firstSpan,
+    renderSpans: medianCount(results.map((entry) => entry.raster.renderSpans)),
+    tileFirstMs: round(median(results.map((entry) => entry.raster.tileFirstMs))),
+    cacheBytes: round(median(results.map((entry) => entry.raster.cacheBytes))),
+    cacheTiles: medianCount(results.map((entry) => entry.raster.cacheTiles)),
+    cacheBudgetBytes: first.raster.cacheBudgetBytes,
+    cacheSupported: first.raster.cacheSupported,
+    cacheHits: medianCount(results.map((entry) => entry.raster.cacheHits)),
+    cacheMisses: medianCount(results.map((entry) => entry.raster.cacheMisses)),
+  },
   edits: {
     count: EDIT_COUNT,
     p50Ms: round(median(results.map((entry) => entry.edits.p50Ms))),
@@ -461,6 +545,7 @@ const summary = {
   runsDetail: results.map((entry) => ({
     frames: entry.frames,
     blockedWindows: entry.blockedWindows,
+    raster: entry.raster,
     edits: {
       p50Ms: entry.edits.p50Ms,
       p95Ms: entry.edits.p95Ms,
