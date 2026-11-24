@@ -99,7 +99,7 @@ const pages = [
   {
     file: "features/index.html",
     lang: "en",
-    kind: "features",
+    kind: "tour",
     pair: "features",
     canonical: pairUrls.features.en,
     title: "GridScalr features — PDF takeoff, counts and exports",
@@ -108,19 +108,12 @@ const pages = [
     titleTerms: ["pdf", "takeoff", "counts", "exports"],
     h1Terms: ["pdf takeoff", "tif", "feature"],
     metaTerms: ["calibration", "count schedule", "revision comparison", "ocr", "pdf"],
-    bodyTerms: [
-      "pdf takeoff",
-      "count schedule",
-      "revision comparison",
-      "local ocr",
-      "procurement quantities",
-      "tif",
-    ],
+    bodyTerms: ["pdf takeoff", "count schedule", "revision comparison", "ocr", "tif"],
   },
   {
     file: "sv/funktioner/index.html",
     lang: "sv",
-    kind: "features",
+    kind: "tour",
     pair: "features",
     canonical: pairUrls.features.sv,
     title: "Funktioner i GridScalr — mängdning av PDF och TIF",
@@ -129,14 +122,7 @@ const pages = [
     titleTerms: ["funktioner", "mängdning", "pdf", "tif"],
     h1Terms: ["funktioner", "mängdning", "pdf", "tif"],
     metaTerms: ["kalibrering", "antalstabell", "revisionsjämförelse", "ocr", "pdf"],
-    bodyTerms: [
-      "mängdning",
-      "antalstabell",
-      "revisionsjämförelse",
-      "lokal ocr",
-      "inköpsunderlag",
-      "tif",
-    ],
+    bodyTerms: ["mängdning", "antalstabell", "revisionsjämförelse", "ocr", "tif"],
   },
   {
     file: "area-takeoff/index.html",
@@ -558,7 +544,15 @@ function checkHead(document, page, release) {
 function checkImages(document, page) {
   const images = [...document.querySelectorAll("img")];
   const minimum =
-    page.kind === "home" ? 6 : page.kind === "task" ? 4 : page.kind === "guide" ? 2 : 12;
+    page.kind === "home"
+      ? 6
+      : page.kind === "task"
+        ? 4
+        : page.kind === "guide"
+          ? 2
+          : page.kind === "tour"
+            ? 6
+            : 12;
   assert(images.length >= minimum, `${page.file}: expected at least ${minimum} images`);
 
   const eager = images.filter((img) => img.getAttribute("fetchpriority") === "high");
@@ -588,7 +582,15 @@ function checkImages(document, page) {
 
   const lightboxTriggers = [...document.querySelectorAll("[data-lightbox]")];
   const minimumShots =
-    page.kind === "home" ? 5 : page.kind === "task" ? 4 : page.kind === "guide" ? 2 : 14;
+    page.kind === "home"
+      ? 5
+      : page.kind === "task"
+        ? 4
+        : page.kind === "guide"
+          ? 2
+          : page.kind === "tour"
+            ? 6
+            : 14;
   assert(
     lightboxTriggers.length >= minimumShots,
     `${page.file}: expected at least ${minimumShots} lightbox screenshots`,

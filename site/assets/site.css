@@ -2682,3 +2682,22 @@ table.data td.order {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.feature-extra {
+  padding: 40px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.feature-extra h2 {
+  margin: 0 0 12px;
+  color: var(--text-strong);
+  font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+  font-weight: 660;
+  letter-spacing: -0.02em;
+}
+
+.feature-extra p:not(.eyebrow) {
+  max-width: 70ch;
+  margin: 0;
+  color: var(--muted);
+}

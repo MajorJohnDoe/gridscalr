@@ -1,8 +1,8 @@
 # Webbplatsen: innehåll, guider och organisk trafik
 
 Status: fas 0 och 1 klara (tema, `site:capture`, startsida, tre uppgiftssidor). Guideindex
-och tre av tolv guider publicerade. Roll-, metod- och installationssidor samt resterande
-guider återstår.
+och tre av tolv guider publicerade. Funktionssidan är ombyggd med skärmbilder per språk.
+Roll-, metod- och installationssidor samt resterande guider återstår.
 Godkänd visuell riktning (skiss 4): ljus yta, Slate-paletten från appen, stora skärmbilder i
 full bredd, riktig appikon, svenska först.
 
