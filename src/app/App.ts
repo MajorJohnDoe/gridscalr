@@ -99,7 +99,7 @@ import { TOOL_KEYS } from "../ui/shortcuts";
 import { isEditingTool } from "../features/viewOnly";
 import { pageMenu } from "../features/pageMenu";
 import { renderChrome, renderTopbar, requestMarkupRename, type PanelActions } from "../ui/panels";
-import { showSelectionMenuAt } from "../ui/selectionMenu";
+import { showCanvasSelectionMenu } from "../ui/selectionMenu";
 import { updateStatus, resetStatusBar } from "../ui/statusBar";
 import { createShell, disposeShellRender, relabelShell, type ShellRefs } from "../ui/shell";
 import { openHelp } from "../ui/helpDialog";
@@ -269,6 +269,7 @@ export class App {
       deleteSelection: () => this.canvas.deleteSelection(),
       editSelectedText: () => this.canvas.editSelectedText(),
       editRail: (itemId) => void openRailDialog(itemId),
+      connectToChannel: (layer, item, point) => this.canvas.connectToChannel(layer, item, point),
       editLineTypes: () => void openLineTypeDialog(),
       fitDrawingToArea: () => fitDrawingFlow(() => this.canvas.invalidate()),
       copySelection: () => copySelection(),
@@ -342,7 +343,7 @@ export class App {
       getPageSize: (page) => this.pageSizes.get(page),
       ensurePageSize: (page) => void this.enqueuePageSize(page),
       onError: (message) => toast(message, "error"),
-      onContextMenu: ({ clientX, clientY }) => showSelectionMenuAt(clientX, clientY, this.actions),
+      onContextMenu: (position) => showCanvasSelectionMenu(position, this.actions),
     });
     this.search = new SearchController({
       host: this.refs.canvasArea,

@@ -1431,6 +1431,7 @@
   "compare.drawingReferencePages": "Ritningsreferens · {count, plural, one {# sida} other {# sidor}} · ingen markeringsjämförelse",
   "compare.rowMeta": "Sida {page} · {kind} · {layer}",
   "selection.editText": "Redigera text…",
+  "selection.connectToChannel": "Anslut till kanal",
   "selection.moveToLayer": "Flytta till lager",
   "selection.setCategory": "Ange kategori",
   "selection.setRoomEllipsis": "Ange rum…",

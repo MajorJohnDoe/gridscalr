@@ -1431,6 +1431,7 @@
   "compare.drawingReferencePages": "Drawing reference · {count, plural, one {# page} other {# pages}} · no markup comparison",
   "compare.rowMeta": "Page {page} · {kind} · {layer}",
   "selection.editText": "Edit text…",
+  "selection.connectToChannel": "Connect to channel",
   "selection.moveToLayer": "Move to layer",
   "selection.setCategory": "Set category",
   "selection.setRoomEllipsis": "Set room…",
