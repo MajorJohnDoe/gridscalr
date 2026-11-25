@@ -10,6 +10,7 @@ import { depthDialog, textDialog } from "../../ui/dialogs";
 import { toast } from "../../ui/toast";
 import type { Draft } from "../draftRenderer";
 import type { CreatedItemRef, ItemOptions } from "./itemFactory";
+import type { PolylineContinuationTarget } from "../../features/lineContinuation";
 
 export interface DraftHost {
   viewPage(): number;
@@ -23,6 +24,8 @@ export interface DraftHost {
     options?: ItemOptions,
   ): CreatedItemRef | null;
   startTextBoxEdit(item: MarkupItem, layer: Layer): void;
+  /** Appends drafted page-space points to an existing polyline; no new item. */
+  appendPolyline(points: Point[], target: PolylineContinuationTarget): void;
   startCalloutTextEdit(item: MarkupItem, layer: Layer): void;
   startCloudTextEdit(item: MarkupItem, layer: Layer): void;
   cropActive(): boolean;
@@ -230,9 +233,13 @@ export class DraftLifecycle {
 
     if (this.current.kind === "polyline") {
       const points = dedupeLast(this.current.points);
+      const appendTo = this.current.appendTo;
       this.current = null;
       this.host.clearSnap();
-      if (points.length >= 2) this.host.createItem("polyline", points);
+      if (points.length >= 2) {
+        if (appendTo) this.host.appendPolyline(points, appendTo);
+        else this.host.createItem("polyline", points);
+      }
       this.host.drawInteraction();
       return;
     }

@@ -75,6 +75,7 @@ import {
 } from "../features/schematics";
 import { openScheduleBuilder } from "../features/schedules";
 import * as railConnections from "../features/railConnections";
+import * as lineContinuation from "../features/lineContinuation";
 import { calloutLayout, cloudLabelLayout } from "../model/annotations";
 import type { ImageAsset, ItemKind, MarkupItem, PageSize, Point, Project } from "../model/types";
 import { formatNumber } from "../model/units";
@@ -288,6 +289,7 @@ export class CanvasView {
         this.snap = null;
       },
       createItem: (kind, points, options) => this.createItem(kind, points, options),
+      appendPolyline: (points, target) => lineContinuation.appendContinuedPolyline(target, points),
       startTextBoxEdit: (item, layer) => this.editors.startTextBoxEdit(item, layer),
       startCalloutTextEdit: (item, layer) => this.editors.startCalloutTextEdit(item, layer),
       startCloudTextEdit: (item, layer) => this.editors.startCloudTextEdit(item, layer),
@@ -974,6 +976,28 @@ export class CanvasView {
     const hierarchy = buildLayerHierarchy(project.layers);
     if (!railConnections.canConnectWireToChannel(found.item, found.layer, hierarchy)) return;
     railConnections.connectToChannel(layerId, itemId, point, this.viewZoom);
+  }
+
+  /**
+   * Starts a polyline draft that appends to the selected end of an existing
+   * line. Escape cancels the draft and leaves the item unchanged.
+   */
+  public startPolylineContinuation(layerId: string, itemId: string, vertexIndex: number): boolean {
+    if (this.editingDisabled) return false;
+    const start = lineContinuation.startContinuation(layerId, itemId, vertexIndex, this.viewPageId);
+    if (!start) return false;
+    store.setTool("polyline");
+    store.setActiveLayer(layerId);
+    this.drafts.setDraft({
+      kind: "polyline",
+      points: [{ ...start.point }],
+      cursor: { ...start.point },
+      appendTo: start.target,
+    });
+    this.snap = null;
+    this.interaction.focus({ preventScroll: true });
+    this.drawInteraction();
+    return true;
   }
 
   private measurementLabelHit(screen: Point): LabelHit | null {
