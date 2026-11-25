@@ -1,6 +1,14 @@
 import { primaryDocument } from "../model/documents";
 import { pageDisplayName, pageIdAt } from "../model/pages";
-import type { AreaMode, CountType, ImageMode, PageId, PageSize, RecentEntry } from "../model/types";
+import type {
+  AreaMode,
+  CountType,
+  ImageMode,
+  PageId,
+  PageSize,
+  Point,
+  RecentEntry,
+} from "../model/types";
 import { store, type ChangeReason, type ToolId } from "../state/store";
 import type { RecoverySummary } from "../features/sessionRecovery";
 import type { ShellRefs } from "./shell";
@@ -68,6 +76,7 @@ export interface PanelActions {
   deleteSelection: () => void;
   editSelectedText: () => void;
   editRail: (itemId: string) => void;
+  connectToChannel: (layerId: string, itemId: string, point: Point) => void;
   editLineTypes: () => void;
   fitDrawingToArea: () => void;
   copySelection: () => void;

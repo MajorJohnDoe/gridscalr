@@ -9,12 +9,13 @@ import {
 } from "../model/layers";
 import { resolveSelection, selectionKind } from "../model/selection";
 import { INSPECTION_STATUSES, inspectionStatusLabel } from "../model/symbols";
-import type { InspectionStatus } from "../model/types";
+import type { InspectionStatus, Point } from "../model/types";
 import { store } from "../state/store";
 import { textDialog } from "./dialogs";
 import type { PanelActions } from "./panels";
 import type { PopoverItem } from "./popover";
 import { showPopoverAt } from "./popover";
+import { findRailCrossing, isWireKind } from "../features/railConnections";
 import {
   cachedSchedule,
   continuePlacement,
@@ -27,8 +28,21 @@ import {
 } from "../features/schedules";
 import { t } from "../i18n";
 
+/** Canvas entry point that forwards the click's page point with the menu. */
+export function showCanvasSelectionMenu(
+  position: { page: Point; clientX: number; clientY: number },
+  actions: PanelActions,
+): void {
+  showSelectionMenuAt(position.clientX, position.clientY, actions, position.page);
+}
+
 /** Context menu for the current selection, shared by the canvas and the panels. */
-export function showSelectionMenuAt(x: number, y: number, actions: PanelActions): void {
+export function showSelectionMenuAt(
+  x: number,
+  y: number,
+  actions: PanelActions,
+  pagePoint?: Point,
+): void {
   const project = store.project;
   if (!project) return;
   const refs = store.ui.selection;
@@ -81,6 +95,22 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
   );
   if (editableText) {
     items.push({ label: t("selection.editText"), icon: "text", action: actions.editSelectedText });
+  }
+  if (pagePoint && resolved.length === 1 && !resolved[0].locked && isWireKind(resolved[0].item)) {
+    const wire = resolved[0];
+    const crossing = findRailCrossing(
+      project,
+      { layerId: wire.layer.id, itemId: wire.item.id },
+      pagePoint,
+      store.ui.zoom,
+    );
+    if (crossing) {
+      items.push({
+        label: t("selection.connectToChannel"),
+        icon: "rail",
+        action: () => actions.connectToChannel(wire.layer.id, wire.item.id, pagePoint),
+      });
+    }
   }
   if (resolved.length === 1 && resolved[0].item.kind === "rail" && !resolved[0].locked) {
     items.push({

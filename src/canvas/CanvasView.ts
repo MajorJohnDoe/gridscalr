@@ -74,6 +74,7 @@ import {
   templateDocumentForPage,
 } from "../features/schematics";
 import { openScheduleBuilder } from "../features/schedules";
+import * as railConnections from "../features/railConnections";
 import { calloutLayout, cloudLabelLayout } from "../model/annotations";
 import type { ImageAsset, ItemKind, MarkupItem, PageSize, Point, Project } from "../model/types";
 import { formatNumber } from "../model/units";
@@ -962,6 +963,17 @@ export class CanvasView {
       return;
     }
     toast(t("canvas.selectText"), "info");
+  }
+
+  /** Marks the nearest wire/rail crossing with one connection-dot symbol. */
+  public connectToChannel(layerId: string, itemId: string, point: Point): void {
+    if (this.editingDisabled) return;
+    const project = store.project;
+    const found = project ? findItem(project, itemId) : undefined;
+    if (!project || !found || found.layer.id !== layerId) return;
+    const hierarchy = buildLayerHierarchy(project.layers);
+    if (!railConnections.canConnectWireToChannel(found.item, found.layer, hierarchy)) return;
+    railConnections.connectToChannel(layerId, itemId, point, this.viewZoom);
   }
 
   private measurementLabelHit(screen: Point): LabelHit | null {

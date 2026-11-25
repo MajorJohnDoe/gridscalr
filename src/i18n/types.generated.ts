@@ -1433,6 +1433,7 @@ export type MessageKey =
   | "compare.drawingReferencePages"
   | "compare.rowMeta"
   | "selection.editText"
+  | "selection.connectToChannel"
   | "selection.moveToLayer"
   | "selection.setCategory"
   | "selection.setRoomEllipsis"
