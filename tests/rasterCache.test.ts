@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { backdropFor, rasterCovers } from "../src/canvas/raster";
+import {
+  backdropFor,
+  cadenceWaitMs,
+  gestureCadenceMs,
+  rasterCovers,
+  rasterMatchesView,
+  visiblePageRect,
+  type RenderedView,
+} from "../src/canvas/raster";
 import type { RenderResult } from "../src/pdf/pdfRenderer";
 
 function raster(pageNumber: number): RenderResult {
@@ -46,5 +54,119 @@ describe("rasterCovers", () => {
   it("is false when the view reaches past the raster", () => {
     expect(rasterCovers(raster, { x: 20, y: 20, width: 120, height: 40 })).toBe(false);
     expect(rasterCovers(raster, { x: 0, y: 20, width: 50, height: 40 })).toBe(false);
+  });
+});
+
+describe("visiblePageRect", () => {
+  const page = { width: 2000, height: 1500 };
+
+  it("is the viewport in page units when it lies inside the page", () => {
+    expect(visiblePageRect(page, 2, -1000, -800, 800, 600)).toEqual({
+      x: 500,
+      y: 400,
+      width: 400,
+      height: 300,
+    });
+  });
+
+  it("is clamped to the page at the fit view", () => {
+    // The viewport is larger than the drawing, with empty margin on both sides.
+    expect(visiblePageRect(page, 0.25, 100, 100, 800, 600)).toEqual({
+      x: 0,
+      y: 0,
+      width: 2000,
+      height: 1500,
+    });
+  });
+
+  it("is empty for an invalid zoom", () => {
+    expect(visiblePageRect(page, 0, 0, 0, 800, 600)).toEqual({
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+    });
+  });
+});
+
+describe("rasterMatchesView", () => {
+  const viewRaster = raster(1);
+  const view = { x: 20, y: 20, width: 50, height: 40 };
+  const rendered: RenderedView = { page: 1, zoom: 2, dpr: 1 };
+
+  it("is true when the same page, zoom and density already covers the view", () => {
+    expect(rasterMatchesView(viewRaster, rendered, 1, 2, 1, view)).toBe(true);
+  });
+
+  it("is false without a raster or a recorded view", () => {
+    expect(rasterMatchesView(null, rendered, 1, 2, 1, view)).toBe(false);
+    expect(rasterMatchesView(viewRaster, null, 1, 2, 1, view)).toBe(false);
+  });
+
+  it("is false when the zoom or the density changed", () => {
+    expect(rasterMatchesView(viewRaster, rendered, 1, 3, 1, view)).toBe(false);
+    expect(rasterMatchesView(viewRaster, rendered, 1, 2, 2, view)).toBe(false);
+  });
+
+  it("is false on another page even when the rect matches", () => {
+    expect(rasterMatchesView(viewRaster, rendered, 2, 2, 1, view)).toBe(false);
+    expect(rasterMatchesView(viewRaster, { ...rendered, page: 2 }, 2, 2, 1, view)).toBe(false);
+  });
+
+  it("is false when the view reaches past the raster", () => {
+    expect(rasterMatchesView(viewRaster, rendered, 1, 2, 1, { ...view, width: 500 })).toBe(false);
+  });
+});
+
+describe("gestureCadenceMs", () => {
+  it("never drops below 220 ms", () => {
+    expect(gestureCadenceMs(0)).toBe(220);
+    expect(gestureCadenceMs(20)).toBe(220);
+  });
+
+  it("scales at 1.5 times the measured cost", () => {
+    expect(gestureCadenceMs(200)).toBe(300);
+    expect(gestureCadenceMs(46)).toBe(220);
+    expect(gestureCadenceMs(85)).toBe(220);
+  });
+
+  it("never exceeds 600 ms", () => {
+    expect(gestureCadenceMs(400)).toBe(600);
+    expect(gestureCadenceMs(5000)).toBe(600);
+  });
+
+  it("treats a missing cost as the minimum", () => {
+    expect(gestureCadenceMs(Number.NaN)).toBe(220);
+    expect(gestureCadenceMs(Number.POSITIVE_INFINITY)).toBe(220);
+  });
+});
+
+describe("cadenceWaitMs", () => {
+  it("spaces a gesture-time raster by the measured cost", () => {
+    expect(cadenceWaitMs({ gesture: true, settle: false, lastCostMs: 300, overdueMs: 0 })).toBe(
+      450,
+    );
+  });
+
+  it("does not postpone a gesture-time raster that is already overdue", () => {
+    expect(cadenceWaitMs({ gesture: true, settle: false, lastCostMs: 300, overdueMs: 900 })).toBe(
+      16,
+    );
+  });
+
+  it("renders at once on the first schedule after the gesture settles", () => {
+    expect(cadenceWaitMs({ gesture: false, settle: true, lastCostMs: 300, overdueMs: 0 })).toBe(16);
+  });
+
+  it("coalesces an ordinary view change", () => {
+    expect(cadenceWaitMs({ gesture: false, settle: false, lastCostMs: 300, overdueMs: 0 })).toBe(
+      90,
+    );
+    expect(cadenceWaitMs({ gesture: false, settle: false, lastCostMs: 300, overdueMs: 70 })).toBe(
+      20,
+    );
+    expect(cadenceWaitMs({ gesture: false, settle: false, lastCostMs: 300, overdueMs: 900 })).toBe(
+      16,
+    );
   });
 });

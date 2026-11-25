@@ -525,3 +525,145 @@ rows.
   unverified limitation (F-149).
 
 
+## Scan phase 1 — Cover check, crop margin and cost cadence (2026-11-25)
+
+- Code measured: `main` `8978332` (0.33.6) before, the phase branch after. Both
+  trees were extracted to `/tmp` outside the repository and served by the same
+  Vite version and the same symlinked `node_modules`, so neither side had an
+  environment advantage: running the "after" tree in place and the "before" tree
+  as an extracted copy made one worktree several seconds slower at project open
+  for reasons unrelated to the change, and that artifact was excluded.
+- Scenarios on the scanned page, recorder on, samples cleared per window:
+  **A** ten separate 28 px pans inside the crop, **B** one continuous 5 s pan of
+  360 px, **C** three Ctrl + wheel zoom-in steps and three zoom-out steps.
+  Three runs each, median. Viewport 1440 × 900, DPR 1 and DPR 2.
+- `pdf-raster` count and duration come from the named spans; blocked time is the
+  recorder's long-task windows (tasks of 50 ms or more).
+
+### Fixture and how it relates to the reported page
+
+`BOTTENPLAN.tif` is not in the repository, so the measurement uses a synthetic
+page of the same type and shape: a 2531 × 1685 pt page holding one 10546 × 7020
+grayscale scan (74.0 Mpix at 300 dpi) encoded as CCITT G4 in a three-page PDF,
+exactly the storage the schema 27 derived PDF uses for a scanned TIF. It is
+opened as the demo project's source page, so the same 174 markups sit above it.
+
+The per-raster cost on this fixture is **8–22 ms at DPR 1 and 9–47 ms at DPR 2**,
+lower than the reported 46–85 ms on the user's machine. PDF.js decodes
+the image once and then composites a cached bitmap, so the remaining cost is
+destination pixels and machine speed, not the decode. The reported per-view
+cost is therefore **not reproduced**, and no speedup claim is made for the
+reported page. What this phase changes is measurable on any page: how many
+renders a pan causes, and when during a gesture they start.
+
+### Ten short pans inside the crop
+
+| Measure | DPR 1 before | DPR 1 after | DPR 2 before | DPR 2 after |
+| --- | --- | --- | --- | --- |
+| `pdf-raster` spans | 9 | **0** | 10 | **0** |
+| `pdf-raster` total | 97.1 ms | 0 ms | 161.8 ms | 0 ms |
+| `pdf-raster` p50 / p95 | 10.7 / 16.6 ms | — | 18.5 / 21.7 ms | — |
+| Blocked long tasks | 0 | 0 | 0 | 0 |
+
+Every step stayed inside the raised 300 px crop margin, so the raster on screen
+already described the view and no PDF.js render ran. Before, the 70 px margin
+gave up after three steps and the coalesced cadence re-rendered on almost every
+step.
+
+### One continuous 5 s pan of 360 px
+
+"During gesture" counts `pdf-raster` spans that started before `pointerup`, so a
+render that only happens at release would show 0 there.
+
+| Measure | DPR 1 before | DPR 1 after | DPR 2 before | DPR 2 after |
+| --- | --- | --- | --- | --- |
+| `pdf-raster` spans | 62 | **4** | 70 | **4** |
+| Started during the gesture | 62 | **4** | 70 | **4** |
+| `pdf-raster` total | 614.6 ms | **57.9 ms** | 834.6 ms | **125.6 ms** |
+| `pdf-raster` p50 / p95 | 10.1 / 16.4 ms | 12.5 / 16.3 ms | 9.5 / 21.1 ms | 16.0 / 46.9 ms |
+| Blocked long tasks (tasks / total / largest) | 0 / 0 / — | 0 / 0 / — | 0–2 / 0–120 / 70 ms | 0–3 / 0–177 / 62 ms |
+| Frames over 20 ms / frame max | 0 / 16.8 ms | 0 / 16.8 ms | 44–48 / 66.7 ms | 48–53 / 50.1 ms |
+
+Fewer, larger renders replace many small ones: total raster work falls 91 % at
+DPR 1 and 85 % at DPR 2 while the largest single long task stays at or below the
+0.33.6 level (70 ms here, 74 ms on the reported run) and far from the 611 ms in
+11 tasks seen before 0.33.6. The renders start **during** the gesture at the
+measured-cost interval — the binary "wait for the release" rule is gone.
+
+### Zoom in and out (three steps each way)
+
+| Measure | DPR 1 before | DPR 1 after | DPR 2 before | DPR 2 after |
+| --- | --- | --- | --- | --- |
+| `pdf-raster` spans | 15 | **6** | 12 | **6** |
+| `pdf-raster` total | 148.1 ms | **60.6 ms** | 139.6 ms | **82.0 ms** |
+| `pdf-raster` p50 / p95 | 8.8 / 15.6 ms | 8.4 / 15.4 ms | 9.4 / 18.7 ms | 13.3 / 14.9 ms |
+| Blocked long tasks (tasks / total / largest) | 0 / 0 / — | 0 / 0 / — | 1–3 / 57–172 / 61 ms | 2–3 / 106–192 / 69 ms |
+
+The zoom loop is the one row where the heavier DPR 2 profile pays a little: the
+same six renders replace twelve, but three long tasks appear where there were
+one to three, and the total blocked time rises by about 50 ms across the whole
+loop. The largest single task is 69 ms against 61 ms before — still under the
+74 ms reported level and two orders of magnitude below the pre-0.33.6 stall.
+This is the deliberate trade of the phase: a raster may now start during the
+gesture, and a raster that starts is a long task.
+
+### The documented demo project (vector page)
+
+`npm run perf:probe`, three runs, median, same machine and the same extracted
+trees:
+
+| Measure | Before | After |
+| --- | --- | --- |
+| `pdf-raster` spans / total / p95 | 73 / 1354.1 ms / 27.1 ms | **6 / 77.1 ms / 21.9 ms** |
+| `pdf-render` spans / total | 75 / 1276.4 ms | 6 / 92.3 ms |
+| Time to first visible raster | 59.0 ms | 45.3 ms |
+| Frame p50 / p95 / max | 16.7 / 16.8 / 16.8 ms | 16.7 / 16.7 / 16.8 ms |
+| Frames over 20 ms | 0 | 0 |
+| `draw-items` p95 / total | 3.5 / 240.1 ms | 3.3 / 244.4 ms |
+| Blocked long-task windows | 0 | 0 |
+| JS heap | 56.8 MB | 56.8 MB |
+
+Most of the 73 pre-change renders were the pan at the fit view, where the whole
+page is already on screen and the cover check now proves it. No regression in
+frames, edit cost or heap.
+
+### Resting output and checks
+
+- `npm run test:visual`: 4 screens, 0 differing pixels, **no baseline change**.
+- `npm run test:canvas`: green, including crop and split view.
+- `npm run test:ui`, `test:a11y`, `test:touch-targets`, `test:ui-scale`: green.
+- `npx vitest run`: 188 files, 1950 tests green (new: `tests/rasterController.test.ts`
+  and the pure cadence/cover tests in `tests/rasterCache.test.ts`).
+- `npm run check:performance` (CI profile): every budget passes; p95 edit
+  19.0 ms, open 12.2 ms, autosave 957.2 ms, page switch 6.4 ms, UI freeze
+  105.8 ms, heap 54.1 MB.
+
+### Observation, not attributed to this phase
+
+On the scanned fixture the first tile a page ever renders can cost several
+seconds, because PDF.js decodes and downsamples the whole 74 Mpix image for it
+and 0.33.6 disables tiling only *after* that first tile returns. The clean
+extracted-tree comparison measured the same cost on both sides (482–523 ms
+before, 524–548 ms after at the fit view, with one outlier run at 6.6 s on each
+side), so this phase neither causes nor fixes it. It is the size gate proposed
+for F-148: decide from the page's planned raster pixels, not from a first tile
+that has already paid the decode.
+
+### What phase 1 says
+
+- A pan that stays inside the rendered crop is now free: 0 renders instead of
+  9–10 for ten steps, and 4 instead of 62–70 for a five-second pan.
+- The 300 px margin is the reason a short pan never leaves the crop, and the
+  cover check is the reason a pan that leaves it still renders only when it has
+  to. Total raster work on the scripted pan fell 85–91 %.
+- The cost-aware cadence removes the wait-for-release rule: every render in the
+  measured window started while the pointer was still down, paced at 1.5 × the
+  last measured cost between 220 and 600 ms.
+- Blocked time stays bounded: largest single long task 69 ms after against
+  70 ms before at DPR 2, no long tasks at all at DPR 1. The zoom loop on the
+  heavier profile gains one extra long task; that is the measured cost of
+  filling during the gesture instead of after it.
+- Rest output and the visual baseline are unchanged, and the per-raster cost of
+  the fixture itself is unchanged — this phase changes how often a render runs,
+  not how expensive one render is. Phase 2's per-zoom level cache is the change
+  that targets the render cost itself.
