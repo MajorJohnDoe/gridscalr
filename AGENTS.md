@@ -517,7 +517,7 @@ src/features/schematics/symbols/registry.ts localized symbol labels, search text
 src/features/schematics/model/fitDrawing.ts drawing-area bounds, overflow warning and fit action
 src/features/schematics/ui/lineTypeDialog.ts project media-class editor
 src/canvas/CanvasView.ts   pointer events, rendering orchestration, hit testing, inline editing, resize/rotate, PNG composition
-src/canvas/raster.ts       primary canvas render scheduling, tile-cache selection and full-page fallback
+src/canvas/raster.ts       primary canvas render scheduling, cover check, cost cadence, tile-cache selection and full-page fallback
 src/canvas/itemRenderer.ts thin public entry point; delegates item drawing to canvas/items/
 src/canvas/items/context.ts shared item render context, panel drawer and label helper
 src/canvas/items/dispatch.ts rotation, shared canvas setup and the item-family switch

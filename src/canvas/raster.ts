@@ -38,17 +38,29 @@ export interface CanvasRasterHost {
   onError(error: unknown): void;
 }
 
-const CROP_MARGIN = 70;
-/** Coalescing window for a single view change. */
-const COALESCE_MS = 90;
 /**
- * A view that keeps changing still rasterises this often. A coalescing timer
- * alone is reset by every wheel event, so a held scroll rendered nothing until
- * it stopped and the newly exposed strip stayed empty for the whole gesture.
+ * Screen-space margin around the viewport. A pan shorter than this stays inside
+ * the rendered crop, so it costs one blit instead of a full PDF.js render.
  */
-const CONTINUOUS_RENDER_MS = 140;
-/** A raster that costs this much must not be re-run at the fastest cadence. */
-const MAX_CADENCE_COST_MS = 400;
+const CROP_MARGIN = 300;
+/** Coalescing window for a single view change outside a gesture. */
+const COALESCE_MS = 90;
+/** Shortest delay before a scheduled raster, so a burst shares one render. */
+const MIN_WAIT_MS = 16;
+/**
+ * During a gesture a raster may start no sooner than this after the last one.
+ * A coalescing timer alone is reset by every wheel event, so a held scroll would
+ * otherwise render nothing until it stopped and the newly exposed strip would
+ * stay empty for the whole gesture.
+ */
+const GESTURE_MIN_INTERVAL_MS = 220;
+/**
+ * ... and no later than this, so an expensive page still fills while the
+ * gesture runs instead of waiting for the release.
+ */
+const GESTURE_MAX_INTERVAL_MS = 600;
+/** A gesture-time raster is spaced at this multiple of its own measured cost. */
+const GESTURE_COST_FACTOR = 1.5;
 /**
  * PDF.js re-walks the page operator list for every tile, so on a dense drawing
  * a tile can cost as much as a whole crop. When the first tile is this slow the
@@ -74,6 +86,90 @@ export function rasterCovers(
   );
 }
 
+/** The page and pixel density a raster was rendered for. */
+export interface RenderedView {
+  page: number;
+  zoom: number;
+  dpr: number;
+}
+
+/**
+ * The part of the viewport that lies over the page, in page units. Clamping to
+ * the page matters: at the fit view the viewport is wider than the drawing, and
+ * the empty margin beside the sheet must not count as uncovered content.
+ */
+export function visiblePageRect(
+  pageSize: PageSize,
+  zoom: number,
+  panX: number,
+  panY: number,
+  width: number,
+  height: number,
+): { x: number; y: number; width: number; height: number } {
+  if (!Number.isFinite(zoom) || zoom <= 0) return { x: 0, y: 0, width: 0, height: 0 };
+  const left = Math.max(0, -panX / zoom);
+  const top = Math.max(0, -panY / zoom);
+  const right = Math.min(pageSize.width, (width - panX) / zoom);
+  const bottom = Math.min(pageSize.height, (height - panY) / zoom);
+  return {
+    x: left,
+    y: top,
+    width: Math.max(0, right - left),
+    height: Math.max(0, bottom - top),
+  };
+}
+
+/**
+ * True when the raster on screen already describes this view: same page, same
+ * zoom and pixel density, and a crop that contains the whole visible page area.
+ * Panning inside the crop then needs one `drawImage`, not a PDF.js render.
+ */
+export function rasterMatchesView(
+  raster: RenderResult | null,
+  rendered: RenderedView | null,
+  page: number,
+  zoom: number,
+  dpr: number,
+  view: { x: number; y: number; width: number; height: number },
+): boolean {
+  if (!raster || !rendered) return false;
+  if (rendered.page !== page || rendered.zoom !== zoom || rendered.dpr !== dpr) return false;
+  if (raster.pageNumber !== page) return false;
+  return rasterCovers(raster, view);
+}
+
+/**
+ * Raster cadence during a gesture: proportional to the last measured cost, so a
+ * 46 ms page fills every 220 ms and a 400 ms page every 600 ms, instead of a
+ * binary "cheap pages render, expensive pages wait for the release" rule.
+ */
+export function gestureCadenceMs(lastCostMs: number): number {
+  const cost = Number.isFinite(lastCostMs) && lastCostMs > 0 ? lastCostMs : 0;
+  return Math.round(
+    Math.min(
+      GESTURE_MAX_INTERVAL_MS,
+      Math.max(GESTURE_MIN_INTERVAL_MS, cost * GESTURE_COST_FACTOR),
+    ),
+  );
+}
+
+/**
+ * How long to wait before starting the next raster. During a gesture the
+ * measured-cost interval applies; the first schedule after the gesture settles
+ * renders at once; an ordinary view change coalesces a burst.
+ */
+export function cadenceWaitMs(input: {
+  gesture: boolean;
+  settle: boolean;
+  lastCostMs: number;
+  overdueMs: number;
+}): number {
+  const overdue = Number.isFinite(input.overdueMs) ? Math.max(0, input.overdueMs) : 0;
+  if (input.gesture) return Math.max(MIN_WAIT_MS, gestureCadenceMs(input.lastCostMs) - overdue);
+  if (input.settle) return MIN_WAIT_MS;
+  return Math.max(MIN_WAIT_MS, COALESCE_MS - overdue);
+}
+
 /**
  * The raster that stays visible underneath a partial tile composition. Without
  * it a new crop replaces the base canvas before its first tile exists, so the
@@ -93,13 +189,16 @@ export function backdropFor(
 
 export class CanvasRasterController {
   private rasterValue: RenderResult | null = null;
+  private renderedView: RenderedView | null = null;
   private backdropValue: RenderResult | null = null;
   private coarsePending = false;
   private pending: RenderResult | null = null;
+  private pendingView: RenderedView | null = null;
   private generation = 0;
   private timer: number | null = null;
   private lastRenderAt = 0;
   private lastCostMs = 0;
+  private gestureAtLastSchedule = false;
   private tilesDisabled = false;
   private busyValue = false;
   private useTiles: boolean;
@@ -129,6 +228,7 @@ export class CanvasRasterController {
           // One tile already costs what a whole crop would: stop tiling.
           this.tilesDisabled = true;
           this.pending = null;
+          this.pendingView = null;
           this.tiles?.cancel();
           this.busyValue = false;
           void this.renderNow();
@@ -137,7 +237,9 @@ export class CanvasRasterController {
         const pending = this.pending;
         if (pending && this.rasterValue !== pending) {
           this.rasterValue = pending;
+          this.renderedView = this.pendingView;
           this.pending = null;
+          this.pendingView = null;
         }
         if (completed > 0) this.hideLoading();
         this.busyValue = this.tiles?.busy ?? false;
@@ -146,7 +248,9 @@ export class CanvasRasterController {
       onComplete: () => {
         if (this.pending) {
           this.rasterValue = this.pending;
+          this.renderedView = this.pendingView;
           this.pending = null;
+          this.pendingView = null;
         }
         this.backdropValue = null;
         this.busyValue = false;
@@ -171,38 +275,37 @@ export class CanvasRasterController {
     return this.busyValue;
   }
 
-  /** A page whose last raster cost more than a couple of frames. */
-  private get expensive(): boolean {
-    return this.lastCostMs > 60;
-  }
-
   /**
-   * Coalesces a burst of view changes, but never postpones the raster for more
-   * than `CONTINUOUS_RENDER_MS`. During a held scroll that keeps a steady
-   * cadence of renders, and each one only needs the newly exposed edge because
-   * the tiles are anchored to the page.
+   * Schedules the next raster. A view that the raster on screen still covers is
+   * skipped entirely: `drawBase` already paints that raster at the new pan, so a
+   * PDF.js render would buy nothing and cost a stall. Otherwise the wait follows
+   * the cost-aware cadence: the measured-cost interval during a gesture, an
+   * immediate render once the gesture settles, and a short coalescing window for
+   * an ordinary view change.
    */
   schedule(): void {
     if (!this.host.renderer()) return;
     const bounds = this.host.bounds();
     if (bounds.width < 2 || bounds.height < 2) return;
-    const now = performance.now();
-    const overdue = now - this.lastRenderAt;
-    const interval = Math.min(
-      MAX_CADENCE_COST_MS,
-      Math.max(CONTINUOUS_RENDER_MS, Math.round(this.lastCostMs * 1.5)),
-    );
-    // On an expensive page a render started mid-drag is thrown away a frame
-    // later and costs the user a visible stall, so it waits for the gesture.
-    const defer = this.expensive && this.host.gestureActive?.() === true;
-    const wait = defer ? 200 : Math.max(16, Math.min(COALESCE_MS, interval - overdue));
-    if (this.timer !== null) window.clearTimeout(this.timer);
+    const gesture = this.host.gestureActive?.() === true;
+    const page = this.host.page();
+    const zoom = this.host.zoom();
+    const dpr = this.host.dpr();
+    if (this.covers(page, zoom, dpr)) {
+      this.clearTimer();
+      this.gestureAtLastSchedule = gesture;
+      return;
+    }
+    const wait = cadenceWaitMs({
+      gesture,
+      settle: this.gestureAtLastSchedule && !gesture,
+      lastCostMs: this.lastCostMs,
+      overdueMs: performance.now() - this.lastRenderAt,
+    });
+    this.gestureAtLastSchedule = gesture;
+    this.clearTimer();
     this.timer = window.setTimeout(() => {
       this.timer = null;
-      if (this.expensive && this.host.gestureActive?.() === true) {
-        this.schedule();
-        return;
-      }
       void this.renderNow();
     }, wait);
   }
@@ -211,13 +314,13 @@ export class CanvasRasterController {
   reset(): void {
     this.generation += 1;
     this.rasterValue = null;
+    this.renderedView = null;
     this.backdropValue = null;
     this.pending = null;
+    this.pendingView = null;
     this.busyValue = false;
-    if (this.timer !== null) {
-      window.clearTimeout(this.timer);
-      this.timer = null;
-    }
+    this.gestureAtLastSchedule = false;
+    this.clearTimer();
     this.tiles?.cancel();
     this.hideLoading();
   }
@@ -231,8 +334,22 @@ export class CanvasRasterController {
     this.tiles?.dispose();
   }
 
+  /** True when the raster on screen already describes the current view. */
+  private covers(page: number, zoom: number, dpr: number): boolean {
+    const size = this.host.pageSize();
+    if (!size) return false;
+    const visible = visiblePageRect(
+      size,
+      zoom,
+      this.host.panX(),
+      this.host.panY(),
+      this.host.width(),
+      this.host.height(),
+    );
+    return rasterMatchesView(this.rasterValue, this.renderedView, page, zoom, dpr, visible);
+  }
+
   private async renderNow(): Promise<void> {
-    this.lastRenderAt = performance.now();
     const renderer = this.host.renderer();
     const size = this.host.pageSize();
     const bounds = this.host.bounds();
@@ -241,17 +358,18 @@ export class CanvasRasterController {
     const pageId = this.host.pageId();
     const zoom = this.host.zoom();
     const dpr = this.host.dpr();
+    const panX = this.host.panX();
+    const panY = this.host.panY();
     const width = this.host.width();
     const height = this.host.height();
-    const crop = cropRectForView(
-      size,
-      zoom,
-      this.host.panX(),
-      this.host.panY(),
-      width,
-      height,
-      CROP_MARGIN,
-    );
+    if (this.covers(page, zoom, dpr)) {
+      // The view is already inside the rendered crop. `drawBase` paints that
+      // raster at the new pan, so re-rendering would only add a stall.
+      return;
+    }
+    this.lastRenderAt = performance.now();
+    const crop = cropRectForView(size, zoom, panX, panY, width, height, CROP_MARGIN);
+    const view: RenderedView = { page, zoom, dpr };
     const generation = ++this.generation;
     // Keep the raster that is on screen now visible underneath the new one.
     if (this.rasterValue) this.backdropValue = this.rasterValue;
@@ -264,13 +382,16 @@ export class CanvasRasterController {
         this.busyValue = busy;
         if (!busy) {
           this.rasterValue = tiles;
+          this.renderedView = view;
           this.pending = null;
+          this.pendingView = null;
           this.backdropValue = null;
           this.hideLoading();
           this.host.drawBase();
           return;
         }
         this.pending = tiles;
+        this.pendingView = view;
         if (!this.rasterValue) {
           this.showLoading();
           this.host.drawBase();
@@ -290,6 +411,7 @@ export class CanvasRasterController {
       perfMark("raster");
       if (generation !== this.generation || page !== this.host.page()) return;
       this.rasterValue = result;
+      this.renderedView = view;
       this.backdropValue = null;
       this.host.drawBase();
     } catch (error) {
@@ -380,5 +502,10 @@ export class CanvasRasterController {
 
   private hideLoading(): void {
     this.host.loading().classList.remove("is-visible");
+  }
+
+  private clearTimer(): void {
+    if (this.timer !== null) window.clearTimeout(this.timer);
+    this.timer = null;
   }
 }
