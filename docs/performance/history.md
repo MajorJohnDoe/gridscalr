@@ -705,3 +705,117 @@ before; this phase changes how often it runs, not how expensive one run is. The
 blocked window reported 0 long tasks. Markup cost is unchanged (`draw-items`
 p95 2.8 ms over 332 redraws), which is the expected result: the canvas still
 draws every mark­up on every frame, and the win is in the drawing behind it.
+
+## Scan phase 2 — In-memory display levels (2026-11-25)
+
+- Code measured: phase 1 (`f16fbcc`) before, the phase 2 branch after. Both
+  trees were extracted to `/tmp` outside the repository with the same symlinked
+  `node_modules`, as in phase 1, so neither side had an environment advantage.
+- Same fixture and the same probe windows as phase 1: a synthetic 74.0 Mpix
+  CCITT G4 scan page, ten 28 px pans, one 5 s / 360 px pan, three zoom-in and
+  three zoom-out steps, plus two new windows: **zoom-back** (one octave in,
+  settle, one octave back) and a **20-step zoom loop** for the cache budget.
+  Three runs, medians.
+- A level is one whole-page bitmap per page and zoom octave (`log2` rounded up),
+  capped at 20 Mpix and a 8192 px side, held in a 128 MiB least-recently-used
+  cache. An octave whose page does not fit the caps is never built, so a level
+  is only ever a substitute for the exact crop, never a soft placeholder.
+
+### Scanned fixture, DPR 1
+
+| Measure | Phase 1 | Phase 2 |
+| --- | --- | --- |
+| Ten 28 px pans, `pdf-raster` spans | 0 | 0 |
+| 5 s / 360 px pan, `pdf-raster` spans | 4 | **0** |
+| 5 s pan, raster total | 52.2 ms | **0 ms** |
+| 5 s pan, frame p95 / max / frames over 20 ms | 16.8 / 33.3 ms / 1 | 16.8 / 33.3 ms / 1 |
+| 5 s pan, blocked long tasks | 0 | 0 |
+| Three zoom-in + three zoom-out steps, spans | 6 | **2** |
+| Same zoom loop, raster total | 70.7 ms | **29.3 ms** |
+| Same zoom loop, blocked long tasks | 0 | 0 |
+| **Zoom-back window**, `pdf-raster` spans | 2 | **0** |
+| **Zoom-back window**, `level-hit` spans | 0 | **1** |
+| `level-build` spans / last build | — | 3 / 28.8 ms |
+| Rest pixels against phase 1 | — | **0 differing pixels, max delta 0** |
+
+The 20-step zoom loop ended at the same 3 levels and **89.5 MB of the 128 MiB
+budget** as it peaked at, so the LRU holds this page's octaves without growing.
+
+### Scanned fixture, DPR 2
+
+| Measure | Phase 1 | Phase 2 |
+| --- | --- | --- |
+| 5 s pan, `pdf-raster` spans | 4 | **0** |
+| 5 s pan, raster total | 119.0 ms | **0 ms** |
+| 5 s pan, frame p95 / max / frames over 20 ms | 33.3 / 50.0 ms / 52–55 | 33.3 / 50.1 ms / 40–57 |
+| 5 s pan, blocked long tasks (tasks / total / largest) | 1–2 / 52–114 / 60 ms | 0–2 / 0–103 / 53 ms |
+| **Zoom-back window**, spans / `level-hit` | 2 / 0 | **0 / 1** |
+| Level cache at the end | — | 2 levels, 85.3 MB |
+
+The zoom-in/out row is unchanged at DPR 2 (6 spans both sides) because this
+page's octave above 2× needs a 69 Mpix whole-page bitmap, which the 20 Mpix cap
+refuses; those views keep the phase 1 path. On this 2531 × 1685 pt page the
+levels therefore cover `zoom × dpr ≤ 2`, which includes the fit view and 1:1 at
+both densities. A softer underlay-only level for higher octaves is deliberately
+not built: it would cost a whole-page render and up to 80 MB for an image that
+is only visible during the gesture, and the coarse pass already fills that role.
+
+### The documented demo project (vector page)
+
+`npm run perf:probe`, three runs, median, one extracted tree each:
+
+| Measure | Phase 1 | Phase 2 |
+| --- | --- | --- |
+| `pdf-raster` spans / total | 5 / 71.8 ms | **1 / 20.4 ms** |
+| `pdf-render` spans / total | 16 / 187.5 ms | 5 / 60.3 ms |
+| `level-build` spans / total / p95 | — | 2 / 32.3 ms / 21.2 ms |
+| `level-hit` spans | — | 4 |
+| Time to first visible raster / span | 32.5 ms / `pdf-render` | **10.1 ms / `level-hit`** |
+| Frame p50 / p95 / max | 16.7 / 16.7 / 16.8 ms | 16.7 / 16.7 / 16.8 ms |
+| Frames over 20 ms | 0 | 0 |
+| `draw-items` p95 / total | 3.5 / 261.0 ms | 3.7 / 257.5 ms |
+| Blocked long-task windows | 0 | 0 |
+| JS heap | 56.8 MB | 56.8 MB |
+
+`perf:probe` now accepts a `level-hit` as the answer to its "what did this zoom
+change cost" step and reports which span answered, so a cached view cannot be
+mistaken for a render that never ran.
+
+### Rest output
+
+At the octave scale the level is rendered from the same page viewport at the
+same scale as the crop it replaces, so the resting image is identical: two
+ad-hoc captures of the base canvas on the scanned fixture (a settled 1:1 view,
+and the same view after a 620 px pan that leaves the crop) compared **0
+differing pixels, max channel delta 0** against phase 1. Inside a zoom band the
+level is a downscale of the next octave up, which is at least as sharp as a
+direct crop render. `npm run test:visual` stays 4/4 with no baseline change, and
+`test:canvas`, `test:ui`, `test:a11y`, `test:touch-targets` and `test:ui-scale`
+are green.
+
+### Cold start, and the phase 3 decision
+
+A level is memory only: closing the project drops it, and reopening rebuilds one
+level per visited page and octave. On this fixture a build is **16–33 ms**
+(three builds: the fit octave, 1:1 and 2:1), paid after the page's first sharp
+paint, not before it. The phase 3 threshold agreed with the user was more than
+~200 ms per visited page, or more than ~1 s before the first page is sharp in a
+large project; the measured build is an order of magnitude below it and the
+first paint is unchanged. **Phase 3 is therefore not taken**: there is no
+measured cold-start complaint to justify writing levels to disk, with its
+invalidation, cleanup and package rules. The trigger and the number are recorded
+here so a later complaint can be checked against them instead of re-litigated.
+
+### What phase 2 says
+
+- A pan no longer renders at all on a scanned page (4 → 0 spans at both
+  densities), because the whole-page level is the image the view needs.
+- A return to a visited zoom is a `level-hit` with no `pdf-raster`, which is the
+  phase's acceptance criterion, and the resting image is pixel-identical.
+- The cache is bounded and stable: 3 levels / 89.5 MB at DPR 1 and 2 levels /
+  85.3 MB at DPR 2, unchanged by a 20-step zoom loop, inside the 128 MiB budget.
+- Frames, blocked time, edit cost and heap are unchanged on both the scanned
+  fixture and the vector demo; the only new cost is one whole-page build per
+  visited octave, measured at 16–33 ms on this page.
+- The per-render cost itself is untouched: a view outside the level range still
+  pays the 43–94 ms crop. That is the boundary the caps set, not a regression.

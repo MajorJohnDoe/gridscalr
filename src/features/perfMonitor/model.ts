@@ -43,6 +43,8 @@ export const SPAN_NAMES = [
   "pdf-render",
   "tile-render",
   "tile-cache-hit",
+  "level-build",
+  "level-hit",
   "pdf-operator-list",
   "thumbnail",
   "autosave-write",

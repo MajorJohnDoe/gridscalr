@@ -10,6 +10,16 @@
 
 import { perfMark, perfSpanAsync } from "../features/perfMonitor";
 import {
+  DisplayLevelController,
+  levelIndexFor,
+  levelIsSharpEnough,
+  levelPixels,
+  levelScaleFor,
+  type DisplayLevel,
+  type DisplayLevelStats,
+  type LevelRequest,
+} from "../features/displayLevels";
+import {
   TileCacheController,
   type TileCacheStats,
   type TileRect,
@@ -35,6 +45,8 @@ export interface CanvasRasterHost {
   drawBase(): void;
   /** True while the pointer is mid-pan, so an expensive raster can wait. */
   gestureActive?: () => boolean;
+  /** Identity of the loaded document set, so a replaced source cannot hit a stale level. */
+  contentKey?: () => string;
   onError(error: unknown): void;
 }
 
@@ -170,6 +182,21 @@ export function cadenceWaitMs(input: {
   return Math.max(MIN_WAIT_MS, COALESCE_MS - overdue);
 }
 
+/** Draws a whole-page level bitmap with the current view. */
+export function drawLevelBitmap(
+  ctx: CanvasRenderingContext2D,
+  level: DisplayLevel,
+  view: { zoom: number; panX: number; panY: number },
+): void {
+  ctx.drawImage(
+    level.canvas,
+    view.panX,
+    view.panY,
+    level.pageSize.width * view.zoom,
+    level.pageSize.height * view.zoom,
+  );
+}
+
 /**
  * The raster that stays visible underneath a partial tile composition. Without
  * it a new crop replaces the base canvas before its first tile exists, so the
@@ -203,12 +230,20 @@ export class CanvasRasterController {
   private busyValue = false;
   private useTiles: boolean;
   private readonly tiles: TileCacheController | null;
+  private readonly levels: DisplayLevelController | null;
 
   constructor(
     private readonly host: CanvasRasterHost,
-    options: { tiled: boolean },
+    options: { tiled: boolean; levels?: boolean },
   ) {
     this.useTiles = options.tiled;
+    this.levels =
+      options.levels === false
+        ? null
+        : new DisplayLevelController(
+            { renderPageLevel: (pageNumber, scale) => this.renderPageLevel(pageNumber, scale) },
+            { onLevel: () => this.host.drawBase() },
+          );
     if (!options.tiled) {
       this.tiles = null;
       return;
@@ -294,6 +329,14 @@ export class CanvasRasterController {
     if (this.covers(page, zoom, dpr)) {
       this.clearTimer();
       this.gestureAtLastSchedule = gesture;
+      // The settled view is already sharp; cache its whole-page level for the
+      // next pan or zoom-back while the canvas is idle.
+      this.requestLevel(gesture);
+      return;
+    }
+    if (this.levelCovers(zoom, dpr)) {
+      this.clearTimer();
+      this.gestureAtLastSchedule = gesture;
       return;
     }
     const wait = cadenceWaitMs({
@@ -329,9 +372,88 @@ export class CanvasRasterController {
     return this.tiles?.stats() ?? null;
   }
 
+  levelStats(): DisplayLevelStats | null {
+    return this.levels?.stats() ?? null;
+  }
+
+  /**
+   * The whole-page level to draw under the exact crop. Null when the exact
+   * raster already covers the visible page area, so a settled view draws the
+   * same single image it did before levels existed.
+   */
+  underlay(): DisplayLevel | null {
+    if (!this.levels) return null;
+    const request = this.levelRequest();
+    if (!request) return null;
+    if (this.covers(request.page, this.host.zoom(), this.host.dpr())) return null;
+    return this.levels.peek(request);
+  }
+
   dispose(): void {
     this.reset();
     this.tiles?.dispose();
+    this.levels?.dispose();
+  }
+
+  /**
+   * The level request for the current page and view. Null when there is no
+   * page, or when this octave's whole page does not fit the level caps: a level
+   * that cannot reach the view's own scale would only be an underlay, and the
+   * exact crop plus the coarse pass already cover that case.
+   */
+  private levelRequest(): LevelRequest | null {
+    const size = this.host.pageSize();
+    const pageId = this.host.pageId();
+    if (!size || !pageId) return null;
+    const scale = this.host.zoom() * this.host.dpr();
+    const index = levelIndexFor(scale);
+    const pageSize = { width: size.width, height: size.height };
+    const pixels = levelPixels(pageSize, levelScaleFor(index));
+    if (pixels.scale + 1e-9 < levelScaleFor(index)) return null;
+    return {
+      contentKey: this.host.contentKey?.() ?? "",
+      pageId,
+      page: this.host.page(),
+      pageSize,
+      scale,
+    };
+  }
+
+  /** Starts (or joins) the whole-page build for the current view when idle. */
+  private requestLevel(gesture: boolean): void {
+    if (!this.levels || gesture) return;
+    const request = this.levelRequest();
+    if (request) this.levels.ensure(request, { build: true });
+  }
+
+  /**
+   * True when a cached whole-page level is at least as sharp as this view would
+   * render, so blitting it is already the exact output and a PDF.js render would
+   * only repeat the same pixels. The level is never built from here.
+   */
+  private levelCovers(zoom: number, dpr: number): boolean {
+    if (!this.levels) return false;
+    const request = this.levelRequest();
+    if (!request) return false;
+    const level = this.levels.ensure(request, { build: false });
+    return !!level && levelIsSharpEnough(level.scale, zoom * dpr);
+  }
+
+  /**
+   * True when the raster on screen was rendered for the current page, zoom and
+   * density, so it is sharp at this view. A raster from another zoom is only a
+   * backdrop; once a level is drawn under it, that backdrop would make the
+   * settled image softer than the level itself.
+   */
+  currentAccurate(): boolean {
+    const rendered = this.renderedView;
+    return (
+      !!rendered &&
+      !!this.rasterValue &&
+      rendered.page === this.host.page() &&
+      rendered.zoom === this.host.zoom() &&
+      rendered.dpr === this.host.dpr()
+    );
   }
 
   /** True when the raster on screen already describes the current view. */
@@ -367,6 +489,7 @@ export class CanvasRasterController {
       // raster at the new pan, so re-rendering would only add a stall.
       return;
     }
+    if (this.levelCovers(zoom, dpr)) return;
     this.lastRenderAt = performance.now();
     const crop = cropRectForView(size, zoom, panX, panY, width, height, CROP_MARGIN);
     const view: RenderedView = { page, zoom, dpr };
@@ -403,6 +526,7 @@ export class CanvasRasterController {
     this.busyValue = true;
     this.showLoading();
     const startedAt = performance.now();
+    let painted = false;
     try {
       const result = await perfSpanAsync("pdf-raster", () =>
         renderer.renderCrop(page, crop, zoom * dpr),
@@ -414,6 +538,7 @@ export class CanvasRasterController {
       this.renderedView = view;
       this.backdropValue = null;
       this.host.drawBase();
+      painted = true;
     } catch (error) {
       if (isCancellation(error)) return;
       if (generation === this.generation) this.host.onError(error);
@@ -421,6 +546,9 @@ export class CanvasRasterController {
       if (generation === this.generation) {
         this.busyValue = false;
         this.hideLoading();
+        // The sharp raster is on screen; cache the whole-page level for the
+        // next pan or zoom-back. A gesture in flight keeps its frames free of it.
+        if (painted) this.requestLevel(this.host.gestureActive?.() === true);
       }
     }
   }
@@ -494,6 +622,16 @@ export class CanvasRasterController {
     this.hideLoading();
     this.host.onError(error);
     void this.renderNow();
+  }
+
+  /** Renders one whole page for the level cache through the shared renderer. */
+  private async renderPageLevel(
+    pageNumber: number,
+    scale: number,
+  ): Promise<{ canvas: HTMLCanvasElement; scale: number }> {
+    const renderer = this.host.renderer();
+    if (!renderer) throw new Error("renderer-unavailable");
+    return renderer.renderPageLevel(pageNumber, scale);
   }
 
   private showLoading(): void {

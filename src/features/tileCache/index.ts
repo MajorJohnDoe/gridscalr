@@ -33,4 +33,4 @@ export {
   type TilePlanInput,
   type TileRect,
 } from "./model";
-export { renderPageRaster, type PageRaster, type RasterTask } from "./render";
+export { renderPageRaster, type PageRaster, type RasterLimits, type RasterTask } from "./render";

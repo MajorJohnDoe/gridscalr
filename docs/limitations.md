@@ -204,11 +204,13 @@ coarse pass costs a few milliseconds and shows a soft copy of the drawing
 instead of an empty sheet until the exact tiles arrive. During a long gesture the
 markup layer is redrawn for real at most every 120 ms or once the view has moved
 30 % of the smaller canvas side, whichever comes first, and stays on the fast
-blit in between; the page raster is
-never postponed for more than 140 ms, so newly exposed drawing and markups fill
-in while the pan continues instead of only at pointer release. A debounce alone
-was reset by every wheel event, which is why a held scroll previously rendered
-nothing until it stopped. The tile cache
+blit in between. The page raster is skipped while the bitmap on screen already
+covers the visible page area at the same page, zoom and pixel density, and
+otherwise starts at most every `clamp(1.5 × the last measured raster cost,
+220 ms, 600 ms)` while the gesture runs, so newly exposed drawing fills in
+during the pan instead of only at pointer release. A debounce alone was reset by
+every wheel event, which is why a held scroll previously rendered nothing until
+it stopped. The tile cache
 is capped at **128 MiB of RGBA pixels** (`TILE_CACHE_BUDGET_BYTES` in
 `src/features/tileCache/model.ts`). At 1440 × 900 that is about ten views at
 DPR 1 or two to three at DPR 2; the phase 4 probe measured 10.2 MiB steady state
@@ -235,6 +237,30 @@ transient cache, not a lower first-tile latency (F-148). The composed tile raste
 is not bit-identical to one crop: a small number of antialiased edge pixels
 differ (≤ 0.17 %, max channel delta 10 at the fit view), with no seam or offset.
 `npm run test:visual` passes with no baseline change.
+
+### Display levels (scanned drawings)
+
+The primary canvas also keeps **one whole-page bitmap per page and zoom octave**
+in memory, capped at **128 MiB** (`LEVEL_CACHE_BUDGET_BYTES` in
+`src/features/displayLevels/model.ts`). The octave index is `log2(zoom × device
+pixel ratio)` rounded up, so a view uses the smallest bitmap that is at least as
+sharp as the crop it replaces. A pan that leaves the crop margin, and a return to
+a zoom octave already visited, then blit that bitmap instead of rendering the PDF
+again; the phase 2 probe measured 4 → 0 renders for a five-second pan and a
+`level-hit` with no render on a zoom-back, with the resting image pixel-identical
+at the octave scale.
+
+A level is only built when its whole page fits the caps (20 Mpix and an 8192 px
+side) and can reach the view's own scale, so a level is never a soft substitute
+for the exact crop; when none qualifies, the phase 1 path (crop render, coarse
+pass, tile cache) applies unchanged. On the reported 2531 × 1685 pt scan that
+means levels cover `zoom × dpr ≤ 2`, and a higher zoom still pays one crop render
+per view. Levels are display state only: memory only, dropped when the project
+closes, never measured, printed, exported or written to the project file, and
+keyed by the loaded document identity so a replaced source can never draw the old
+drawing. Eviction is least-recently-used except for the level being drawn, so a
+single level larger than the budget can exceed it until the next view; one level
+is capped at 20 Mpix (80 MiB), which bounds that overshoot.
 
 
 ### Drift Slice 1 measured profile

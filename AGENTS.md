@@ -511,13 +511,17 @@ src/features/tileCache/index.ts public surface: controller, budget, grid, render
 src/features/tileCache/model.ts pure device-pixel grid, visible-first order, budget and distance eviction
 src/features/tileCache/controller.ts queue, cancellation, ImageBitmap/canvas fallback and composition paint
 src/features/tileCache/render.ts clipped-viewport render adapter shared with PdfRenderer.renderCrop
+src/features/displayLevels/ in-memory whole-page bitmap per page and zoom octave: level rule, 128 MiB LRU and build controller
+src/features/displayLevels/index.ts public surface: controller, octave rule, level caps and eviction
+src/features/displayLevels/model.ts pure octave index, level pixel cap, sharpness rule and LRU selection
+src/features/displayLevels/controller.ts build/reuse/evict one whole-page level per page and octave
 src/features/schematics/   operation-card templates, sheet fields, symbol catalogue surface, fit and dialogs
 src/features/schematics/index.ts public surface for sheet templates, rendering, symbols and dialogs
 src/features/schematics/symbols/registry.ts localized symbol labels, search text and render-plan wrappers
 src/features/schematics/model/fitDrawing.ts drawing-area bounds, overflow warning and fit action
 src/features/schematics/ui/lineTypeDialog.ts project media-class editor
 src/canvas/CanvasView.ts   pointer events, rendering orchestration, hit testing, inline editing, resize/rotate, PNG composition
-src/canvas/raster.ts       primary canvas render scheduling, cover check, cost cadence, tile-cache selection and full-page fallback
+src/canvas/raster.ts       primary canvas render scheduling, cover check, cost cadence, display levels, tile-cache selection and full-page fallback
 src/canvas/itemRenderer.ts thin public entry point; delegates item drawing to canvas/items/
 src/canvas/items/context.ts shared item render context, panel drawer and label helper
 src/canvas/items/dispatch.ts rotation, shared canvas setup and the item-family switch
