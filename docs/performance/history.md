@@ -711,30 +711,50 @@ draws every mark­up on every frame, and the win is in the drawing behind it.
 - Code measured: phase 1 (`f16fbcc`) before, the phase 2 branch after. Both
   trees were extracted to `/tmp` outside the repository with the same symlinked
   `node_modules`, as in phase 1, so neither side had an environment advantage.
-- Same fixture and the same probe windows as phase 1: a synthetic 74.0 Mpix
-  CCITT G4 scan page, ten 28 px pans, one 5 s / 360 px pan, three zoom-in and
-  three zoom-out steps, plus two new windows: **zoom-back** (one octave in,
-  settle, one octave back) and a **20-step zoom loop** for the cache budget.
-  Three runs, medians.
-- A level is one whole-page bitmap per page and zoom octave (`log2` rounded up),
-  capped at 20 Mpix and a 8192 px side, held in a 128 MiB least-recently-used
-  cache. An octave whose page does not fit the caps is never built, so a level
-  is only ever a substitute for the exact crop, never a soft placeholder.
+- Same fixture and probe windows as phase 1: a synthetic 74.0 Mpix CCITT G4 scan
+  page, ten 28 px pans, one 5 s / 360 px pan, three zoom-in and three zoom-out
+  steps, plus **zoom-back** (one octave in, settle, one octave back), a 5 s pan
+  at a **non-octave zoom** (1.3x) and a **20-step zoom loop** for the cache
+  budget. Three runs, medians.
+- A level is one whole-page bitmap per page and zoom octave (`log2(zoom × dpr)`
+  rounded up), capped at 20 Mpix and an 8192 px side, held in a 128 MiB
+  least-recently-used cache. An octave whose page does not fit the caps is never
+  built, so a level is always at least as sharp as the view that asks for it.
+
+### Which view the level serves
+
+The rule that keeps the resting image exact is deliberately narrow:
+
+- A view **at the octave's own scale** is served from the level with no render:
+  the bitmap was rasterised from the same page viewport at the same scale as the
+  crop it replaces, so it *is* the exact image. Measured rest difference against
+  phase 1: 0 pixels.
+- A view **inside an octave band** (say 1.3x on the level built for 2x) uses the
+  level while a gesture runs, because a slightly soft but continuous page beats a
+  stall, and renders the exact crop once when the gesture settles. The first
+  implementation skipped that settle render and softened thin drawing lines at
+  every non-octave zoom; the documentation capture showed it (42 528 changed
+  pixels on the Takeoff tab, max channel delta 49) and the rule was narrowed
+  until a capture of the same screen matched the previous one with 0 pixels.
+- Without a level, or outside the level range, the phase 1 path (cover check,
+  cost cadence, coarse pass) is unchanged.
 
 ### Scanned fixture, DPR 1
 
 | Measure | Phase 1 | Phase 2 |
 | --- | --- | --- |
 | Ten 28 px pans, `pdf-raster` spans | 0 | 0 |
-| 5 s / 360 px pan, `pdf-raster` spans | 4 | **0** |
-| 5 s pan, raster total | 52.2 ms | **0 ms** |
-| 5 s pan, frame p95 / max / frames over 20 ms | 16.8 / 33.3 ms / 1 | 16.8 / 33.3 ms / 1 |
-| 5 s pan, blocked long tasks | 0 | 0 |
-| Three zoom-in + three zoom-out steps, spans | 6 | **2** |
-| Same zoom loop, raster total | 70.7 ms | **29.3 ms** |
+| 5 s pan at an octave scale, spans | 4 | **0** |
+| Same pan, raster total | 50.0 ms | **0 ms** |
+| Same pan, frame p95 / max / over 20 ms | 16.8 / 16.8 ms / 0 | 16.7 / 33.3 ms / 1 |
+| 5 s pan inside an octave band, spans | 2 | 2 |
+| Same pan, spans started during the gesture | 2 | **0** |
+| Same pan, raster total / frame max | 26.7 ms / 16.8 ms | 24.9 ms / 33.3 ms |
+| Three zoom-in + three zoom-out steps, spans | 9 | **7** |
+| Same zoom loop, raster total | 87.8 ms | 82.5 ms |
 | Same zoom loop, blocked long tasks | 0 | 0 |
 | **Zoom-back window**, `pdf-raster` spans | 2 | **0** |
-| **Zoom-back window**, `level-hit` spans | 0 | **1** |
+| **Zoom-back window**, `level-hit` spans | 0 | **2** |
 | `level-build` spans / last build | — | 3 / 28.8 ms |
 | Rest pixels against phase 1 | — | **0 differing pixels, max delta 0** |
 
@@ -745,20 +765,22 @@ budget** as it peaked at, so the LRU holds this page's octaves without growing.
 
 | Measure | Phase 1 | Phase 2 |
 | --- | --- | --- |
-| 5 s pan, `pdf-raster` spans | 4 | **0** |
-| 5 s pan, raster total | 119.0 ms | **0 ms** |
-| 5 s pan, frame p95 / max / frames over 20 ms | 33.3 / 50.0 ms / 52–55 | 33.3 / 50.1 ms / 40–57 |
-| 5 s pan, blocked long tasks (tasks / total / largest) | 1–2 / 52–114 / 60 ms | 0–2 / 0–103 / 53 ms |
-| **Zoom-back window**, spans / `level-hit` | 2 / 0 | **0 / 1** |
+| 5 s pan at an octave scale, spans | 4 | **0** |
+| Same pan, raster total | 118.9 ms | **0 ms** |
+| Same pan, frame p95 / max / frames over 20 ms | 33.3 / 50.1 ms / 50–60 | 33.3 / 50.0 ms / 43–53 |
+| Same pan, blocked long tasks (tasks / largest) | 1–2 / 55 ms | 0–2 / 55 ms |
+| 5 s pan inside an octave band, spans / during | 2 / 2 | 2 / 2 |
+| Three zoom-in + three zoom-out steps, spans | 12 | **10** |
+| Same zoom loop, raster total | 142.1 ms | 129.3 ms |
+| Same zoom loop, blocked long tasks (tasks / total / largest) | 1–3 / 64–171 / 64 ms | 1–2 / 52–110 / 60 ms |
+| **Zoom-back window**, spans / `level-hit` | 2 / 0 | **0 / 2** |
 | Level cache at the end | — | 2 levels, 85.3 MB |
 
-The zoom-in/out row is unchanged at DPR 2 (6 spans both sides) because this
-page's octave above 2× needs a 69 Mpix whole-page bitmap, which the 20 Mpix cap
-refuses; those views keep the phase 1 path. On this 2531 × 1685 pt page the
-levels therefore cover `zoom × dpr ≤ 2`, which includes the fit view and 1:1 at
-both densities. A softer underlay-only level for higher octaves is deliberately
-not built: it would cost a whole-page render and up to 80 MB for an image that
-is only visible during the gesture, and the coarse pass already fills that role.
+At DPR 2 the 1.3x pan is already outside the level range (the next octave would
+need a 69 Mpix whole-page bitmap, which the 20 Mpix cap refuses), so that row
+keeps the phase 1 behaviour. On this 2531 × 1685 pt page levels cover
+`zoom × dpr` at 1, 2 and 4 of the page density, which includes the fit view and
+1:1 at both densities; the exact octaves are where a revisit is free.
 
 ### The documented demo project (vector page)
 
@@ -783,20 +805,20 @@ mistaken for a render that never ran.
 
 ### Rest output
 
-At the octave scale the level is rendered from the same page viewport at the
-same scale as the crop it replaces, so the resting image is identical: two
-ad-hoc captures of the base canvas on the scanned fixture (a settled 1:1 view,
-and the same view after a 620 px pan that leaves the crop) compared **0
-differing pixels, max channel delta 0** against phase 1. Inside a zoom band the
-level is a downscale of the next octave up, which is at least as sharp as a
-direct crop render. `npm run test:visual` stays 4/4 with no baseline change, and
-`test:canvas`, `test:ui`, `test:a11y`, `test:touch-targets` and `test:ui-scale`
-are green.
+Two ad-hoc captures of the base canvas on the scanned fixture (a settled view at
+an octave scale, and the same view after a 620 px pan that leaves the crop)
+compared **0 differing pixels, max channel delta 0** against phase 1. At a
+non-octave zoom the settled image is the exact crop, not the level. The
+documentation capture at the fit view is byte-identical for the Takeoff tab and
+differs elsewhere only where phase 1's larger crop margin already changed the
+antialiased drawing edges. `npm run test:visual` stays 4/4 with no baseline
+change, and `test:canvas`, `test:ui`, `test:a11y`, `test:touch-targets` and
+`test:ui-scale` are green.
 
 ### Cold start, and the phase 3 decision
 
 A level is memory only: closing the project drops it, and reopening rebuilds one
-level per visited page and octave. On this fixture a build is **16–33 ms**
+level per visited page and octave. On this fixture a build is **17–33 ms**
 (three builds: the fit octave, 1:1 and 2:1), paid after the page's first sharp
 paint, not before it. The phase 3 threshold agreed with the user was more than
 ~200 ms per visited page, or more than ~1 s before the first page is sharp in a
@@ -808,14 +830,19 @@ here so a later complaint can be checked against them instead of re-litigated.
 
 ### What phase 2 says
 
-- A pan no longer renders at all on a scanned page (4 → 0 spans at both
-  densities), because the whole-page level is the image the view needs.
-- A return to a visited zoom is a `level-hit` with no `pdf-raster`, which is the
-  phase's acceptance criterion, and the resting image is pixel-identical.
+- At an octave scale a pan renders nothing at all (4 → 0 spans at both
+  densities) and a return to a visited octave is `level-hit` with no render.
+- Inside an octave band the level fills the gesture and the sharp crop lands once
+  on release: the render count is unchanged, but **nothing renders while the
+  pointer moves** (2 → 0 spans started during the gesture at DPR 1), which is the
+  stall the user felt.
 - The cache is bounded and stable: 3 levels / 89.5 MB at DPR 1 and 2 levels /
   85.3 MB at DPR 2, unchanged by a 20-step zoom loop, inside the 128 MiB budget.
+- The resting image is exact by construction: a level is only used without a
+  render when it was rasterised at exactly the view's scale, and every other view
+  settles on the exact crop. The first iteration relaxed that and visibly
+  softened thin lines; the documentation capture caught it and the rule was
+  narrowed.
 - Frames, blocked time, edit cost and heap are unchanged on both the scanned
   fixture and the vector demo; the only new cost is one whole-page build per
-  visited octave, measured at 16–33 ms on this page.
-- The per-render cost itself is untouched: a view outside the level range still
-  pays the 43–94 ms crop. That is the boundary the caps set, not a regression.
+  visited octave, measured at 17–33 ms on this page.

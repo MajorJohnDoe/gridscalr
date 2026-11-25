@@ -243,12 +243,14 @@ differ (≤ 0.17 %, max channel delta 10 at the fit view), with no seam or offse
 The primary canvas also keeps **one whole-page bitmap per page and zoom octave**
 in memory, capped at **128 MiB** (`LEVEL_CACHE_BUDGET_BYTES` in
 `src/features/displayLevels/model.ts`). The octave index is `log2(zoom × device
-pixel ratio)` rounded up, so a view uses the smallest bitmap that is at least as
-sharp as the crop it replaces. A pan that leaves the crop margin, and a return to
-a zoom octave already visited, then blit that bitmap instead of rendering the PDF
-again; the phase 2 probe measured 4 → 0 renders for a five-second pan and a
-`level-hit` with no render on a zoom-back, with the resting image pixel-identical
-at the octave scale.
+pixel ratio)` rounded up. A view at the octave's own scale is served from the
+level with no render, because that bitmap was rasterised at exactly the view's
+scale and is the exact image; a pan that leaves the crop margin and a return to a
+visited octave then blit it instead of rendering the PDF again. Inside an octave
+band the level fills the gesture and the exact crop renders once on release, so
+the settled image is never softer than the crop it replaces. The phase 2 probe
+measured 4 → 0 renders for a five-second pan at an octave scale and a `level-hit`
+with no render on a zoom-back, with 0 differing rest pixels against phase 1.
 
 A level is only built when its whole page fits the caps (20 Mpix and an 8192 px
 side) and can reach the view's own scale, so a level is never a soft substitute

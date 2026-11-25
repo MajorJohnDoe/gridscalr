@@ -249,6 +249,23 @@ describe("CanvasRasterController display levels", () => {
     controller.dispose();
   });
 
+  it("fills a gesture from the level and renders once on release", async () => {
+    // 0.7 is inside octave 0 but is not the octave's own scale, so the level is
+    // a stand-in during the gesture and the exact crop lands on release.
+    const { state, renders, controller } = harness({ zoom: 0.7, panX: -500, panY: -400 });
+    await flush(controller);
+    const afterFirst = renders.length;
+    state.gesture = true;
+    // Pan towards the page edge so the crop no longer covers the view.
+    state.panX = 0;
+    await flush(controller);
+    expect(renders.length).toBe(afterFirst);
+    state.gesture = false;
+    await flush(controller);
+    expect(renders.length).toBe(afterFirst + 1);
+    controller.dispose();
+  });
+
   it("reports no underlay while an exact raster covers the view", async () => {
     const { controller } = harness({ panX: -500, panY: -400 });
     await flush(controller);
