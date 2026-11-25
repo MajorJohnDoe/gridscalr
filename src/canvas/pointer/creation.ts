@@ -141,14 +141,16 @@ export function handleCreationDown(
       context.finishDraft();
       return;
     }
-    let snapped = event.shiftKey ? page : context.snapPolylinePoint(page);
-    if (event.shiftKey) context.clearSnap();
     const draft = context.getDraft();
     const existing = draft?.kind === "polyline" ? draft : null;
+    if (event.shiftKey) context.clearSnap();
+    let snapped = event.shiftKey || existing ? page : context.snapPolylinePoint(page);
     if (existing && existing.points.length) {
+      // The helper chooses the axis from the raw pointer, so a rail row near
+      // the pointer cannot pull the vertex off the straight guide.
       snapped = context.constrainPolyline(
         existing.points[existing.points.length - 1],
-        snapped,
+        page,
         event.shiftKey,
       );
     }
@@ -369,8 +371,8 @@ export function updateDraftFromPointer(
     draft.current = event.shiftKey ? constrainSquare(draft.start, page) : page;
   } else if (draft.kind === "polyline") {
     const last = draft.points[draft.points.length - 1];
-    const snapped = event.shiftKey ? page : context.snapPolylinePoint(page);
-    draft.cursor = context.constrainPolyline(last, snapped, event.shiftKey);
+    // The raw pointer lets constrainPolyline choose the guide axis itself.
+    draft.cursor = context.constrainPolyline(last, page, event.shiftKey);
   } else if (draft.kind === "pen" || draft.kind === "highlight") {
     const last = draft.points[draft.points.length - 1];
     if (distance(last, page) > 1.4 / context.viewZoom()) {
