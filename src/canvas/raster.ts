@@ -33,6 +33,8 @@ export interface CanvasRasterHost {
   bounds(): DOMRect;
   loading(): HTMLElement;
   drawBase(): void;
+  /** True while the pointer is mid-pan, so an expensive raster can wait. */
+  gestureActive?: () => boolean;
   onError(error: unknown): void;
 }
 
@@ -169,6 +171,11 @@ export class CanvasRasterController {
     return this.busyValue;
   }
 
+  /** A page whose last raster cost more than a couple of frames. */
+  private get expensive(): boolean {
+    return this.lastCostMs > 60;
+  }
+
   /**
    * Coalesces a burst of view changes, but never postpones the raster for more
    * than `CONTINUOUS_RENDER_MS`. During a held scroll that keeps a steady
@@ -185,10 +192,17 @@ export class CanvasRasterController {
       MAX_CADENCE_COST_MS,
       Math.max(CONTINUOUS_RENDER_MS, Math.round(this.lastCostMs * 1.5)),
     );
-    const wait = Math.max(16, Math.min(COALESCE_MS, interval - overdue));
+    // On an expensive page a render started mid-drag is thrown away a frame
+    // later and costs the user a visible stall, so it waits for the gesture.
+    const defer = this.expensive && this.host.gestureActive?.() === true;
+    const wait = defer ? 200 : Math.max(16, Math.min(COALESCE_MS, interval - overdue));
     if (this.timer !== null) window.clearTimeout(this.timer);
     this.timer = window.setTimeout(() => {
       this.timer = null;
+      if (this.expensive && this.host.gestureActive?.() === true) {
+        this.schedule();
+        return;
+      }
       void this.renderNow();
     }, wait);
   }
@@ -334,9 +348,11 @@ export class CanvasRasterController {
     const renderer = this.host.renderer();
     if (!renderer) return;
     this.coarsePending = true;
+    const startedAt = performance.now();
     const scale = Math.max(0.05, zoom * dpr * COARSE_SCALE_FACTOR);
     void perfSpanAsync("pdf-raster", () => renderer.renderCrop(page, crop, scale))
       .then((result) => {
+        this.lastCostMs = Math.max(this.lastCostMs, performance.now() - startedAt);
         if (generation !== this.generation || this.host.page() !== page) return;
         if (!this.busyValue) return;
         this.backdropValue = result;

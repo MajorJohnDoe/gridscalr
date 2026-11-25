@@ -98,6 +98,11 @@ export class GestureRenderController {
     this.schedule();
   }
 
+  /** True while a pan or wheel gesture is still running. */
+  get isActive(): boolean {
+    return this.active;
+  }
+
   /**
    * Paints the captured raster with the gesture transform. Returns false when
    * the caller must draw the items for real instead.

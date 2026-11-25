@@ -234,6 +234,7 @@ export class CanvasView {
         panX: () => this.viewPanX,
         panY: () => this.viewPanY,
         dpr: () => this.dpr,
+        gestureActive: () => this.gestureRender.isActive,
         width: () => this.width,
         height: () => this.height,
         bounds: () => this.host.getBoundingClientRect(),
