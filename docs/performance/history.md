@@ -676,3 +676,32 @@ that has already paid the decode.
   the fixture itself is unchanged — this phase changes how often a render runs,
   not how expensive one render is. Phase 2's per-zoom level cache is the change
   that targets the render cost itself.
+
+## Reported page — first user run on the phase 1 build (2026-11-25)
+
+The reported `BOTTENPLAN.tif` page, opened in the Windows 0.33.6 test build that
+contains phase 1 (`f16fbcc`): 4 pages, 434 objects, 0.6 MB embedded. The
+performance panel was read after a fast mouse zoom in and out followed by fast
+panning. One run, 30 s window, hand-driven rather than the scripted probe, so
+the counts are indicative rather than like-for-like with the rows above; they
+are the only numbers from the reported file, which is not in the repository.
+
+| Measure | 0.33.6 baseline (reported) | Phase 1 build (reported) |
+| --- | --- | --- |
+| `pdf-raster` spans | 47 | **9** |
+| `pdf-raster` p50 | 46.2 ms | 43.0 ms |
+| `pdf-raster` p95 / max | 84.9 / 86.9 ms | 94.1 / 94.1 ms |
+| Blocked long tasks | 74 ms in 1 task | **0.0 ms in 0 tasks** |
+| `canvas-redraw` count / p95 | 295 / 3.0 ms | 333 / 3.0 ms |
+| `draw-items` count / p95 | 294 / 2.9 ms | 332 / 2.8 ms |
+| `draw-base` p95 / max | 0.1 / 0.7 ms | 0.1 / 0.2 ms |
+| Worst frame / heap | — | 174 ms, 8 s before the reading / 16 MB |
+
+Reading: **81 % fewer PDF renders** for the interaction and **no blocked long
+task** at the moment of the reading, against 74 ms in one task on 0.33.6. The
+single raster is still 43–94 ms because it is the same page-level composite as
+before; this phase changes how often it runs, not how expensive one run is. The
+174 ms worst frame is one dropped frame where a ~94 ms render landed; the
+blocked window reported 0 long tasks. Markup cost is unchanged (`draw-items`
+p95 2.8 ms over 332 redraws), which is the expected result: the canvas still
+draws every mark­up on every frame, and the win is in the drawing behind it.
