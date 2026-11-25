@@ -165,6 +165,15 @@ website feature tour and guide pair
 changed; schema 28 stays the current development schema. The measured rows are in
 [`performance/history.md`](performance/history.md).
 
+**Operation-card fixes** shipped as **0.34.0** on 2026-11-25
+([`release-notes/0.34.0.md`](release-notes/0.34.0.md)): the straight-line guide
+now survives an I/O rail row ([#377](https://github.com/MajorJohnDoe/gridscalr/issues/377)),
+**Connect to channel** marks one exact wire/row crossing in one click
+([#378](https://github.com/MajorJohnDoe/gridscalr/issues/378)) and **Continue
+line here** appends new segments to the same polyline
+([#379](https://github.com/MajorJohnDoe/gridscalr/issues/379)). No schema field
+changed; schema 28 stays the current development schema.
+
 Schema 28 shipped in 0.29.0, not in the released 0.28.0 binary. The quality gate
 for 1.0 is unchanged: Windows, macOS and Linux artifacts, the two interface
 languages, portable packages, tested large-project performance, and
