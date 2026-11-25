@@ -224,7 +224,10 @@ falls back to the full-page path. The tile path has not been manually verified o
 WebKitGTK in this development environment, so the fallback is the safe default
 there (F-149).
 
-Tiles trade one monolithic raster for several smaller rasters. On a small crop
+Tiles are abandoned for the rest of the session once the first tile costs more
+than 30 ms, because PDF.js re-walks the page operator list per tile and on a dense
+drawing a tile can cost as much as a whole crop; the measured case was 88 ms per
+tile against 205 ms for one crop. Tiles trade one monolithic raster for several smaller rasters. On a small crop
 the first tile can cost about as much as the monolith because PDF.js walks the
 whole page operator list for every render; the measured win is the lower total
 raster work during a zoom stream (30–38 % in the phase 4 probe) and the bounded

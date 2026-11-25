@@ -45,6 +45,14 @@ const COALESCE_MS = 90;
  * it stopped and the newly exposed strip stayed empty for the whole gesture.
  */
 const CONTINUOUS_RENDER_MS = 140;
+/** A raster that costs this much must not be re-run at the fastest cadence. */
+const MAX_CADENCE_COST_MS = 400;
+/**
+ * PDF.js re-walks the page operator list for every tile, so on a dense drawing
+ * a tile can cost as much as a whole crop. When the first tile is this slow the
+ * tiled path is abandoned for the full-crop render, which walks the list once.
+ */
+const TILE_COST_LIMIT_MS = 30;
 /** The coarse pass runs at this fraction of the exact device scale. */
 const COARSE_SCALE_FACTOR = 0.45;
 
@@ -89,6 +97,8 @@ export class CanvasRasterController {
   private generation = 0;
   private timer: number | null = null;
   private lastRenderAt = 0;
+  private lastCostMs = 0;
+  private tilesDisabled = false;
   private busyValue = false;
   private useTiles: boolean;
   private readonly tiles: TileCacheController | null;
@@ -112,6 +122,16 @@ export class CanvasRasterController {
     this.tiles = new TileCacheController({
       source,
       onProgress: (completed) => {
+        const tileCost = this.tiles?.stats().firstTileMs ?? 0;
+        if (!this.tilesDisabled && completed === 1 && tileCost > TILE_COST_LIMIT_MS) {
+          // One tile already costs what a whole crop would: stop tiling.
+          this.tilesDisabled = true;
+          this.pending = null;
+          this.tiles?.cancel();
+          this.busyValue = false;
+          void this.renderNow();
+          return;
+        }
         const pending = this.pending;
         if (pending && this.rasterValue !== pending) {
           this.rasterValue = pending;
@@ -161,7 +181,11 @@ export class CanvasRasterController {
     if (bounds.width < 2 || bounds.height < 2) return;
     const now = performance.now();
     const overdue = now - this.lastRenderAt;
-    const wait = Math.max(16, Math.min(COALESCE_MS, CONTINUOUS_RENDER_MS - overdue));
+    const interval = Math.min(
+      MAX_CADENCE_COST_MS,
+      Math.max(CONTINUOUS_RENDER_MS, Math.round(this.lastCostMs * 1.5)),
+    );
+    const wait = Math.max(16, Math.min(COALESCE_MS, interval - overdue));
     if (this.timer !== null) window.clearTimeout(this.timer);
     this.timer = window.setTimeout(() => {
       this.timer = null;
@@ -219,7 +243,7 @@ export class CanvasRasterController {
     if (this.rasterValue) this.backdropValue = this.rasterValue;
     this.ensureCoarse(page, crop, zoom, dpr, generation);
 
-    if (this.useTiles && this.tiles && pageId) {
+    if (this.useTiles && !this.tilesDisabled && this.tiles && pageId) {
       const tiles = this.renderTiles(page, pageId, zoom, dpr, width, height, crop);
       if (tiles) {
         const busy = this.tiles.busy;
@@ -243,10 +267,12 @@ export class CanvasRasterController {
 
     this.busyValue = true;
     this.showLoading();
+    const startedAt = performance.now();
     try {
       const result = await perfSpanAsync("pdf-raster", () =>
         renderer.renderCrop(page, crop, zoom * dpr),
       );
+      this.lastCostMs = performance.now() - startedAt;
       perfMark("raster");
       if (generation !== this.generation || page !== this.host.page()) return;
       this.rasterValue = result;
