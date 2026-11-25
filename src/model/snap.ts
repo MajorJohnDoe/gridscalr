@@ -333,6 +333,109 @@ export function excludeOwnSnapTargets(
   });
 }
 
+function horizontalAxis(last: Point, point: Point): boolean {
+  return Math.abs(point.x - last.x) >= Math.abs(point.y - last.y);
+}
+
+/** The orthogonal guide rule: the dominant pointer delta chooses the axis. */
+export function orthoPoint(last: Point, current: Point): Point {
+  return horizontalAxis(last, current) ? { x: current.x, y: last.y } : { x: last.x, y: current.y };
+}
+
+/**
+ * Where a segment meets the orthogonal guide through `last`, or null when it
+ * never does. A collinear segment is clamped to its own span instead, so a
+ * horizontal rail row projects a horizontal guide anywhere along the row.
+ */
+function axisSegmentTarget(
+  point: Point,
+  last: Point,
+  a: Point,
+  b: Point,
+  horizontal: boolean,
+): Point | null {
+  if (horizontal) {
+    const axis = last.y;
+    if (Math.abs(b.y - a.y) < 1e-9) {
+      if (Math.abs(a.y - axis) > 1e-9) return null;
+      const min = Math.min(a.x, b.x);
+      const max = Math.max(a.x, b.x);
+      return { x: Math.max(min, Math.min(max, point.x)), y: axis };
+    }
+    const t = (axis - a.y) / (b.y - a.y);
+    if (t < -1e-9 || t > 1 + 1e-9) return null;
+    return { x: a.x + (b.x - a.x) * t, y: axis };
+  }
+  const axis = last.x;
+  if (Math.abs(b.x - a.x) < 1e-9) {
+    if (Math.abs(a.x - axis) > 1e-9) return null;
+    const min = Math.min(a.y, b.y);
+    const max = Math.max(a.y, b.y);
+    return { x: axis, y: Math.max(min, Math.min(max, point.y)) };
+  }
+  const t = (axis - a.x) / (b.x - a.x);
+  if (t < -1e-9 || t > 1 + 1e-9) return null;
+  return { x: axis, y: a.y + (b.y - a.y) * t };
+}
+
+/**
+ * Nearest snap target on the orthogonal guide through `last` and `point`.
+ * A point candidate must itself sit near the guide, so a diagonal port is not
+ * projected onto a distant axis. Segment candidates are intersected with the
+ * guide, including a collinear rail row. The tolerance is measured in screen
+ * pixels along the guide, matching `findSnap`.
+ */
+export function snapAlongAxis(
+  last: Point,
+  point: Point,
+  candidates: readonly SnapCandidate[],
+  tolerancePx: number,
+  zoom: number,
+): SnapResult | null {
+  if (!Number.isFinite(tolerancePx) || tolerancePx <= 0 || zoom <= 0) return null;
+  const radius = tolerancePx / zoom;
+  const horizontal = horizontalAxis(last, point);
+  let best: SnapResult | null = null;
+
+  const consider = (candidate: SnapCandidate, target: Point): void => {
+    const along = horizontal ? Math.abs(target.x - point.x) : Math.abs(target.y - point.y);
+    if (along > radius) return;
+    const priority = KIND_PRIORITY[candidate.kind];
+    const bestPriority = best ? KIND_PRIORITY[best.kind] : Number.POSITIVE_INFINITY;
+    if (
+      !best ||
+      priority < bestPriority ||
+      (priority === bestPriority && along < best.distance - 1e-9)
+    ) {
+      best = { ...candidate, point: target, distance: along };
+    }
+  };
+
+  for (const candidate of candidates) {
+    if (candidate.segment) {
+      const target = axisSegmentTarget(
+        point,
+        last,
+        candidate.segment.a,
+        candidate.segment.b,
+        horizontal,
+      );
+      if (target) consider(candidate, target);
+      continue;
+    }
+    const perpendicular = horizontal
+      ? Math.abs(candidate.point.y - last.y)
+      : Math.abs(candidate.point.x - last.x);
+    if (perpendicular > radius) continue;
+    consider(
+      candidate,
+      horizontal ? { x: candidate.point.x, y: last.y } : { x: last.x, y: candidate.point.y },
+    );
+  }
+
+  return best;
+}
+
 /** Finds the nearest candidate within a screen-pixel threshold. */
 export function findSnap(
   point: Point,

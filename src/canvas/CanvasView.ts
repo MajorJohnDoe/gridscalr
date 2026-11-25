@@ -56,6 +56,8 @@ import {
   collectSnapCandidates,
   excludeOwnSnapTargets,
   findSnap,
+  orthoPoint,
+  snapAlongAxis,
   type SnapCandidate,
   type SnapKind,
   type SnapResult,
@@ -138,12 +140,6 @@ const FONT_STACK = TEXT_FONT_STACK;
  * symbol tags that start outside the viewport still draw while they cross it.
  */
 const VIEW_CULL_MARGIN = 120;
-
-function orthoPoint(last: Point, current: Point): Point {
-  return Math.abs(current.x - last.x) >= Math.abs(current.y - last.y)
-    ? { x: current.x, y: last.y }
-    : { x: last.x, y: current.y };
-}
 
 /** Tools whose next click can land on an existing snap target. */
 export class CanvasView {
@@ -808,16 +804,27 @@ export class CanvasView {
   }
 
   private constrainPolyline(last: Point, point: Point, free: boolean): Point {
-    if (free) {
-      this.snap = null;
-      return point;
+    this.snap = null;
+    if (free) return point;
+    const project = store.project;
+    if (project?.settings.snapToGeometry) {
+      const candidates = this.snapCandidates();
+      const tolerance = project.settings.snapTolerancePx ?? 8;
+      // A target on the orthogonal guide keeps the straight line. An explicit
+      // target off the guide still wins at any angle, so a diagonal cable to a
+      // port is unchanged.
+      const along = snapAlongAxis(last, point, candidates, tolerance, this.viewZoom);
+      if (along) {
+        this.snap = along;
+        return { ...along.point };
+      }
+      const anyAngle = findSnap(point, candidates, tolerance, this.viewZoom);
+      if (anyAngle) {
+        this.snap = anyAngle;
+        return { ...anyAngle.point };
+      }
     }
-    // An explicit snap target wins over the orthogonal default, so a cable can
-    // start or end on a port, midpoint, intersection or segment at any angle.
-    if (this.snap) return point;
-    const constrained = orthoPoint(last, point);
-    if (distance(constrained, point) > 1e-6) this.snap = null;
-    return constrained;
+    return orthoPoint(last, point);
   }
 
   private runCalibration = async (p1: Point, p2: Point): Promise<void> => {

@@ -5,6 +5,8 @@ import {
   collectSnapCandidates,
   excludeOwnSnapTargets,
   findSnap,
+  orthoPoint,
+  snapAlongAxis,
   type SnapCandidate,
 } from "../src/model/snap";
 import type { MarkupItem, Project } from "../src/model/types";
@@ -78,6 +80,30 @@ function makeProject(): Project {
         { x: 400, y: 400 },
         { x: 500, y: 450 },
       ],
+    }),
+  );
+  return project;
+}
+
+function makeRailProject(): Project {
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
+  const draw = layersForKind(project, "draw")[0];
+  addItem(
+    project,
+    draw.id,
+    makeItem({
+      id: "rail",
+      kind: "rail",
+      points: [
+        { x: 100, y: 100 },
+        { x: 300, y: 100 },
+      ],
+      rows: [
+        { id: "a", label: "A" },
+        { id: "b", label: "B" },
+        { id: "c", label: "C" },
+      ],
+      rowSpacing: 20,
     }),
   );
   return project;
@@ -281,5 +307,76 @@ describe("markup snapping", () => {
     project.pages[0].state = { calibration: createManualCalibration(100) };
     candidates = collectSnapCandidates(project, pageIdFor(1));
     expect(has(candidates, "endpoint", 500, 500)).toBe(false);
+  });
+
+  it("keeps a vertical guide onto a rail row and lands on the row", () => {
+    const candidates = collectSnapCandidates(makeRailProject(), pageIdFor(1));
+    const result = snapAlongAxis({ x: 150, y: 0 }, { x: 152, y: 98 }, candidates, 8, 1);
+    expect(result?.kind).toBe("segment");
+    expect(result?.point.x).toBeCloseTo(150, 5);
+    expect(result?.point.y).toBeCloseTo(100, 5);
+    expect(result?.distance).toBeCloseTo(2, 5);
+  });
+
+  it("keeps a horizontal guide onto a rail row and lands on the row", () => {
+    const candidates = collectSnapCandidates(makeRailProject(), pageIdFor(1));
+    const result = snapAlongAxis({ x: 150, y: 100 }, { x: 170, y: 101 }, candidates, 8, 1);
+    expect(result?.kind).toBe("segment");
+    expect(result?.point.x).toBeCloseTo(170, 5);
+    expect(result?.point.y).toBeCloseTo(100, 5);
+    expect(result?.distance).toBeCloseTo(0, 5);
+  });
+
+  it("exposes each rail row as a segment candidate", () => {
+    const candidates = collectSnapCandidates(makeRailProject(), pageIdFor(1));
+    expect(
+      candidates.some(
+        (candidate) =>
+          candidate.kind === "segment" &&
+          candidate.segment?.a.x === 100 &&
+          candidate.segment.a.y === 100 &&
+          candidate.segment.b.x === 300 &&
+          candidate.segment.b.y === 100,
+      ),
+    ).toBe(true);
+  });
+
+  it("does not project an off-axis port onto the guide, but any-angle snapping still wins", () => {
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
+    const draw = layersForKind(project, "draw")[0];
+    addItem(
+      project,
+      draw.id,
+      makeItem({
+        id: "fan",
+        kind: "symbol",
+        symbolId: "schematic.fan",
+        symbolSize: 64,
+        points: [{ x: 100, y: 100 }],
+      }),
+    );
+    const candidates = collectSnapCandidates(project, pageIdFor(1));
+    const last = { x: 0, y: 0 };
+    const point = { x: 84, y: 101 };
+    expect(snapAlongAxis(last, point, candidates, 8, 1)).toBeNull();
+    expect(findSnap(point, candidates, 8, 1)).toMatchObject({
+      kind: "endpoint",
+      point: { x: 83, y: 100 },
+    });
+  });
+
+  it("returns null with no axis target and keeps the plain ortho result", () => {
+    expect(snapAlongAxis({ x: 0, y: 0 }, { x: 50, y: 1 }, [], 8, 1)).toBeNull();
+    expect(orthoPoint({ x: 0, y: 0 }, { x: 50, y: 1 })).toEqual({ x: 50, y: 0 });
+  });
+
+  it("measures axis tolerance in screen pixels across zoom levels", () => {
+    const candidates = collectSnapCandidates(makeRailProject(), pageIdFor(1));
+    const last = { x: 150, y: 0 };
+    const point = { x: 152, y: 94 };
+    expect(snapAlongAxis(last, point, candidates, 8, 1)).toMatchObject({
+      point: { x: 150, y: 100 },
+    });
+    expect(snapAlongAxis(last, point, candidates, 8, 2)).toBeNull();
   });
 });
