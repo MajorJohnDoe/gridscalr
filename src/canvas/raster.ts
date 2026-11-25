@@ -311,12 +311,16 @@ export class CanvasRasterController {
   }
 
   /**
-   * Schedules the next raster. A view that the raster on screen still covers is
-   * skipped entirely: `drawBase` already paints that raster at the new pan, so a
-   * PDF.js render would buy nothing and cost a stall. Otherwise the wait follows
-   * the cost-aware cadence: the measured-cost interval during a gesture, an
-   * immediate render once the gesture settles, and a short coalescing window for
-   * an ordinary view change.
+   * Schedules the next raster.
+   *
+   * A view the raster on screen still covers is skipped entirely: `drawBase`
+   * paints that raster at the new pan, so a render would buy nothing. A cached
+   * display level that was rendered at exactly this scale is skipped too, because
+   * it is the exact output. While a gesture runs, a level for the current octave
+   * fills the view, so the sharp crop waits for the release instead of stalling
+   * mid-gesture. Everything else follows the cost-aware cadence: the
+   * measured-cost interval during a gesture, an immediate render once the
+   * gesture settles, and a short coalescing window for an ordinary view change.
    */
   schedule(): void {
     if (!this.host.renderer()) return;
@@ -334,7 +338,19 @@ export class CanvasRasterController {
       this.requestLevel(gesture);
       return;
     }
-    if (this.levelCovers(zoom, dpr)) {
+    const request = this.levelRequest();
+    const level = request ? (this.levels?.ensure(request, { build: false }) ?? null) : null;
+    if (level && this.levelIsExact(level, zoom * dpr)) {
+      // The cached page bitmap was rendered at exactly this scale, so it is the
+      // exact output; drawing it again through PDF.js would repeat the pixels.
+      this.clearTimer();
+      this.gestureAtLastSchedule = gesture;
+      this.requestLevel(gesture);
+      return;
+    }
+    if (level && gesture) {
+      // The whole-page level fills the strip while the pointer moves, so the
+      // sharp crop can wait for the release instead of stalling mid-gesture.
       this.clearTimer();
       this.gestureAtLastSchedule = gesture;
       return;
@@ -409,7 +425,7 @@ export class CanvasRasterController {
     const index = levelIndexFor(scale);
     const pageSize = { width: size.width, height: size.height };
     const pixels = levelPixels(pageSize, levelScaleFor(index));
-    if (pixels.scale + 1e-9 < levelScaleFor(index)) return null;
+    if (!levelIsSharpEnough(pixels.scale, levelScaleFor(index))) return null;
     return {
       contentKey: this.host.contentKey?.() ?? "",
       pageId,
@@ -426,17 +442,24 @@ export class CanvasRasterController {
     if (request) this.levels.ensure(request, { build: true });
   }
 
+  /** True when the level was rendered at exactly the view's own scale. */
+  private levelIsExact(level: DisplayLevel, scale: number): boolean {
+    return Math.abs(level.scale - scale) <= Math.max(1e-6, scale * 1e-6);
+  }
+
   /**
-   * True when a cached whole-page level is at least as sharp as this view would
-   * render, so blitting it is already the exact output and a PDF.js render would
-   * only repeat the same pixels. The level is never built from here.
+   * True when the raster render can be skipped for this view: the level is
+   * exactly at the view's scale, or a gesture is running and the level fills the
+   * view until the sharp crop lands on release. Never builds a level.
    */
-  private levelCovers(zoom: number, dpr: number): boolean {
+  private levelSkipsRender(zoom: number, dpr: number): boolean {
     if (!this.levels) return false;
     const request = this.levelRequest();
     if (!request) return false;
     const level = this.levels.ensure(request, { build: false });
-    return !!level && levelIsSharpEnough(level.scale, zoom * dpr);
+    if (!level) return false;
+    if (this.levelIsExact(level, zoom * dpr)) return true;
+    return this.host.gestureActive?.() === true;
   }
 
   /**
@@ -489,7 +512,7 @@ export class CanvasRasterController {
       // raster at the new pan, so re-rendering would only add a stall.
       return;
     }
-    if (this.levelCovers(zoom, dpr)) return;
+    if (this.levelSkipsRender(zoom, dpr)) return;
     this.lastRenderAt = performance.now();
     const crop = cropRectForView(size, zoom, panX, panY, width, height, CROP_MARGIN);
     const view: RenderedView = { page, zoom, dpr };
