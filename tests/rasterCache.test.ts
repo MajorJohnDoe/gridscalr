@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { backdropFor } from "../src/canvas/raster";
+import { backdropFor, rasterCovers } from "../src/canvas/raster";
 import type { RenderResult } from "../src/pdf/pdfRenderer";
 
 function raster(pageNumber: number): RenderResult {
@@ -29,5 +29,22 @@ describe("backdropFor", () => {
 
   it("never draws a raster from another page", () => {
     expect(backdropFor(raster(2), raster(1), 1)).toBeNull();
+  });
+});
+
+describe("rasterCovers", () => {
+  const raster = { rect: { x: 10, y: 10, width: 100, height: 80 } };
+
+  it("is false without a raster", () => {
+    expect(rasterCovers(null, { x: 0, y: 0, width: 10, height: 10 })).toBe(false);
+  });
+
+  it("is true when the raster contains the whole view", () => {
+    expect(rasterCovers(raster, { x: 20, y: 20, width: 50, height: 40 })).toBe(true);
+  });
+
+  it("is false when the view reaches past the raster", () => {
+    expect(rasterCovers(raster, { x: 20, y: 20, width: 120, height: 40 })).toBe(false);
+    expect(rasterCovers(raster, { x: 0, y: 20, width: 50, height: 40 })).toBe(false);
   });
 });

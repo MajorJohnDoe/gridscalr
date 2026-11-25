@@ -37,6 +37,24 @@ export interface CanvasRasterHost {
 }
 
 const CROP_MARGIN = 70;
+/** The coarse pass runs at this fraction of the exact device scale. */
+const COARSE_SCALE_FACTOR = 0.45;
+
+/** True when `raster` covers `view` (both in page units) with a small slack. */
+export function rasterCovers(
+  raster: { rect: { x: number; y: number; width: number; height: number } } | null,
+  view: { x: number; y: number; width: number; height: number },
+): boolean {
+  if (!raster) return false;
+  const rect = raster.rect;
+  const slack = 0.5;
+  return (
+    rect.x <= view.x + slack &&
+    rect.y <= view.y + slack &&
+    rect.x + rect.width >= view.x + view.width - slack &&
+    rect.y + rect.height >= view.y + view.height - slack
+  );
+}
 
 /**
  * The raster that stays visible underneath a partial tile composition. Without
@@ -58,8 +76,7 @@ export function backdropFor(
 export class CanvasRasterController {
   private rasterValue: RenderResult | null = null;
   private backdropValue: RenderResult | null = null;
-  private underlayValue: RenderResult | null = null;
-  private underlayPending = false;
+  private coarsePending = false;
   private pending: RenderResult | null = null;
   private generation = 0;
   private timer: number | null = null;
@@ -119,15 +136,6 @@ export class CanvasRasterController {
     return this.backdropValue;
   }
 
-  /**
-   * A coarse whole-page raster drawn beneath everything else, so an area that
-   * has never been rendered (for example after zooming out) shows the drawing
-   * immediately instead of an empty sheet.
-   */
-  get underlay(): RenderResult | null {
-    return this.underlayValue;
-  }
-
   get rendering(): boolean {
     return this.busyValue;
   }
@@ -149,7 +157,6 @@ export class CanvasRasterController {
     this.generation += 1;
     this.rasterValue = null;
     this.backdropValue = null;
-    this.underlayValue = null;
     this.pending = null;
     this.busyValue = false;
     if (this.timer !== null) {
@@ -190,9 +197,9 @@ export class CanvasRasterController {
       CROP_MARGIN,
     );
     const generation = ++this.generation;
-    this.ensureUnderlay(page, size);
     // Keep the raster that is on screen now visible underneath the new one.
     if (this.rasterValue) this.backdropValue = this.rasterValue;
+    this.ensureCoarse(page, crop, zoom, dpr, generation);
 
     if (this.useTiles && this.tiles && pageId) {
       const tiles = this.renderTiles(page, pageId, zoom, dpr, width, height, crop);
@@ -260,27 +267,40 @@ export class CanvasRasterController {
   }
 
   /**
-   * Renders one coarse full-page bitmap per page and keeps it for the lifetime
-   * of that page. It is about 384 px on the long side, so the cost is one small
-   * raster and the result is stretched behind the exact tiles.
+   * When the previous raster does not cover the new view (a zoom out or a large
+   * jump), render the crop once at a fraction of the exact scale and keep it
+   * under the tiles. It is a few milliseconds of work and turns a blank sheet
+   * into a soft copy of the drawing that sharpens as the tiles arrive.
    */
-  private ensureUnderlay(page: number, size: PageSize): void {
-    if (this.underlayValue?.pageNumber === page || this.underlayPending) return;
+  private ensureCoarse(
+    page: number,
+    crop: TileRect,
+    zoom: number,
+    dpr: number,
+    generation: number,
+  ): void {
+    if (this.coarsePending) return;
+    const visible = {
+      x: -this.host.panX() / zoom,
+      y: -this.host.panY() / zoom,
+      width: this.host.width() / zoom,
+      height: this.host.height() / zoom,
+    };
+    if (rasterCovers(this.rasterValue, visible)) return;
     const renderer = this.host.renderer();
     if (!renderer) return;
-    this.underlayPending = true;
-    const scale = 384 / Math.max(size.width, size.height, 1);
-    void perfSpanAsync("pdf-raster", () =>
-      renderer.renderCrop(page, { x: 0, y: 0, width: size.width, height: size.height }, scale),
-    )
+    this.coarsePending = true;
+    const scale = Math.max(0.05, zoom * dpr * COARSE_SCALE_FACTOR);
+    void perfSpanAsync("pdf-raster", () => renderer.renderCrop(page, crop, scale))
       .then((result) => {
-        this.underlayPending = false;
-        if (this.host.page() !== page) return;
-        this.underlayValue = result;
+        if (generation !== this.generation || this.host.page() !== page) return;
+        if (!this.busyValue) return;
+        this.backdropValue = result;
         this.host.drawBase();
       })
-      .catch(() => {
-        this.underlayPending = false;
+      .catch(() => undefined)
+      .finally(() => {
+        this.coarsePending = false;
       });
   }
 

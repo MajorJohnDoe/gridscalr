@@ -198,9 +198,12 @@ order and paints the first completed tile immediately. Tiles are anchored to the
 at the current render scale, so a pan keeps every tile that is still on screen and
 renders only the newly exposed edge. Two things stay visible while the exact
 tiles are being prepared: the previous complete raster underneath the new
-composition, and one coarse whole-page underlay (about 384 px on the long side)
-beneath everything, so an area that has never been rendered, for example after a
-zoom out, shows the drawing immediately instead of an empty sheet. The tile cache
+composition, and, when that raster does not cover the new view (a zoom out or a
+large jump), one coarse pass of the same crop at 45 % of the device scale. The
+coarse pass costs a few milliseconds and shows a soft copy of the drawing
+instead of an empty sheet until the exact tiles arrive. During a long gesture the
+markup layer is redrawn for real at most every 250 ms, so newly exposed markups
+fill in while the pan continues instead of only at pointer release. The tile cache
 is capped at **64 MiB of RGBA pixels** (`TILE_CACHE_BUDGET_BYTES` in
 `src/features/tileCache/model.ts`). At 1440 × 900 that is about ten views at
 DPR 1 or two to three at DPR 2; the phase 4 probe measured 10.2 MiB steady state

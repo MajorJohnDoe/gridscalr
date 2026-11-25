@@ -1,4 +1,4 @@
-import { GESTURE_SETTLE_MS, settleDelay, type SettleClock } from "./model";
+import { GESTURE_SETTLE_MS, refreshDue, settleDelay, type SettleClock } from "./model";
 
 /** The zoom and pan of one viewport, in CSS pixels. */
 export interface GestureViewport {
@@ -58,17 +58,30 @@ export class GestureRenderController {
   private active = false;
   private painted = false;
   private timer: number | null = null;
+  /** When the last real content redraw happened inside this gesture. */
+  private refreshedAt = 0;
   private readonly clock: SettleClock = { lastInputAt: 0, idleMs: GESTURE_SETTLE_MS };
 
   constructor(private readonly host: GestureRenderHost) {}
 
   begin(kind: GestureKind): void {
     this.clearTimer();
-    // The caller views the updated viewport by the time the first frame draws,
-    // but the content canvas still shows the viewport the gesture started from.
-    if (!this.active) this.baseView = { ...this.host.viewport() };
+    const now = performance.now();
+    if (!this.active) {
+      // The caller views the updated viewport by the time the first frame draws,
+      // but the content canvas still shows the viewport the gesture started from.
+      this.baseView = { ...this.host.viewport() };
+      this.refreshedAt = now;
+    } else if (refreshDue(now, this.refreshedAt)) {
+      // A long stream still needs real pixels, so settle once and start a new
+      // capture from the redrawn canvas instead of blitting for seconds.
+      this.settle();
+      this.active = true;
+      this.baseView = { ...this.host.viewport() };
+      this.refreshedAt = now;
+    }
     this.active = true;
-    if (kind === "wheel") this.clock.lastInputAt = performance.now();
+    if (kind === "wheel") this.clock.lastInputAt = now;
   }
 
   end(kind: GestureKind): void {
@@ -153,6 +166,7 @@ export class GestureRenderController {
   private settle(): void {
     this.clearTimer();
     this.active = false;
+    this.refreshedAt = performance.now();
     const painted = this.painted;
     this.painted = false;
     this.dropRaster();

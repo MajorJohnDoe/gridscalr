@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  GESTURE_REFRESH_MS,
   GESTURE_SETTLE_MS,
   MIN_GESTURE_SETTLE_MS,
   clampSettleMs,
   rasterTransform,
+  refreshDue,
   settleDelay,
   settleDue,
 } from "../src/features/gestureRender";
@@ -74,5 +76,23 @@ describe("gesture raster transform", () => {
     expect(
       rasterTransform({ zoom: Number.NaN, panX: 5, panY: 5 }, { zoom: 2, panX: 10, panY: 15 }),
     ).toEqual({ scale: 1, offsetX: 5, offsetY: 10 });
+  });
+});
+
+describe("gesture refresh rule", () => {
+  it("owes a real redraw once the refresh window has passed", () => {
+    expect(refreshDue(1_000, 1_000)).toBe(false);
+    expect(refreshDue(1_000 + GESTURE_REFRESH_MS - 1, 1_000)).toBe(false);
+    expect(refreshDue(1_000 + GESTURE_REFRESH_MS, 1_000)).toBe(true);
+  });
+
+  it("never forces a redraw from an unusable clock", () => {
+    expect(refreshDue(Number.NaN, 0)).toBe(false);
+    expect(refreshDue(1_000, Number.NaN)).toBe(false);
+  });
+
+  it("refreshes well before a user could call the view frozen", () => {
+    expect(GESTURE_REFRESH_MS).toBeGreaterThan(GESTURE_SETTLE_MS);
+    expect(GESTURE_REFRESH_MS).toBeLessThanOrEqual(400);
   });
 });

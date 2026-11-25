@@ -14,9 +14,11 @@ export {
   type RasterTransform,
 } from "./controller";
 export {
+  GESTURE_REFRESH_MS,
   GESTURE_SETTLE_MS,
   MIN_GESTURE_SETTLE_MS,
   clampSettleMs,
+  refreshDue,
   settleDelay,
   settleDue,
   type SettleClock,

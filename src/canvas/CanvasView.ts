@@ -1120,11 +1120,6 @@ export class CanvasView {
     ctx.fillRect(x, y, w, h);
     ctx.restore();
 
-    const underlay = this.raster.underlay;
-    if (underlay && underlay.pageNumber === this.viewPage) {
-      ctx.drawImage(underlay.canvas, x, y, w, h);
-    }
-
     const current = this.raster.current;
     const backdrop = backdropFor(this.raster.backdrop, current, this.viewPage);
     if (backdrop) this.drawRaster(ctx, backdrop);

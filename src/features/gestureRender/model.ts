@@ -11,6 +11,13 @@
 /** Default idle window after the last wheel event. */
 export const GESTURE_SETTLE_MS = 120;
 
+/**
+ * A gesture that keeps receiving input still gets a real content redraw this
+ * often. Without it a long wheel stream or a slow drag shows the captured
+ * raster until the gesture ends, so newly exposed markups stay missing.
+ */
+export const GESTURE_REFRESH_MS = 250;
+
 /** A settle delay under one frame would spin the timer instead of drawing. */
 export const MIN_GESTURE_SETTLE_MS = 16;
 
@@ -40,4 +47,13 @@ export function settleDelay(now: number, clock: SettleClock): number {
 
 export function settleDue(now: number, clock: SettleClock): boolean {
   return settleDelay(now, clock) === 0;
+}
+
+/**
+ * True when a still-running gesture owes a real content redraw. A sample that
+ * is not finite never forces one, so a bad clock cannot cause a redraw storm.
+ */
+export function refreshDue(now: number, refreshedAt: number): boolean {
+  if (!Number.isFinite(now) || !Number.isFinite(refreshedAt)) return false;
+  return now - refreshedAt >= GESTURE_REFRESH_MS;
 }
