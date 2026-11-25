@@ -637,6 +637,15 @@ frames, edit cost or heap.
 - `npm run check:performance` (CI profile): every budget passes; p95 edit
   19.0 ms, open 12.2 ms, autosave 957.2 ms, page switch 6.4 ms, UI freeze
   105.8 ms, heap 54.1 MB.
+- The documentation screenshots were recaptured for the version bump. The
+  capture runs at a settled view whose crop is now 300 px instead of 70 px
+  around the viewport, and PDF.js rasterises the same page slightly differently
+  for a different crop origin: comparing the committed images with the new ones
+  shows the difference confined to the base drawing's antialiased edges (for
+  example 42 528 of 2 073 600 px, max channel delta 49 on the Takeoff tab,
+  where the markups, labels and the placed table are byte-identical). No
+  content, position or layout moved, and the same class of difference was
+  recorded for tiles in phase 4.
 
 ### Observation, not attributed to this phase
 
