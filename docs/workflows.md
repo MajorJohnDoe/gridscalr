@@ -52,6 +52,8 @@ Drawing tools live on drawing layers, separately from measurements. A practical 
 
 Click, right-click or long-press the Cloud, Callout, Stamp and Arrow tools to choose variants, colours and presets. Every object can still be hidden or locked individually without changing the layer.
 
+On an operation card, a pipe or control cable keeps its straight-line guide when it reaches an I/O rail row. Right-click a wire near a row and choose **Connect to channel** to mark the exact crossing with one connection dot, or right-click near either end of the wire and choose **Continue line here** to extend the same run to the next row. Both actions are one undo step, and rows the wire merely crosses stay unmarked.
+
 ### 4. Export the work order
 
 1. Choose **File → Export → Drawing PDF…**.

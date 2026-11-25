@@ -5,7 +5,7 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.33.0** · Project-file schema: **28, in development**
+Current version: **0.34.0** · Project-file schema: **28, in development**
 
 1.0 is **deferred** and remains a quality gate, not a target date. Work is
 organised by foundation slices so the product can release pre-1.0 minors while

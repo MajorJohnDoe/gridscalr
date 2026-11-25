@@ -715,7 +715,9 @@ Text boxes are useful for function descriptions, notes over drawings and multi-c
 
 ### Pipes, ducts and line types
 
-Choose **Pipe / duct** (`F`) and click the vertices of the run. Segments stay horizontal or vertical unless you hold `Shift` for a free angle, or the segment starts or ends on an explicit snap target such as an endpoint, midpoint, intersection or rail row. The tool otherwise follows the pointer freely and snaps to existing item endpoints, midpoints, rail rows and intersections. `Enter` or a double-click finishes the run; `Esc` cancels it.
+Choose **Pipe / duct** (`F`) and click the vertices of the run. Segments stay horizontal or vertical unless you hold `Shift` for a free angle, or the segment starts or ends on an explicit snap target such as an endpoint, midpoint, intersection or rail row. The ortho guide itself now projects onto a nearby rail row, so a vertical drop lands at the current x on that row and a horizontal run at the pointer's y; the segment stays straight instead of jumping to the raw pointer angle. An explicit port or symbol snap can still end a segment at any angle when no target lies on the guide. `Enter` or a double-click finishes the run; `Esc` cancels it.
+
+Right-click a pipe or line near a rail row and choose **Connect to channel** to place one connection dot at the exact wire/row intersection on the wire's own drawing layer. The action marks one crossing at a time and is one undo step, so a cable that crosses five rows can connect to only the rows that are real connections. Right-click within the hit tolerance of a polyline's first or last vertex and choose **Continue line here** to draw more segments into the same item with a shared joint; finishing is one undo step and `Esc` leaves the original unchanged.
 
 The context bar selects the media class: supply air, extract air, exhaust air, outdoor air, heating flow/return, district heating flow/return, domestic water, cooling, control cable and bus. The class sets the colour, width and dash at creation. Open **Line options** in the context bar to choose the line type from a dropdown, pick a colour swatch, set the stroke width, or switch between solid and dashed. The Line tool has the same menu without the line-type selector. A one-off colour, weight or dashed pipe therefore does not need a new media class. Use **Edit line types…** to rename, recolour, reweight, add or remove media classes. Existing runs keep their stored style, so editing or deleting a class never restyles an old drawing.
 
@@ -730,7 +732,7 @@ Choose **Symbol** (`B`), open the **Special** tab and pick **I/O rail**, then dr
 - Add, remove and reorder rows with the arrow buttons.
 - Show or hide the left badges and the legend line.
 
-Rail rows are snap targets for pipes and control cables. Connection dots are ordinary small filled ellipses; a cable can cross a row without connecting, so the dots are placed explicitly.
+Rail rows are snap targets for pipes and control cables. Connection dots are ordinary small filled ellipses; a cable can cross a row without connecting, so the dots are placed explicitly. Right-click a pipe or line near a row and choose **Connect to channel** to mark the exact crossing with one dot on the wire's own drawing layer, or right-click near either end of a wire and choose **Continue line here** to extend the same item to the next row. Each action is one undo step, and crossings you did not mark stay clean.
 
 ### Resize and rotate
 
