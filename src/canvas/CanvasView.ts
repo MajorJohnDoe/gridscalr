@@ -1184,6 +1184,11 @@ export class CanvasView {
 
   private drawContentStage(): void {
     if (this.gestureRender.paint()) return;
+    this.drawContentItems();
+    this.gestureRender.afterRedraw();
+  }
+
+  private drawContentItems(): void {
     const ctx = this.contentCtx;
     this.prepare(ctx);
     const project = this.sceneProject;

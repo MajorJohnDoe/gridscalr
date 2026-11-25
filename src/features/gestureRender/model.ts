@@ -16,7 +16,7 @@ export const GESTURE_SETTLE_MS = 120;
  * often. Without it a long wheel stream or a slow drag shows the captured
  * raster until the gesture ends, so newly exposed markups stay missing.
  */
-export const GESTURE_REFRESH_MS = 250;
+export const GESTURE_REFRESH_MS = 120;
 
 /** A settle delay under one frame would spin the timer instead of drawing. */
 export const MIN_GESTURE_SETTLE_MS = 16;
@@ -50,10 +50,29 @@ export function settleDue(now: number, clock: SettleClock): boolean {
 }
 
 /**
+ * How far the view may travel, as a fraction of the smaller canvas side,
+ * before the captured raster is too stale to be worth keeping. A fast drag
+ * moves further than a timer can follow, so distance and time both refresh.
+ */
+export const GESTURE_REFRESH_DISTANCE = 0.3;
+
+/**
  * True when a still-running gesture owes a real content redraw. A sample that
  * is not finite never forces one, so a bad clock cannot cause a redraw storm.
  */
 export function refreshDue(now: number, refreshedAt: number): boolean {
   if (!Number.isFinite(now) || !Number.isFinite(refreshedAt)) return false;
   return now - refreshedAt >= GESTURE_REFRESH_MS;
+}
+
+/** True when the view has moved far enough that the captured raster is stale. */
+export function movedFar(
+  from: { panX: number; panY: number },
+  to: { panX: number; panY: number },
+  viewWidth: number,
+  viewHeight: number,
+): boolean {
+  if (![from.panX, from.panY, to.panX, to.panY].every(Number.isFinite)) return false;
+  const limit = Math.max(1, Math.min(viewWidth, viewHeight)) * GESTURE_REFRESH_DISTANCE;
+  return Math.hypot(to.panX - from.panX, to.panY - from.panY) >= limit;
 }

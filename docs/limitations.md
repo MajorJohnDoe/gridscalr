@@ -202,7 +202,9 @@ composition, and, when that raster does not cover the new view (a zoom out or a
 large jump), one coarse pass of the same crop at 45 % of the device scale. The
 coarse pass costs a few milliseconds and shows a soft copy of the drawing
 instead of an empty sheet until the exact tiles arrive. During a long gesture the
-markup layer is redrawn for real at most every 250 ms, and the page raster is
+markup layer is redrawn for real at most every 120 ms or once the view has moved
+30 % of the smaller canvas side, whichever comes first, and stays on the fast
+blit in between; the page raster is
 never postponed for more than 140 ms, so newly exposed drawing and markups fill
 in while the pan continues instead of only at pointer release. A debounce alone
 was reset by every wheel event, which is why a held scroll previously rendered

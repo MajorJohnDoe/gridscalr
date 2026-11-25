@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  GESTURE_REFRESH_DISTANCE,
   GESTURE_REFRESH_MS,
   GESTURE_SETTLE_MS,
   MIN_GESTURE_SETTLE_MS,
   clampSettleMs,
+  movedFar,
   rasterTransform,
   refreshDue,
   settleDelay,
@@ -92,7 +94,26 @@ describe("gesture refresh rule", () => {
   });
 
   it("refreshes well before a user could call the view frozen", () => {
-    expect(GESTURE_REFRESH_MS).toBeGreaterThan(GESTURE_SETTLE_MS);
-    expect(GESTURE_REFRESH_MS).toBeLessThanOrEqual(400);
+    expect(GESTURE_REFRESH_MS).toBeGreaterThanOrEqual(GESTURE_SETTLE_MS);
+    expect(GESTURE_REFRESH_MS).toBeLessThanOrEqual(150);
+  });
+});
+
+describe("gesture distance rule", () => {
+  it("keeps the capture while the view has barely moved", () => {
+    expect(movedFar({ panX: 0, panY: 0 }, { panX: 40, panY: 30 }, 800, 600)).toBe(false);
+  });
+
+  it("refreshes once the view moved past the distance limit", () => {
+    const limit = 600 * GESTURE_REFRESH_DISTANCE;
+    expect(movedFar({ panX: 0, panY: 0 }, { panX: limit + 1, panY: 0 }, 800, 600)).toBe(true);
+  });
+
+  it("never refreshes from an unusable viewport", () => {
+    expect(movedFar({ panX: 0, panY: 0 }, { panX: Number.NaN, panY: 0 }, 800, 600)).toBe(false);
+  });
+
+  it("refreshes a fast drag well before a quarter of a second", () => {
+    expect(GESTURE_REFRESH_MS).toBeLessThanOrEqual(150);
   });
 });

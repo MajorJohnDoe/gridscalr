@@ -1,4 +1,4 @@
-import { GESTURE_SETTLE_MS, refreshDue, settleDelay, type SettleClock } from "./model";
+import { GESTURE_SETTLE_MS, movedFar, refreshDue, settleDelay, type SettleClock } from "./model";
 
 /** The zoom and pan of one viewport, in CSS pixels. */
 export interface GestureViewport {
@@ -60,6 +60,8 @@ export class GestureRenderController {
   private timer: number | null = null;
   /** When the last real content redraw happened inside this gesture. */
   private refreshedAt = 0;
+  /** Set while the caller draws the items for real after a refresh. */
+  private rearm = false;
   private readonly clock: SettleClock = { lastInputAt: 0, idleMs: GESTURE_SETTLE_MS };
 
   constructor(private readonly host: GestureRenderHost) {}
@@ -103,6 +105,15 @@ export class GestureRenderController {
       this.dropRaster();
       return false;
     }
+    if (this.needsRefresh()) {
+      // Too stale to keep: let this frame draw the items for real and re-arm
+      // the capture from that drawing in `afterRedraw`.
+      this.clearTimer();
+      this.active = false;
+      this.rearm = true;
+      this.dropRaster();
+      return false;
+    }
     if (this.raster && !this.fitsCanvas()) {
       // The canvas was resized mid-gesture, so the raster no longer describes
       // it. Drop reuse and let this frame draw the items for real.
@@ -120,11 +131,33 @@ export class GestureRenderController {
     return true;
   }
 
+  /**
+   * Called by the host after it drew the items for real while a gesture is in
+   * flight, so the next frame captures the fresh content instead of the old one.
+   */
+  afterRedraw(): void {
+    if (!this.rearm) return;
+    this.rearm = false;
+    this.active = true;
+    this.baseView = { ...this.host.viewport() };
+    this.refreshedAt = performance.now();
+  }
+
   /** Ends any gesture and drops the raster; the next frame draws for real. */
   dispose(): void {
     this.clearTimer();
     this.active = false;
     this.dropRaster();
+  }
+
+  /** Time or distance since the last real redraw made the capture stale. */
+  private needsRefresh(): boolean {
+    if (!this.painted) return false;
+    if (refreshDue(performance.now(), this.refreshedAt)) return true;
+    if (!this.baseView) return false;
+    const width = this.host.canvas.width / Math.max(1, this.host.dpr());
+    const height = this.host.canvas.height / Math.max(1, this.host.dpr());
+    return movedFar(this.baseView, this.host.viewport(), width, height);
   }
 
   private paintRaster(raster: HTMLCanvasElement, from: GestureViewport): void {
@@ -166,6 +199,7 @@ export class GestureRenderController {
   private settle(): void {
     this.clearTimer();
     this.active = false;
+    this.rearm = false;
     this.refreshedAt = performance.now();
     const painted = this.painted;
     this.painted = false;
