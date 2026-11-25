@@ -202,8 +202,11 @@ composition, and, when that raster does not cover the new view (a zoom out or a
 large jump), one coarse pass of the same crop at 45 % of the device scale. The
 coarse pass costs a few milliseconds and shows a soft copy of the drawing
 instead of an empty sheet until the exact tiles arrive. During a long gesture the
-markup layer is redrawn for real at most every 250 ms, so newly exposed markups
-fill in while the pan continues instead of only at pointer release. The tile cache
+markup layer is redrawn for real at most every 250 ms, and the page raster is
+never postponed for more than 140 ms, so newly exposed drawing and markups fill
+in while the pan continues instead of only at pointer release. A debounce alone
+was reset by every wheel event, which is why a held scroll previously rendered
+nothing until it stopped. The tile cache
 is capped at **64 MiB of RGBA pixels** (`TILE_CACHE_BUDGET_BYTES` in
 `src/features/tileCache/model.ts`). At 1440 × 900 that is about ten views at
 DPR 1 or two to three at DPR 2; the phase 4 probe measured 10.2 MiB steady state

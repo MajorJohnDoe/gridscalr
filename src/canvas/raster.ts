@@ -37,6 +37,14 @@ export interface CanvasRasterHost {
 }
 
 const CROP_MARGIN = 70;
+/** Coalescing window for a single view change. */
+const COALESCE_MS = 90;
+/**
+ * A view that keeps changing still rasterises this often. A coalescing timer
+ * alone is reset by every wheel event, so a held scroll rendered nothing until
+ * it stopped and the newly exposed strip stayed empty for the whole gesture.
+ */
+const CONTINUOUS_RENDER_MS = 140;
 /** The coarse pass runs at this fraction of the exact device scale. */
 const COARSE_SCALE_FACTOR = 0.45;
 
@@ -80,6 +88,7 @@ export class CanvasRasterController {
   private pending: RenderResult | null = null;
   private generation = 0;
   private timer: number | null = null;
+  private lastRenderAt = 0;
   private busyValue = false;
   private useTiles: boolean;
   private readonly tiles: TileCacheController | null;
@@ -140,16 +149,24 @@ export class CanvasRasterController {
     return this.busyValue;
   }
 
-  /** Same 90 ms coalescing window the pre-tile canvas used. */
+  /**
+   * Coalesces a burst of view changes, but never postpones the raster for more
+   * than `CONTINUOUS_RENDER_MS`. During a held scroll that keeps a steady
+   * cadence of renders, and each one only needs the newly exposed edge because
+   * the tiles are anchored to the page.
+   */
   schedule(): void {
     if (!this.host.renderer()) return;
     const bounds = this.host.bounds();
     if (bounds.width < 2 || bounds.height < 2) return;
+    const now = performance.now();
+    const overdue = now - this.lastRenderAt;
+    const wait = Math.max(16, Math.min(COALESCE_MS, CONTINUOUS_RENDER_MS - overdue));
     if (this.timer !== null) window.clearTimeout(this.timer);
     this.timer = window.setTimeout(() => {
       this.timer = null;
       void this.renderNow();
-    }, 90);
+    }, wait);
   }
 
   /** Drops the current raster and cancels queued tiles without changing the page. */
@@ -177,6 +194,7 @@ export class CanvasRasterController {
   }
 
   private async renderNow(): Promise<void> {
+    this.lastRenderAt = performance.now();
     const renderer = this.host.renderer();
     const size = this.host.pageSize();
     const bounds = this.host.bounds();
