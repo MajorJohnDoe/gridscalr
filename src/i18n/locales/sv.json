@@ -1432,6 +1432,7 @@
   "compare.rowMeta": "Sida {page} · {kind} · {layer}",
   "selection.editText": "Redigera text…",
   "selection.connectToChannel": "Anslut till kanal",
+  "selection.continueLine": "Fortsätt linje härifrån",
   "selection.moveToLayer": "Flytta till lager",
   "selection.setCategory": "Ange kategori",
   "selection.setRoomEllipsis": "Ange rum…",

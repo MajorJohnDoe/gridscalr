@@ -1434,6 +1434,7 @@ export type MessageKey =
   | "compare.rowMeta"
   | "selection.editText"
   | "selection.connectToChannel"
+  | "selection.continueLine"
   | "selection.moveToLayer"
   | "selection.setCategory"
   | "selection.setRoomEllipsis"

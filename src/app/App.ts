@@ -270,6 +270,8 @@ export class App {
       editSelectedText: () => this.canvas.editSelectedText(),
       editRail: (itemId) => void openRailDialog(itemId),
       connectToChannel: (layer, item, point) => this.canvas.connectToChannel(layer, item, point),
+      continuePolyline: (layer, item, vertexIndex) =>
+        this.canvas.startPolylineContinuation(layer, item, vertexIndex),
       editLineTypes: () => void openLineTypeDialog(),
       fitDrawingToArea: () => fitDrawingFlow(() => this.canvas.invalidate()),
       copySelection: () => copySelection(),

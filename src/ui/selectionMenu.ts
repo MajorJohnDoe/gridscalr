@@ -7,6 +7,7 @@ import {
   layerVisibleOnPage,
   moveTargetLayers,
 } from "../model/layers";
+import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { resolveSelection, selectionKind } from "../model/selection";
 import { INSPECTION_STATUSES, inspectionStatusLabel } from "../model/symbols";
 import type { InspectionStatus, Point } from "../model/types";
@@ -16,6 +17,11 @@ import type { PanelActions } from "./panels";
 import type { PopoverItem } from "./popover";
 import { showPopoverAt } from "./popover";
 import { findRailCrossing, isWireKind } from "../features/railConnections";
+import {
+  CONTINUATION_HIT_TOLERANCE_PX,
+  canContinuePolyline,
+  nearestContinuableEndpoint,
+} from "../features/lineContinuation";
 import {
   cachedSchedule,
   continuePlacement,
@@ -109,6 +115,25 @@ export function showSelectionMenuAt(
         label: t("selection.connectToChannel"),
         icon: "rail",
         action: () => actions.connectToChannel(wire.layer.id, wire.item.id, pagePoint),
+      });
+    }
+  }
+  if (pagePoint && resolved.length === 1) {
+    const entry = resolved[0];
+    const endpoint = nearestContinuableEndpoint(
+      entry.item,
+      pagePoint,
+      CONTINUATION_HIT_TOLERANCE_PX,
+      store.ui.zoom,
+    );
+    if (
+      endpoint &&
+      canContinuePolyline(entry.item, entry.layer, buildLayerHierarchy(project.layers))
+    ) {
+      items.push({
+        label: t("selection.continueLine"),
+        icon: "polyline",
+        action: () => actions.continuePolyline(entry.layer.id, entry.item.id, endpoint.index),
       });
     }
   }

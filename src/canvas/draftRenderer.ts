@@ -44,6 +44,7 @@ import {
   volumeUnitLabel,
 } from "../model/units";
 import { drawArrowHead, hexAlpha } from "./geometry";
+import type { PolylineContinuationTarget } from "../features/lineContinuation";
 import { t } from "../i18n";
 
 export const CALIBRATION_COLOR = "#a78bfa";
@@ -56,7 +57,13 @@ export type Draft =
   | { kind: "volume"; points: Point[]; cursor: Point }
   | { kind: "area"; points: Point[]; cursor: Point }
   | { kind: "pen"; points: Point[]; cursor: Point }
-  | { kind: "polyline"; points: Point[]; cursor: Point }
+  | {
+      kind: "polyline";
+      points: Point[];
+      cursor: Point;
+      /** A continuation draft appends to this item instead of creating one. */
+      appendTo?: PolylineContinuationTarget;
+    }
   | { kind: "highlight"; points: Point[]; cursor: Point }
   | { kind: "highlight-polygon"; points: Point[]; cursor: Point }
   | { kind: "cloud"; points: Point[]; cursor: Point }

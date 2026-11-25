@@ -1432,6 +1432,7 @@
   "compare.rowMeta": "Page {page} · {kind} · {layer}",
   "selection.editText": "Edit text…",
   "selection.connectToChannel": "Connect to channel",
+  "selection.continueLine": "Continue line here",
   "selection.moveToLayer": "Move to layer",
   "selection.setCategory": "Set category",
   "selection.setRoomEllipsis": "Set room…",

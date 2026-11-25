@@ -77,6 +77,7 @@ export interface PanelActions {
   editSelectedText: () => void;
   editRail: (itemId: string) => void;
   connectToChannel: (layerId: string, itemId: string, point: Point) => void;
+  continuePolyline: (layerId: string, itemId: string, vertexIndex: number) => void;
   editLineTypes: () => void;
   fitDrawingToArea: () => void;
   copySelection: () => void;
