@@ -129,9 +129,17 @@ export class TileCacheController {
     this.completed = 0;
     this.hits = 0;
     this.misses = 0;
-    this.composition = document.createElement("canvas");
-    this.composition.width = plan.width;
-    this.composition.height = plan.height;
+    // Reuse the composition surface instead of allocating a new canvas on
+    // every render. At a held-pan cadence a fresh canvas per step churned tens
+    // of megabytes per second and produced 150-280 ms garbage-collection stalls
+    // on an otherwise tiny project.
+    if (!this.composition) this.composition = document.createElement("canvas");
+    if (this.composition.width !== plan.width || this.composition.height !== plan.height) {
+      this.composition.width = plan.width;
+      this.composition.height = plan.height;
+    } else {
+      this.composition.getContext("2d")?.clearRect(0, 0, plan.width, plan.height);
+    }
 
     const missing: PlannedTile[] = [];
     for (const tile of plan.tiles) {

@@ -53,6 +53,8 @@ export interface GestureRenderHost {
  */
 export class GestureRenderController {
   private raster: HTMLCanvasElement | null = null;
+  /** Reused capture buffer; a new canvas per refresh churned megabytes. */
+  private buffer: HTMLCanvasElement | null = null;
   /** Viewport the captured pixels were drawn at; latched at gesture start. */
   private baseView: GestureViewport | null = null;
   private active = false;
@@ -179,9 +181,14 @@ export class GestureRenderController {
   private capture(): boolean {
     const { canvas } = this.host;
     if (canvas.width < 1 || canvas.height < 1) return false;
-    const raster = document.createElement("canvas");
-    raster.width = canvas.width;
-    raster.height = canvas.height;
+    if (!this.buffer) this.buffer = document.createElement("canvas");
+    const raster = this.buffer;
+    if (raster.width !== canvas.width || raster.height !== canvas.height) {
+      raster.width = canvas.width;
+      raster.height = canvas.height;
+    } else {
+      raster.getContext("2d")?.clearRect(0, 0, raster.width, raster.height);
+    }
     const context = raster.getContext("2d");
     if (!context) return false;
     context.drawImage(canvas, 0, 0);

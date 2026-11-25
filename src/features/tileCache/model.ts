@@ -13,13 +13,13 @@
 export const TILE_CSS_SIZE = 512;
 
 /**
- * Hard cap on retained tile pixels: 64 MiB of RGBA.
+ * Hard cap on retained tile pixels: 128 MiB of RGBA.
  *
  * A 1440 × 900 viewport needs 6 tiles at DPR 1 (6 MiB) or 6 tiles at DPR 2
  * (24 MiB), so the budget holds several recent views and stays well below the
  * 2 GB desktop working-set budget. See docs/limitations.md.
  */
-export const TILE_CACHE_BUDGET_BYTES = 64 * 1024 * 1024;
+export const TILE_CACHE_BUDGET_BYTES = 128 * 1024 * 1024;
 
 /** `ImageBitmap` and canvas pixels are RGBA in this accounting. */
 export const TILE_BYTES_PER_PIXEL = 4;

@@ -209,7 +209,7 @@ never postponed for more than 140 ms, so newly exposed drawing and markups fill
 in while the pan continues instead of only at pointer release. A debounce alone
 was reset by every wheel event, which is why a held scroll previously rendered
 nothing until it stopped. The tile cache
-is capped at **64 MiB of RGBA pixels** (`TILE_CACHE_BUDGET_BYTES` in
+is capped at **128 MiB of RGBA pixels** (`TILE_CACHE_BUDGET_BYTES` in
 `src/features/tileCache/model.ts`). At 1440 × 900 that is about ten views at
 DPR 1 or two to three at DPR 2; the phase 4 probe measured 10.2 MiB steady state
 on both performance shapes. When the cap is reached, tiles farthest from the
