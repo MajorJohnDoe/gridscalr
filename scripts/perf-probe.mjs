@@ -345,11 +345,11 @@ async function panAndZoom(page, box) {
 }
 
 /**
- * Measures one fresh raster after a zoom change: the first `pdf-render` (full
- * page) or `tile-render` entry that ends after the request. That is the same
- * quantity on the pre-tile and tiled paths, so the two phases compare like with
- * like. Cache bytes come from the dev canvas test bridge when the tile cache
- * exists.
+ * Measures what a zoom change costs: the first `pdf-render` (full page) or
+ * `tile-render` entry that ends after the request, or a `level-hit` when the
+ * display level serves the view without a render. `firstSpan` says which one,
+ * so a phase that adds a cache cannot silently report a render that never ran.
+ * Cache bytes come from the dev canvas test bridge when the tile cache exists.
  */
 async function measureRasterLatency(page) {
   const startedAt = await page.evaluate(() => {
@@ -366,7 +366,9 @@ async function measureRasterLatency(page) {
         .getEntriesByType("measure")
         .some(
           (entry) =>
-            (entry.name === "tile-render" || entry.name === "pdf-render") &&
+            (entry.name === "tile-render" ||
+              entry.name === "pdf-render" ||
+              entry.name === "level-hit") &&
             entry.startTime >= start,
         ),
     startedAt,
@@ -380,7 +382,10 @@ async function measureRasterLatency(page) {
       .getEntriesByType("measure")
       .filter(
         (entry) =>
-          (entry.name === "tile-render" || entry.name === "pdf-render") && entry.startTime >= start,
+          (entry.name === "tile-render" ||
+            entry.name === "pdf-render" ||
+            entry.name === "level-hit") &&
+          entry.startTime >= start,
       )
       .map((entry) => ({
         name: entry.name,

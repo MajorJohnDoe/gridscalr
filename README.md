@@ -434,6 +434,13 @@ every item, and redraws for real once the gesture settles (pointerup, or 120 ms
 after the last wheel event). The `interaction` canvas stays live throughout, so
 selection handles, the marquee, snapping and the draft overlay never lag. At rest
 the output is unchanged.
+`src/features/displayLevels/` keeps one whole-page bitmap per page and zoom
+octave in memory (128 MiB, least recently used) so that a pan past the crop
+margin and a return to a visited zoom blit a page image instead of rendering the
+PDF again. A level is only built when its whole page fits the level caps and it
+can reach the view's own scale, so a level never makes the resting image softer;
+the exact crop still renders whenever no level is sharp enough. It is display
+state only: never measured, printed, exported or written to the project file.
 `src/features/tileCache/` rasterises the primary canvas crop as 512 CSS px tiles
 in visible-first order, paints the first tile as soon as it exists and keeps a
 64 MiB RGBA cache evicted by distance from the viewport. The reference pane,

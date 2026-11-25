@@ -20,10 +20,11 @@ import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { deleteItems, translateItems } from "../model/commands";
 import { perfSpan } from "../features/perfMonitor";
 import { GestureRenderController, type GestureKind } from "../features/gestureRender";
+import type { DisplayLevelStats } from "../features/displayLevels";
 import type { TileCacheStats } from "../features/tileCache";
 
 import { focusViewTransform, pointInBox } from "./geometry";
-import { CanvasRasterController, backdropFor } from "./raster";
+import { CanvasRasterController, backdropFor, drawLevelBitmap } from "./raster";
 import { CropController } from "./crop";
 import { PointerController } from "./pointer/PointerController";
 import { createItemInStore, type ItemOptions } from "./pointer/itemFactory";
@@ -128,6 +129,7 @@ export interface CanvasTestApi {
     rects: Array<{ x: number; y: number; width: number; height: number }>;
   } | null;
   tileCacheStats(): TileCacheStats | null;
+  displayLevelStats(): DisplayLevelStats | null;
 }
 
 const FONT_STACK = TEXT_FONT_STACK;
@@ -235,6 +237,7 @@ export class CanvasView {
         panY: () => this.viewPanY,
         dpr: () => this.dpr,
         gestureActive: () => this.gestureRender.isActive,
+        contentKey: () => this.hooks.getRenderer()?.contentKey ?? "",
         width: () => this.width,
         height: () => this.height,
         bounds: () => this.host.getBoundingClientRect(),
@@ -243,7 +246,7 @@ export class CanvasView {
         onError: (error) =>
           this.hooks.onError?.(t("canvas.renderPageFailed", { error: describeError(error) })),
       },
-      { tiled: options.readOnly !== true },
+      { tiled: options.readOnly !== true, levels: options.readOnly !== true },
     );
 
     this.editors = new CanvasEditorController({
@@ -1121,10 +1124,19 @@ export class CanvasView {
     ctx.fillRect(x, y, w, h);
     ctx.restore();
 
+    // The whole-page level sits under both rasters: during a pan past the crop
+    // margin it is what fills the newly exposed strip, and it disappears from
+    // the settled output as soon as an exact raster covers the view.
+    const underlay = this.raster.underlay();
+    if (underlay) drawLevelBitmap(ctx, underlay, this.view);
+
     const current = this.raster.current;
-    const backdrop = backdropFor(this.raster.backdrop, current, this.viewPage);
+    const accurate = this.raster.currentAccurate();
+    // With a level under it, a raster from another zoom is a soft overlay on a
+    // sharper image, so it is only drawn when it was rendered for this view.
+    const backdrop = accurate ? backdropFor(this.raster.backdrop, current, this.viewPage) : null;
     if (backdrop) this.drawRaster(ctx, backdrop);
-    if (current && current.pageNumber === this.viewPage) {
+    if (current && current.pageNumber === this.viewPage && (accurate || !underlay)) {
       this.drawRaster(ctx, current);
     } else if (this.raster.rendering) {
       ctx.save();
@@ -1489,6 +1501,7 @@ export class CanvasView {
       draftKind: () => this.drafts.draft?.kind ?? null,
       searchHighlights: () => this.searchHits,
       tileCacheStats: () => this.raster.tileStats(),
+      displayLevelStats: () => this.raster.levelStats(),
       annotationScreenPoint: (itemId) => {
         const project = store.project;
         const found = project ? findItem(project, itemId) : undefined;

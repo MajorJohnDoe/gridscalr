@@ -8,6 +8,7 @@ import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { pageOrderSignature, type DocumentPageOrderEntry } from "../model/pages";
 import type { PageSize, Point } from "../model/types";
 import { perfSpanAsync } from "../features/perfMonitor";
+import { LEVEL_MAX_DIMENSION, LEVEL_MAX_PIXELS } from "../features/displayLevels";
 import { renderPageRaster, type TileRenderTask } from "../features/tileCache";
 import { contentBoundsFromPixels } from "./thumbnails";
 import { t } from "../i18n";
@@ -319,6 +320,39 @@ export class PdfRenderer {
       canvas: raster.canvas,
       renderScale: raster.scale,
     };
+  }
+
+  /**
+   * Renders the whole page once at (or below) `requestedScale` for the in-memory
+   * display levels. It uses the level density caps instead of the crop caps, so
+   * one bitmap can cover the page at a resolution a view actually asks for. No
+   * new lifecycle: the task joins `activeTasks`, so `cancel()` and `busy` treat
+   * it like every other render.
+   */
+  async renderPageLevel(
+    pageNumber: number,
+    requestedScale: number,
+  ): Promise<{ canvas: HTMLCanvasElement; scale: number }> {
+    const page = await this.getPage(pageNumber);
+    const size = page.getViewport({ scale: 1 });
+    const raster = renderPageRaster(
+      page,
+      { x: 0, y: 0, width: size.width, height: size.height },
+      requestedScale,
+      { maxDimension: LEVEL_MAX_DIMENSION, maxPixels: LEVEL_MAX_PIXELS },
+    );
+    this.activeTasks.add(raster.task);
+    try {
+      await perfSpanAsync("level-build", () => raster.task.promise);
+    } finally {
+      this.activeTasks.delete(raster.task);
+    }
+    return { canvas: raster.canvas, scale: raster.scale };
+  }
+
+  /** Stable identity of the loaded documents; a replaced source changes it. */
+  get contentKey(): string {
+    return this.documents.map((document) => document.loadingTask.docId).join("|");
   }
 
   /**

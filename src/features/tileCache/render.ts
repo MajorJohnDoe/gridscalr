@@ -20,6 +20,14 @@ export interface PageRaster {
   task: RasterTask;
 }
 
+/** Density caps for one raster; a display level raises them for a whole page. */
+export interface RasterLimits {
+  maxDimension: number;
+  maxPixels: number;
+}
+
+const CROP_LIMITS: RasterLimits = { maxDimension: 4096, maxPixels: 8_000_000 };
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -27,12 +35,15 @@ function clamp(value: number, min: number, max: number): number {
 /**
  * Renders `rect` (page coordinates) into a fresh canvas. The rect is clamped to
  * the page and the requested scale is capped exactly like the pre-tile
- * `renderCrop()`, so a tile never asks PDF.js for a different density.
+ * `renderCrop()`, so a tile never asks PDF.js for a different density. A display
+ * level passes its own limits, because one whole-page bitmap may use more pixels
+ * than a crop.
  */
 export function renderPageRaster(
   page: PDFPageProxy,
   rect: TileRect,
   requestedScale: number,
+  limits: RasterLimits = CROP_LIMITS,
 ): PageRaster {
   const base = page.getViewport({ scale: 1 });
   const pageWidth = base.width;
@@ -43,8 +54,8 @@ export function renderPageRaster(
   const width = clamp(rect.width, 0.5, pageWidth - x);
   const height = clamp(rect.height, 0.5, pageHeight - y);
 
-  const maxDimension = 4096;
-  const maxPixels = 8_000_000;
+  const maxDimension = limits.maxDimension;
+  const maxPixels = limits.maxPixels;
   let scale = Math.min(
     requestedScale,
     maxDimension / Math.max(width, 1),
