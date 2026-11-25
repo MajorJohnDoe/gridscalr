@@ -846,3 +846,38 @@ here so a later complaint can be checked against them instead of re-litigated.
 - Frames, blocked time, edit cost and heap are unchanged on both the scanned
   fixture and the vector demo; the only new cost is one whole-page build per
   visited octave, measured at 17–33 ms on this page.
+
+## Reported page — second user run, phase 2 build (2026-11-25)
+
+The same reported page in the Windows 0.33.7 build (phase 2 with the exact-rest
+rule), after "a lot of zooming in and out and very fast panning". One run, 30 s
+window, hand-driven, so the intensity is not comparable with the scripted rows.
+The user reported it feeling "very snappy, no lag".
+
+| Measure | 0.33.6 baseline | Phase 1 run | Phase 2 run |
+| --- | --- | --- | --- |
+| `pdf-raster` spans | 47 | 9 | 37 |
+| `pdf-raster` p50 | 46.2 ms | 43.0 ms | 44.4 ms |
+| `pdf-raster` p95 / max | 84.9 / 86.9 ms | 94.1 / 94.1 ms | 129 / 165 ms |
+| `level-hit` spans | — | — | **68** |
+| Blocked long tasks | 74 ms in 1 task | 0.0 ms in 0 | 154 ms in 2 tasks |
+| `canvas-redraw` count / p95 | 295 / 3.0 ms | 333 / 3.0 ms | 282 / 4.4 ms |
+| `draw-items` p95 / max | 2.9 / 4.4 ms | 2.8 / 4.6 ms | 4.2 / 8.0 ms |
+| `draw-base` p95 / max | 0.1 / 0.7 ms | 0.1 / 0.2 ms | 0.1 / 0.5 ms |
+| Worst frame / heap | — | 174 ms / 16 MB | 174 ms / 24 MB |
+
+Reading: 68 of the view changes were served from a cached level against 37
+renders, so the cache carries a clear majority of a much more intense
+interaction than the two earlier rows. The remaining spikes are the exact crop
+on settle at **high zoom**, where one crop is up to the 8 Mpix density cap of a
+74 Mpix scan and costs 129–165 ms on this machine; there are only two long tasks
+in total, which is the level doing its job between them. Markup and base drawing
+stay cheap (`draw-items` p95 4.2 ms, `draw-base` p95 0.1 ms), which is why the
+interaction feels smooth even while a crop is landing.
+
+This row does not change the phase 2 conclusions, but it names the next candidate
+if the high-zoom spike ever becomes noticeable: defer the exact crop until the
+view has been idle for ~150 ms instead of rendering it immediately on each
+settle, so a fast zoom burst coalesces into one crop instead of one per stop. It
+is deliberately not taken now: the settled image would then stay at level
+sharpness for that window, and no measured complaint justifies it yet.
