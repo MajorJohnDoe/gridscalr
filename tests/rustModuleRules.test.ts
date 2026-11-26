@@ -126,20 +126,63 @@ describe("Rust module wiring", () => {
     );
     expect(result.orphans).toEqual([]);
   });
+
+  it("treats a nested mod.rs as its directory module", () => {
+    const result = evaluate(
+      {
+        "lib.rs": "mod package;",
+        "package/mod.rs": "mod create;",
+        "package/create.rs": "mod tests;",
+        "package/untracked.rs": "fn helper() {}",
+      },
+      { defaultMax: 2 },
+    );
+    expect(result.orphans).toEqual(["src-tauri/src/package/untracked.rs"]);
+  });
+
+  it("counts commands in nested modules under the same cap", () => {
+    const result = evaluate(
+      {
+        "lib.rs": "mod package;",
+        "package/mod.rs": "mod create;",
+        "package/create.rs": [
+          "#[tauri::command]",
+          "fn a() {}",
+          "#[tauri::command]",
+          "fn b() {}",
+          "#[tauri::command]",
+          "fn c() {}",
+        ].join("\n"),
+      },
+      { defaultMax: 2 },
+    );
+    expect(result.violations).toEqual([
+      expect.objectContaining({
+        file: "src-tauri/src/package/create.rs",
+        commands: 3,
+      }),
+    ]);
+  });
 });
 
 describe("the shipped Rust tree", () => {
   it("stays inside the recorded command caps and declares every module", () => {
     const directory = join(root, "src-tauri", "src");
-    const names = readdirSync(directory)
-      .filter((name) => name.endsWith(".rs"))
-      .sort();
-    const texts = names.map((name) => readFileSync(join(directory, name), "utf8"));
+    const files: string[] = [];
+    const walk = (current: string) => {
+      for (const entry of readdirSync(current, { withFileTypes: true })) {
+        const absolute = join(current, entry.name);
+        if (entry.isDirectory()) walk(absolute);
+        else if (entry.name.endsWith(".rs")) files.push(absolute);
+      }
+    };
+    walk(directory);
+    const texts = files.map((file) => readFileSync(file, "utf8"));
     const config = JSON.parse(readFileSync(join(root, "rust-commands.json"), "utf8"));
     const result = evaluateRustModules({
       config,
-      entries: names.map((name, index) => ({
-        file: `src-tauri/src/${name}`,
+      entries: files.map((file, index) => ({
+        file: `src-tauri/src/${file.slice(directory.length + 1).replaceAll("\\", "/")}`,
         commands: countCommands(texts[index]),
       })),
       declared: declaredModules(texts),

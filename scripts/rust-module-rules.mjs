@@ -104,8 +104,15 @@ export function evaluateRustModules({ config, entries, declared }) {
     .sort();
   const orphans = entries
     .filter((entry) => {
-      const leaf = entry.file.split("/").pop() ?? "";
+      const parts = entry.file.split("/");
+      const leaf = parts.pop() ?? "";
       if (CRATE_ROOTS.has(leaf)) return false;
+      // `package/mod.rs` is declared as `mod package;` by its parent, not as
+      // `mod mod;`. Nested module files keep their file stem.
+      if (leaf === "mod.rs") {
+        const directory = parts.pop();
+        return !directory || !declared.has(directory);
+      }
       return !declared.has(leaf.replace(/\.rs$/, ""));
     })
     .map((entry) => entry.file)

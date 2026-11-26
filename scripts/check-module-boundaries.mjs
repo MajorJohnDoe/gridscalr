@@ -136,16 +136,24 @@ for (const file of files) {
  * scripts/rust-module-rules.mjs.
  */
 const rustRoot = resolve(root, "src-tauri", "src");
-const rustFiles = (await readdir(rustRoot, { withFileTypes: true }))
-  .filter((entry) => entry.isFile() && entry.name.endsWith(".rs"))
-  .map((entry) => entry.name)
-  .sort();
+const rustFiles = [];
+async function collectRust(directory) {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const absolute = resolve(directory, entry.name);
+    if (entry.isDirectory()) await collectRust(absolute);
+    else if (entry.name.endsWith(".rs")) {
+      rustFiles.push(relative(root, absolute).split("\\").join("/"));
+    }
+  }
+}
+await collectRust(rustRoot);
+rustFiles.sort();
 const rustTexts = [];
 const rustEntries = [];
-for (const name of rustFiles) {
-  const text = await readFile(resolve(rustRoot, name), "utf8");
+for (const file of rustFiles) {
+  const text = await readFile(resolve(root, file), "utf8");
   rustTexts.push(text);
-  rustEntries.push({ file: `src-tauri/src/${name}`, commands: countCommands(text) });
+  rustEntries.push({ file, commands: countCommands(text) });
 }
 const commandConfig = JSON.parse(await readFile(resolve(root, "rust-commands.json"), "utf8"));
 const rust = evaluateRustModules({
