@@ -1,5 +1,5 @@
 {
-  "total": 164,
+  "total": 145,
   "files": {
     "src/app/App.ts": 1,
     "src/app/imageFlows.ts": 1,
@@ -31,12 +31,6 @@
     "src/ui/layers/menu.ts": 2,
     "src/ui/markups/rows.ts": 2,
     "src/ui/markups/views.ts": 2,
-    "src/ui/settings/display.ts": 4,
-    "src/ui/settings/labels.ts": 2,
-    "src/ui/settings/metadata.ts": 7,
-    "src/ui/settings/project.ts": 1,
-    "src/ui/settings/stamps.ts": 2,
-    "src/ui/settings/units.ts": 3,
     "src/ui/topMenu.ts": 1
   }
 }
