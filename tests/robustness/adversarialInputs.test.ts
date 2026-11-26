@@ -14,7 +14,7 @@
  * `package.rs`; this file also asserts that those guards are still wired, so
  * deleting one is visible in the normal suite.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { withTestPageIds } from "../helpers/pages";
@@ -70,7 +70,19 @@ const INTERNAL_MESSAGE =
   /Cannot read|Cannot convert|is not a function|undefined is not|Maximum call stack|Unexpected token/i;
 
 function readRust(module: string): string {
-  return readFileSync(resolve(__dirname, "..", "..", "src-tauri", "src", module), "utf8");
+  const path = resolve(__dirname, "..", "..", "src-tauri", "src", module);
+  if (existsSync(path)) return readFileSync(path, "utf8");
+  // A module split by concern lives in a directory named after the old file, so
+  // the guard inventory follows the whole package module.
+  return readRustTree(path.replace(/\.rs$/, ""));
+}
+
+function readRustTree(directory: string): string {
+  return readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => !entry.isDirectory() && entry.name.endsWith(".rs"))
+    .sort((left, right) => left.name.localeCompare(right.name))
+    .map((entry) => readFileSync(resolve(directory, entry.name), "utf8"))
+    .join("\n");
 }
 
 function rustConstant(module: string, name: string): number {

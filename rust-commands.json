@@ -6,10 +6,6 @@
       "max": 7,
       "reason": "Legacy Tauri file dialogs plus project open/save commands; split by concern before adding another."
     },
-    "src-tauri/src/package.rs": {
-      "max": 4,
-      "reason": "Legacy package create/inspect/extract commands; split the module before adding a package command."
-    },
     "src-tauri/src/project_backup.rs": {
       "max": 4,
       "reason": "Backup list, restore, replace and delete share one atomic backup path; splitting is a separate refactor."

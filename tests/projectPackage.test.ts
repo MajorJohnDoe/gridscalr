@@ -327,7 +327,10 @@ describe("project package model", () => {
   });
 
   it("keeps the documented package limit in step with the Rust command", () => {
-    const source = readFileSync(new URL("../src-tauri/src/package.rs", import.meta.url), "utf8");
+    const source = readFileSync(
+      new URL("../src-tauri/src/package/limits.rs", import.meta.url),
+      "utf8",
+    );
     expect(source).toContain("MAX_TOTAL_BYTES: u64 = 2 * 1024 * 1024 * 1024;");
     expect(MAX_PACKAGE_TOTAL_BYTES).toBe(2 * 1024 * 1024 * 1024);
   });
