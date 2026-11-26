@@ -2,7 +2,8 @@ import { arcGeometry, distance, simplifyPolyline } from "../../model/geometry";
 import { dedupeLast } from "../geometry";
 import { findItem } from "../../model/layers";
 import { textBoxLayout } from "../../model/annotations";
-import { stampStatusColor } from "../../model/stamps";
+import { applyItemText } from "../../model/commands/editorText";
+import { setMeasurementVolumeDepth } from "../../model/commands/editorItems";
 import type { Layer, MarkupItem, PageSize, Point } from "../../model/types";
 import { store } from "../../state/store";
 import { t } from "../../i18n";
@@ -60,10 +61,7 @@ export class DraftLifecycle {
       if (depth === null) return;
       const value = Math.max(0.001, Math.min(1_000_000, depth));
       store.mutate((current) => {
-        const target = findItem(current, itemRef.itemId)?.item;
-        if (!target || target.kind !== "volume") return;
-        target.depth = value;
-        target.updatedAt = new Date().toISOString();
+        setMeasurementVolumeDepth(current, itemRef.itemId, value);
       }, "change");
     });
   }
@@ -164,21 +162,10 @@ export class DraftLifecycle {
             : t("canvas.editCallout");
     const text = await textDialog(title, t("canvas.onlyThisItem"), item.text ?? "", "", true);
     if (text === null) return;
+    const placeholder =
+      item.kind === "stamp" ? t("tool.stamp") : item.kind === "callout" ? t("kind.callout") : "";
     store.mutate((project) => {
-      const target = findItem(project, item.id)?.item;
-      if (target) {
-        target.text =
-          text.trim() ||
-          (target.kind === "stamp"
-            ? t("tool.stamp")
-            : target.kind === "callout"
-              ? t("kind.callout")
-              : "");
-        if (target.kind === "stamp") {
-          target.color = stampStatusColor(target.text, target.color);
-        }
-        target.updatedAt = new Date().toISOString();
-      }
+      applyItemText(project, item.id, text, placeholder);
     }, "change");
   }
 

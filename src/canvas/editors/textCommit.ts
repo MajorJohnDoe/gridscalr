@@ -1,22 +1,27 @@
-import { makeId } from "../../model/calibration";
-import { normalizeColor } from "../../model/color";
-import { normalizeDegrees } from "../../model/geometry";
+import { findItem, itemIsLocked, layerLockedOnPage, layerVisibleOnPage } from "../../model/layers";
+import { reconcileRuns } from "../../model/richText";
+import type { TextRun } from "../../model/types";
 import {
-  addItem,
-  ensureActiveLayer,
-  findItem,
-  itemIsLocked,
-  layerLockedOnPage,
-  layerVisibleOnPage,
-  resolveItemColor,
-} from "../../model/layers";
-import { reconcileRuns, runsEqual, runsHaveFormatting } from "../../model/richText";
-import { clampTextSize } from "../../model/text";
-import type { MarkupItem } from "../../model/types";
+  applyAnnotationEdit,
+  applyTextBoxEdit,
+  applyTextItemEdit,
+  createTextItem,
+  textEditChanged,
+  type CreatedTextItem,
+  type NewTextInput,
+  type TextEditValues,
+} from "../../model/commands/editorText";
 import { store } from "../../state/store";
 import { toast } from "../../ui/toast";
 import { t } from "../../i18n";
 import { closeTextEditor, type EditorState } from "./shared";
+
+/** Runs for a text box session, from the rich editor or the plain fallback. */
+function textBoxRuns(edit: EditorState["text"], value: string): TextRun[] {
+  if (!edit) return [];
+  if (edit.richEditor) return edit.richEditor.getRuns();
+  return reconcileRuns(edit.runs ?? [{ text: value }], value);
+}
 
 export async function commitTextEdit(state: EditorState): Promise<void> {
   const edit = state.text;
@@ -34,108 +39,29 @@ export async function commitTextEdit(state: EditorState): Promise<void> {
       closeTextEditor(state);
       return;
     }
-    if (edit.mode === "textbox") {
-      const original = edit.original!;
-      const runs = edit.richEditor
-        ? edit.richEditor.getRuns()
-        : reconcileRuns(edit.runs ?? [{ text: value }], value);
-      const changed =
-        value !== original.text ||
-        edit.color !== original.color ||
-        Math.abs(edit.fontSize - original.fontSize) > 0.001 ||
-        edit.bold !== original.bold ||
-        edit.italic !== original.italic ||
-        edit.underline !== original.underline ||
-        edit.align !== original.align ||
-        !runsEqual(runs, original.runs);
-      closeTextEditor(state);
-      if (!changed) return;
-      store.mutate((project) => {
-        const item = findItem(project, edit.itemId!)?.item;
-        if (!item) return;
-        item.text = value;
-        item.textColor = normalizeColor(edit.color, resolveItemColor(item));
-        item.fontSize = clampTextSize(edit.fontSize);
-        if (edit.bold) item.textBold = true;
-        else delete item.textBold;
-        if (edit.italic) item.textItalic = true;
-        else delete item.textItalic;
-        if (edit.underline) item.textUnderline = true;
-        else delete item.textUnderline;
-        if (edit.align === "left") delete item.textAlign;
-        else item.textAlign = edit.align;
-        if (runsHaveFormatting(runs, item)) item.runs = runs;
-        else delete item.runs;
-        item.updatedAt = new Date().toISOString();
-      }, "change");
-      return;
-    }
-    if (edit.mode === "cloud" || edit.mode === "callout") {
-      const original = edit.original!;
-      const changed =
-        value !== original.text ||
-        edit.color !== original.color ||
-        Math.abs(edit.fontSize - original.fontSize) > 0.001 ||
-        edit.bold !== original.bold ||
-        edit.italic !== original.italic ||
-        edit.underline !== original.underline ||
-        edit.align !== original.align ||
-        edit.boxWidth !== original.boxWidth ||
-        edit.boxHeight !== original.boxHeight;
-      closeTextEditor(state);
-      if (!changed) return;
-      store.mutate((project) => {
-        const item = findItem(project, edit.itemId!)?.item;
-        if (!item) return;
-        item.text = value.trim() || t("reference.revision");
-        item.textColor = normalizeColor(edit.color, "#f7fbfc");
-        item.fontSize = clampTextSize(edit.fontSize);
-        if (edit.bold) item.textBold = true;
-        else delete item.textBold;
-        if (edit.italic) item.textItalic = true;
-        else delete item.textItalic;
-        if (edit.underline) item.textUnderline = true;
-        else delete item.textUnderline;
-        if (edit.align === "center") delete item.textAlign;
-        else item.textAlign = edit.align;
-        if (edit.boxWidth) item.textBoxWidth = edit.boxWidth;
-        else delete item.textBoxWidth;
-        if (edit.boxHeight) item.textBoxHeight = edit.boxHeight;
-        else delete item.textBoxHeight;
-        item.updatedAt = new Date().toISOString();
-      }, "change");
-      return;
-    }
-    const original = edit.original!;
-    const rotation = normalizeDegrees(edit.rotation);
-    const changed =
-      value !== original.text ||
-      edit.color !== original.color ||
-      Math.abs(edit.fontSize - original.fontSize) > 0.001 ||
-      Math.abs(rotation - normalizeDegrees(original.rotation)) > 0.001 ||
-      edit.bold !== original.bold ||
-      edit.italic !== original.italic ||
-      edit.underline !== original.underline ||
-      edit.align !== original.align;
+    const values: TextEditValues = {
+      text: value,
+      color: edit.color,
+      fontSize: edit.fontSize,
+      rotation: edit.rotation,
+      bold: edit.bold,
+      italic: edit.italic,
+      underline: edit.underline,
+      align: edit.align,
+      boxWidth: edit.boxWidth,
+      boxHeight: edit.boxHeight,
+      runs: edit.mode === "textbox" ? textBoxRuns(edit, value) : undefined,
+    };
+    const changed = textEditChanged(values, edit.original!);
+    const itemId = edit.itemId;
+    const mode = edit.mode;
     closeTextEditor(state);
     if (!changed) return;
     store.mutate((project) => {
-      const item = findItem(project, edit.itemId!)?.item;
-      if (!item) return;
-      item.text = value;
-      item.color = normalizeColor(edit.color, resolveItemColor(item));
-      item.fontSize = clampTextSize(edit.fontSize);
-      if (edit.bold) item.textBold = true;
-      else delete item.textBold;
-      if (edit.italic) item.textItalic = true;
-      else delete item.textItalic;
-      if (edit.underline) item.textUnderline = true;
-      else delete item.textUnderline;
-      if (edit.align === "left") delete item.textAlign;
-      else item.textAlign = edit.align;
-      if (rotation === 0) delete item.rotation;
-      else item.rotation = rotation;
-      item.updatedAt = new Date().toISOString();
+      if (mode === "textbox") applyTextBoxEdit(project, itemId, values);
+      else if (mode === "cloud" || mode === "callout")
+        applyAnnotationEdit(project, itemId, values, t("reference.revision"));
+      else applyTextItemEdit(project, itemId, values);
     }, "change");
     return;
   }
@@ -163,37 +89,25 @@ export async function commitTextEdit(state: EditorState): Promise<void> {
     closeTextEditor(state);
     return;
   }
-  const rotation = normalizeDegrees(edit.rotation);
-  let layerId = "";
-  let itemId = "";
+  const input: NewTextInput = {
+    pageId: edit.pageId,
+    anchor: edit.anchor,
+    text: value,
+    color: edit.color,
+    fontSize: edit.fontSize,
+    rotation: edit.rotation,
+    bold: edit.bold,
+    italic: edit.italic,
+    underline: edit.underline,
+    align: edit.align,
+  };
   closeTextEditor(state);
+  const created: { ref: CreatedTextItem | null } = { ref: null };
   store.mutate((project) => {
-    const layer = ensureActiveLayer(project, "draw", edit.pageId);
-    const now = new Date().toISOString();
-    const item: MarkupItem = {
-      id: makeId("item"),
-      pageId: edit.pageId,
-      kind: "text",
-      points: [{ ...edit.anchor }],
-      color: normalizeColor(edit.color, "#f2a93b"),
-      strokeWidth: 2,
-      text: value,
-      fontSize: clampTextSize(edit.fontSize),
-      textBold: edit.bold ? true : undefined,
-      textItalic: edit.italic ? true : undefined,
-      textUnderline: edit.underline ? true : undefined,
-      textAlign: edit.align === "left" ? undefined : edit.align,
-      rotation: rotation === 0 ? undefined : rotation,
-      scale: null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    addItem(project, layer.id, item);
-    layerId = layer.id;
-    itemId = item.id;
+    created.ref = createTextItem(project, input);
   }, "change");
-  if (layerId && itemId) {
-    store.setSelection({ layerId, itemId });
+  if (created.ref) {
+    store.setSelection({ layerId: created.ref.layerId, itemId: created.ref.itemId });
     store.setTool("select");
   }
 }

@@ -1,5 +1,6 @@
 import { findItem, itemIsLocked } from "../../model/layers";
 import { itemMetrics } from "../../model/measure";
+import { setItemLabel } from "../../model/commands/editorLabels";
 import { store } from "../../state/store";
 import { toast } from "../../ui/toast";
 import { t } from "../../i18n";
@@ -108,10 +109,7 @@ export async function commitLabelEdit(state: EditorState): Promise<void> {
   closeLabelEditor(state);
   if (value === original) return;
   store.mutate((project) => {
-    const item = findItem(project, edit.itemId)?.item;
-    if (!item) return;
-    item.label = value || undefined;
-    item.updatedAt = new Date().toISOString();
+    setItemLabel(project, edit.itemId, value);
   }, "change");
 }
 

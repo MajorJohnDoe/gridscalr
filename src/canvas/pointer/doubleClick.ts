@@ -1,7 +1,7 @@
 import { areaShapeOf } from "../../model/area";
 import { nearestPointOnSegment, pointToItemLocal } from "../../model/geometry";
 import { findSegment, hitTest } from "../../model/hitTest";
-import { findItem } from "../../model/layers";
+import { insertItemPoint } from "../../model/commands/editorItems";
 import type { Layer, MarkupItem, PageId, Point } from "../../model/types";
 import { store, type ToolId } from "../../state/store";
 import type { LabelHit } from "../editors";
@@ -122,11 +122,7 @@ export function handleDoubleClick(screen: Point, context: DoubleClickContext): v
       hit.item.points[(segment.index + 1) % hit.item.points.length],
     );
     store.mutate((project) => {
-      const item = findItem(project, hit.item.id)?.item;
-      if (item) {
-        item.points.splice(segment.index + 1, 0, insert);
-        item.updatedAt = new Date().toISOString();
-      }
+      insertItemPoint(project, hit.item.id, segment.index, insert);
     }, "change");
   }
 }

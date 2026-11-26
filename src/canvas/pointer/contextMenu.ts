@@ -7,6 +7,13 @@ import {
   labelFitLabel,
 } from "../../model/labelLayout";
 import { findItem } from "../../model/layers";
+import {
+  releaseItemLabelFit,
+  resetItemLabelSize,
+  setItemLabelAnchor,
+  setItemLabelFit,
+} from "../../model/commands/editorLabels";
+import { resetItemLabelPlacement } from "../../model/commands/items";
 import type { LabelFitPosition, MarkupItem, PageId, Point } from "../../model/types";
 import { store } from "../../state/store";
 import { showPopoverAt } from "../../ui/popover";
@@ -73,12 +80,7 @@ function showMeasurementLabelMenu(
       disabled: !custom,
       action: () => {
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (!target) return;
-          delete target.labelOffset;
-          delete target.labelAnchor;
-          delete target.labelFit;
-          target.updatedAt = new Date().toISOString();
+          resetItemLabelPlacement(project, item.id);
         }, "change");
       },
     },
@@ -88,10 +90,7 @@ function showMeasurementLabelMenu(
       disabled: item.labelSize === undefined,
       action: () => {
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (!target) return;
-          delete target.labelSize;
-          target.updatedAt = new Date().toISOString();
+          resetItemLabelSize(project, item.id);
         }, "change");
       },
     },
@@ -137,21 +136,13 @@ function showMeasurementLabelMenu(
 
 function setMeasurementLabelFit(itemId: string, placement: LabelFitPosition): void {
   store.mutate((project) => {
-    const target = findItem(project, itemId)?.item;
-    if (!target || (target.kind !== "area" && target.kind !== "volume")) return;
-    target.labelFit = placement;
-    delete target.labelOffset;
-    delete target.labelAnchor;
-    target.updatedAt = new Date().toISOString();
+    setItemLabelFit(project, itemId, placement);
   }, "change");
 }
 
 function releaseMeasurementLabelFit(itemId: string): void {
   store.mutate((project) => {
-    const target = findItem(project, itemId)?.item;
-    if (!target) return;
-    delete target.labelFit;
-    target.updatedAt = new Date().toISOString();
+    releaseItemLabelFit(project, itemId);
   }, "change");
 }
 
@@ -194,10 +185,7 @@ export function commitLabelConnection(
     return;
   }
   store.mutate((project) => {
-    const target = findItem(project, connect.itemId)?.item;
-    if (!target) return;
-    target.labelAnchor = { ...point };
-    target.updatedAt = new Date().toISOString();
+    setItemLabelAnchor(project, connect.itemId, point);
   }, "change");
   toast(t("canvas.connectionUpdated"), "success");
   context.updateCursor();
