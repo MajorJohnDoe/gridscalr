@@ -26,12 +26,3 @@ export type { PageRemap, ReplacementWarningCode, SourceReplacementResult } from 
 export { importedLayerIdentity, importInsertionIndex, importedPageIds } from "./importMapping";
 export { sourceReplacementDialog } from "./ui";
 export type { ReplacementDialogInput, ReplacementDialogResult } from "./ui";
-export {
-  cleanupSupersededPages,
-  createEmptyProject,
-  insertProjectPage,
-  reorderPages,
-  reorderPages as reorderProjectPages,
-  reorderProjectPage,
-} from "./appActions";
-export type { PageActionHost } from "./appActions";

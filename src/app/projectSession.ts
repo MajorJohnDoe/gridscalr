@@ -22,14 +22,14 @@ import {
 } from "../io/projectFile";
 import { assertWritablePath } from "../io/writeGuard";
 import { describeError } from "../io/platformError";
-import { logEvent } from "../features/diagnostics/log";
+import { logEvent } from "../features/diagnostics";
 import { perfSpanAsync } from "../features/perfMonitor";
 import { chooseProjectSource, type SheetSourceChoice } from "../features/schematics";
 import { messageDialog, unsavedChangesDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 import { store } from "../state/store";
 import { classifyOpenTarget } from "./openTarget";
-import { classifyLaunchPath, firstLaunchPath } from "../features/launch/model";
+import { classifyLaunchPath, firstLaunchPath } from "../features/launch";
 import {
   backupProjectNow,
   cleanProjectTemporaries,

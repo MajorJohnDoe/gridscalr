@@ -1,7 +1,7 @@
 import { t } from "../../i18n";
 import { describeError } from "../../io/platformError";
 import type { ProjectFileStamp } from "../saveIntegrity";
-import { logEvent } from "../diagnostics/log";
+import { logEvent } from "../diagnostics";
 import { appVersion, hostLabel } from "./instance";
 import {
   LEASE_HEARTBEAT_MS,

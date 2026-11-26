@@ -64,6 +64,7 @@
     "check:versions": "node scripts/check-versions.mjs",
     "check:file-budgets": "node scripts/check-file-budgets.mjs",
     "check:modules": "node scripts/check-module-boundaries.mjs",
+    "check:cycles": "node scripts/check-cycles.mjs",
     "check:security": "node scripts/check-security-policy.mjs",
     "check:dependencies": "node scripts/check-dependencies.mjs",
     "check:actions": "node scripts/check-action-pins.mjs",

@@ -7,7 +7,7 @@ import type { PdfRenderer } from "../pdf/pdfRenderer";
 import type { PageThumbnailService } from "../pdf/thumbnails";
 import { store } from "../state/store";
 import { sourceStatus } from "../source/sourceStatus";
-import { logEvent } from "../features/diagnostics/log";
+import { logEvent } from "../features/diagnostics";
 import { SourceStorageController } from "../features/sourceStorage";
 import { recordStructuralCheckpoint } from "../features/sessionRecovery";
 import { openDocument } from "./documentImport";

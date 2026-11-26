@@ -14,12 +14,8 @@ vi.mock("../src/features/sessionRecovery", () => ({
 import { deletePageFlow, type PageFlowHost } from "../src/app/pageFlows";
 import { commitSourceReplacement } from "../src/app/replacementFlows";
 import { RendererStoreSync, type RendererSyncHost } from "../src/app/rendererSync";
-import {
-  applySourceReplacement,
-  insertProjectPage,
-  reorderProjectPage,
-  type PageActionHost,
-} from "../src/features/pageModel";
+import { applySourceReplacement } from "../src/features/pageModel";
+import { insertProjectPage, reorderProjectPage, type PageActionHost } from "../src/app/pageActions";
 import { createProject, defaultDocument } from "../src/model/layers";
 import {
   documentPageOrder,

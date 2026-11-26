@@ -4,4 +4,9 @@ export {
   showPackageDialogPreview,
   type PackageHost,
 } from "./controller";
-export { DEFAULT_PACKAGE_OPTIONS, desktopOnlyMessage, type PackageOptions } from "./model";
+export {
+  DEFAULT_PACKAGE_OPTIONS,
+  desktopOnlyMessage,
+  validatePackagedProjectJson,
+  type PackageOptions,
+} from "./model";

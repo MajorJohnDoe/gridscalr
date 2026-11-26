@@ -1,6 +1,6 @@
 import { describeError } from "../../io/platformError";
 import { store } from "../../state/store";
-import { logEvent } from "../diagnostics/log";
+import { logEvent } from "../diagnostics";
 import { writeCheckpointRecord } from "./autosave";
 import { appVersion, instanceId } from "./instance";
 import { refreshRecoverySummary } from "./summary";

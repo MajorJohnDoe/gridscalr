@@ -222,6 +222,7 @@ The local gate (target: under two minutes):
 npm run check:versions
 npm run check:file-budgets
 npm run check:modules
+npm run check:cycles
 npm run check:security
 npm run check:actions
 npm run check:dependencies
@@ -794,6 +795,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run test:csp` opens the demo in the browser fallback, checks the single dev policy, starts the real Tesseract worker, and proves a blob worker inherits the policy and cannot fetch a remote origin.
 - `npm run check:security` compares the shipped CSP and capabilities with the reasoned record in `security/policy.json`, rejects a second page policy and inline styles, and verifies the debug-only smoke commands and worker bootstraps. See `docs/security-policy.md`.
 - `npm run check:modules` enforces the foundation feature `index.ts` surfaces and the Rust command cap in `rust-commands.json`; `tests/rustModuleRules.test.ts` proves the cap, the stale exception and the undeclared-module cases.
+- `npm run check:cycles` follows value imports and value re-exports across `src` and fails on any runtime import cycle; type-only cycles are ignored. `tests/cycleGate.test.ts` proves the parser, the directory-index resolution and the live-repository baseline.
 - `npm run check:actions` requires every remote `uses:` reference in `.github/workflows` to be a full 40-character commit SHA with a `# <version>` comment, so a moved tag cannot change the release build. `tests/actionPins.test.ts` proves the tag, branch, short-SHA and missing-comment failures. The bump procedure is in `docs/releasing.md`.
 - `npm run check:dependencies` runs `npm audit` and `cargo audit` and applies the reviewed `security/dependency-allowlist.json`; it fails on a new moderate-or-higher advisory, an expired or stale entry and an unreadable audit report, and writes its summary and reports to CI. `tests/dependencyGate.test.ts` proves the threshold, acceptance, expiry and fail-closed rules with synthetic reports.
 - `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic saves and project-package create/inspect/extract, manifest checks, checksums, cancellation and ZIP limits. It runs on the Ubuntu `rust` job and on every `desktop` matrix entry; `src-tauri/src/path_guard_windows_tests.rs` adds the Windows-only cases (verbatim prefix, case-insensitive volume, trailing dot, drive-relative, UNC, junction).

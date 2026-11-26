@@ -1,5 +1,5 @@
 import { t } from "../../i18n";
-import { logEvent } from "../diagnostics/log";
+import { logEvent } from "../diagnostics";
 import { compareProjectShape, validateProject, type ProjectIssue } from "../../model/integrity";
 import type { Project } from "../../model/types";
 import { describeError } from "../../io/platformError";

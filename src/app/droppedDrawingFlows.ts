@@ -7,14 +7,14 @@ import { createProject } from "../model/layers";
 import { pageNumber } from "../model/pages";
 import { excludedSourcePages, includedLocalPages } from "../model/documents";
 import {
+  buildImportPreflight,
   commitProjectImport,
   prepareProjectImport,
+  projectImportPreflightDialog,
   type ImportDocumentOverride,
-} from "../features/projectImport/model";
-import { buildImportPreflight } from "../features/projectImport/preflight";
-import { projectImportPreflightDialog } from "../features/projectImport/preflightUi";
+} from "../features/projectImport";
 import type { DroppedFile } from "../features/pageFileDrop";
-import { logEvent } from "../features/diagnostics/log";
+import { logEvent } from "../features/diagnostics";
 import { recordStructuralCheckpoint } from "../features/sessionRecovery";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import { store } from "../state/store";

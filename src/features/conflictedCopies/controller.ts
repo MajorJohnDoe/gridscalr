@@ -3,7 +3,7 @@ import { describeError } from "../../io/platformError";
 import { parseProject, serializeProject } from "../../io/projectFile";
 import type { Project } from "../../model/types";
 import { store } from "../../state/store";
-import { logEvent } from "../diagnostics/log";
+import { logEvent } from "../diagnostics";
 import {
   buildConflictComparison,
   summarizeProjectVersion,

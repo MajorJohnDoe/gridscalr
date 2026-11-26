@@ -1,5 +1,4 @@
-import { buildDiagnostics, projectStats } from "../features/diagnostics/model";
-import { readDiagnosticsLog } from "../features/diagnostics/log";
+import { buildDiagnostics, projectStats, readDiagnosticsLog } from "../features/diagnostics";
 import { perfSnapshot, summaryText } from "../features/perfMonitor";
 import { getRecoveryUsage, RECOVERY_BUDGET } from "../features/sessionRecovery";
 import { isTauri } from "../io/platform";

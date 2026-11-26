@@ -11,18 +11,16 @@ import type {
   ScaleSnapshot,
 } from "./types";
 import { ensurePageState, pageStateOf } from "./pages";
+import { makeId } from "./ids";
 import { unitToMeters } from "./units";
 import { t } from "../i18n";
 
 /** One metre in PDF points at physical paper size (72 pt/in / 0.0254 m/in). */
 export const MANUAL_SCALE_POINTS_PER_METER = 2834.645669;
 
-export function makeId(prefix = "id"): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return `${prefix}_${crypto.randomUUID()}`;
-  }
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-}
+// Kept as a re-export so existing callers keep one import path. New code uses
+// `model/ids` directly.
+export { makeId };
 
 export function createCalibration(
   p1: Point,

@@ -15,7 +15,7 @@ import {
   selectionAfterClick,
   type PageReorderEntry,
 } from "../src/features/pageReorder";
-import { reorderPages, type PageActionHost } from "../src/features/pageModel";
+import { reorderPages, type PageActionHost } from "../src/app/pageActions";
 import { clearAllRecovery, listRecoveryRecords } from "../src/features/sessionRecovery";
 import { createProject, defaultDocument } from "../src/model/layers";
 import { pageListAfterMove, pageListOrderChanges, pageNumber } from "../src/model/pages";

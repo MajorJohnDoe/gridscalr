@@ -1,22 +1,21 @@
 import {
+  buildImportPreflight,
+  buildImportSourceStates,
   commitProjectImport,
+  emptyPreparedImport,
   inspectProjectImport,
   prepareProjectImport,
+  projectImportDialog,
+  projectImportPreflightDialog,
   ProjectImportError,
-} from "../features/projectImport/model";
-import type {
-  ImportProvenanceSource,
-  ImportWarning,
-  PreparedProjectImport,
-} from "../features/projectImport/model";
-import type { ProjectImportGroupOption } from "../features/projectImport/ui";
-import { projectImportDialog } from "../features/projectImport/ui";
-import { buildImportPreflight } from "../features/projectImport/preflight";
-import { projectImportPreflightDialog } from "../features/projectImport/preflightUi";
-import { unresolvedImportReferences } from "../features/projectImport/unresolved";
-import type { ImportUnresolvedCounts } from "../features/projectImport/unresolved";
-import type { ImportPreflightSnapshot } from "../features/projectImport/relink";
-import { buildImportSourceStates, emptyPreparedImport } from "../features/projectImport/relink";
+  unresolvedImportReferences,
+  type ImportPreflightSnapshot,
+  type ImportProvenanceSource,
+  type ImportUnresolvedCounts,
+  type ImportWarning,
+  type PreparedProjectImport,
+  type ProjectImportGroupOption,
+} from "../features/projectImport";
 import type { ImportedRendererDocument } from "./rendererDocuments";
 import { t } from "../i18n";
 import { isTauri, pickProject } from "../io/platform";
@@ -31,7 +30,7 @@ import type { PdfRenderer } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
 import { messageDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
-import { logEvent } from "../features/diagnostics/log";
+import { logEvent } from "../features/diagnostics";
 import { computeFileMetadata } from "../features/saveIntegrity";
 import { recordStructuralCheckpoint } from "../features/sessionRecovery";
 import type { SourceSelection } from "./projectImportSource";

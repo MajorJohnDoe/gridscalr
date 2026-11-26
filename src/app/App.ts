@@ -40,7 +40,7 @@ import {
   reorderProjectPage,
   reorderProjectPages,
   type PageActionHost,
-} from "../features/pageModel";
+} from "./pageActions";
 import { RendererStoreSync } from "./rendererSync";
 import {
   deletePageFlow,
@@ -122,8 +122,7 @@ import {
 } from "../features/projectPackage";
 import { toast } from "../ui/toast";
 import { loadLayerColorDefaults } from "../io/layerDefaults";
-import { logEvent } from "../features/diagnostics/log";
-import { projectStats } from "../features/diagnostics/model";
+import { logEvent, projectStats } from "../features/diagnostics";
 import { installPerfPanel, refreshPerfPanel } from "../features/perfMonitor";
 import { writeProjectConditional } from "../features/saveIntegrity";
 import type { SessionRecoveryController } from "../features/sessionRecovery";

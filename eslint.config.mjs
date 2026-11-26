@@ -20,17 +20,10 @@ const modelFeatureMessage =
 const LEGACY_LARGE_FILES = [
   "src/app/App.ts",
   "src/canvas/CanvasView.ts",
-  "src/canvas/editors.ts",
   "src/features/schematics/model/sheetTemplate.ts",
   "src/i18n/types.generated.ts",
-  "src/io/projectFile.ts",
   "src/model/labelLayout.ts",
-  "src/pdf/pdfExport.ts",
   "src/state/store.ts",
-  "src/ui/dialogs.ts",
-  "src/ui/markupsPanel.ts",
-  "src/ui/selectionInspector.ts",
-  "src/ui/toolFlyouts.ts",
 ];
 
 export default tseslint.config(

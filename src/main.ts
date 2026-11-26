@@ -30,7 +30,7 @@ import "./styles/status.css";
 import "./styles/perfMonitor.css";
 import "./styles/responsive.css";
 import { App } from "./app/App";
-import { installDiagnosticsLogging, logEvent } from "./features/diagnostics/log";
+import { installDiagnosticsLogging, logEvent } from "./features/diagnostics";
 import { applyStoredLanguage, setLanguagePreference, t } from "./i18n";
 import { sourceStatus } from "./source/sourceStatus";
 import { applyTheme, currentThemePreference, watchSystemTheme } from "./theme/theme";

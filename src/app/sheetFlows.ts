@@ -10,7 +10,7 @@ import { store } from "../state/store";
 import { openDocument } from "./documentImport";
 import { recordStructuralCheckpoint } from "../features/sessionRecovery";
 import { describeError } from "../io/platformError";
-import { logEvent } from "../features/diagnostics/log";
+import { logEvent } from "../features/diagnostics";
 import { messageDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 import {

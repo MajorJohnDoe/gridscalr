@@ -1,14 +1,14 @@
-import { t } from "../../i18n";
-import { createProject } from "../../model/layers";
-import { pageListOrderChanges, pageNumber } from "../../model/pages";
-import type { PageId, PageSize, Project } from "../../model/types";
-import type { PdfRenderer } from "../../pdf/pdfRenderer";
-import type { PageThumbnailService } from "../../pdf/thumbnails";
-import { store } from "../../state/store";
-import { recordStructuralCheckpoint } from "../sessionRecovery";
-import { confirmDialog } from "../../ui/dialogs";
-import { toast } from "../../ui/toast";
-import { removeDocumentAndPages } from "./pageList";
+import { t } from "../i18n";
+import { createProject } from "../model/layers";
+import { pageListOrderChanges, pageNumber } from "../model/pages";
+import type { PageId, PageSize, Project } from "../model/types";
+import type { PdfRenderer } from "../pdf/pdfRenderer";
+import type { PageThumbnailService } from "../pdf/thumbnails";
+import { store } from "../state/store";
+import { recordStructuralCheckpoint } from "../features/sessionRecovery";
+import { confirmDialog } from "../ui/dialogs";
+import { toast } from "../ui/toast";
+import { removeDocumentAndPages } from "../features/pageModel";
 
 export interface PageActionHost {
   renderer(): PdfRenderer | null;
@@ -124,3 +124,5 @@ export async function cleanupSupersededPages(
   host.afterStructuralChange();
   toast(t("replace.cleanupDone", { count: removed }), "info");
 }
+
+export { reorderPages as reorderProjectPages };

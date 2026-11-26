@@ -41,6 +41,15 @@ const FOUNDATION_FEATURES = [
   "src/features/gestureRender",
   "src/features/tileCache",
   "src/features/displayLevels",
+  "src/features/diagnostics",
+  "src/features/launch",
+  "src/features/projectImport",
+  "src/features/projectPackage",
+  "src/features/shareByEmail",
+  "src/features/viewOnly",
+  "src/features/lineContinuation",
+  "src/features/measurementFlyout",
+  "src/features/railConnections",
 ];
 
 const frontendErrors = [];

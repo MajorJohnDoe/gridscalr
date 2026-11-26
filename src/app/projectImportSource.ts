@@ -1,5 +1,5 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import type { ImportDocumentOverride, ImportSourceMismatch } from "../features/projectImport/model";
+import type { ImportDocumentOverride, ImportSourceMismatch } from "../features/projectImport";
 import { derivedCachePath, loadDerivedPdfBytes, scanCandidates } from "../features/derivedPdfCache";
 import { isTauri, pathExists, pickPdf, readFileBytes } from "../io/platform";
 import { resolveRelativePath } from "../io/projectFile";

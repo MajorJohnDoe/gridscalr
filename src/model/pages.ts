@@ -1,4 +1,4 @@
-import { makeId } from "./calibration";
+import { makeId } from "./ids";
 import type { DocumentRef, PageId, PageRecord, PageState, Project, ProjectSettings } from "./types";
 
 /**

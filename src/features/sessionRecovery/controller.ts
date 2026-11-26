@@ -1,7 +1,7 @@
 import { t } from "../../i18n";
 import { store } from "../../state/store";
 import { describeError } from "../../io/platformError";
-import { logEvent } from "../diagnostics/log";
+import { logEvent } from "../diagnostics";
 import {
   clearAutosavesForInstance,
   deleteRecoveryRecord,

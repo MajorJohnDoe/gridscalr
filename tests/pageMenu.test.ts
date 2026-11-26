@@ -27,7 +27,7 @@ import {
   moveTargets,
 } from "../src/features/pageMenu";
 import { pageReorder } from "../src/features/pageReorder";
-import { insertProjectPage, reorderPages, type PageActionHost } from "../src/features/pageModel";
+import { insertProjectPage, reorderPages, type PageActionHost } from "../src/app/pageActions";
 import { pageStatus } from "../src/features/pageStatus";
 import { clearAllRecovery, listRecoveryRecords } from "../src/features/sessionRecovery";
 import { createProject, defaultDocument } from "../src/model/layers";

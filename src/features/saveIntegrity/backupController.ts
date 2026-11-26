@@ -4,7 +4,7 @@ import { describeError } from "../../io/platformError";
 import { parseProject, serializeProject } from "../../io/projectFile";
 import type { Project } from "../../model/types";
 import { store } from "../../state/store";
-import { logEvent } from "../diagnostics/log";
+import { logEvent } from "../diagnostics";
 import type { ConfirmOptions } from "../../ui/dialogs";
 import type { BackupEntry } from "./backup";
 import { sortBackupsNewestFirst } from "./backup";

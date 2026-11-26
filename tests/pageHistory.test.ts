@@ -12,7 +12,7 @@ import {
   reorderPages,
   reorderProjectPage,
   type PageActionHost,
-} from "../src/features/pageModel";
+} from "../src/app/pageActions";
 import { clearAllRecovery, listRecoveryRecords } from "../src/features/sessionRecovery";
 import { validateProject } from "../src/model/integrity";
 import { createProject, defaultDocument } from "../src/model/layers";

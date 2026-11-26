@@ -7,7 +7,7 @@ import { buildLayerHierarchy } from "../model/layerHierarchy";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
 import type { PackageHost } from "../features/projectPackage";
-import { validatePackagedProjectJson } from "../features/projectPackage/model";
+import { validatePackagedProjectJson } from "../features/projectPackage";
 import { computeFileStamp } from "../features/saveIntegrity";
 import { t } from "../i18n";
 
