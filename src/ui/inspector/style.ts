@@ -1,5 +1,13 @@
 import { t } from "../../i18n";
-import { defaultColorForItem, findItem, isMeasurementKind } from "../../model/layers";
+import { defaultColorForItem, isMeasurementKind } from "../../model/layers";
+import { setItemsColor, setItemsStrokeWidth } from "../../model/commands";
+import {
+  setItemDepth,
+  setItemFillEnabled,
+  setItemFontSize,
+  setItemLineStyle,
+  setItemRotation,
+} from "../../model/commands/itemStyle";
 import { STROKE_WIDTH_OPTIONS } from "../../model/style";
 import { store } from "../../state/store";
 import { colorInputValue, setColorInput } from "../colorInput";
@@ -8,7 +16,7 @@ import { el, option } from "../dom";
 import type { InspectorContext } from "./context";
 
 export function appendStyle(section: HTMLElement, context: InspectorContext): void {
-  const { project, item, locked } = context;
+  const { project, item, locked, selection } = context;
   if (item.kind !== "image" && item.kind !== "symbol") {
     const styleRow = el("div", "field-row");
     const colorField = el("label", "field");
@@ -25,8 +33,7 @@ export function appendStyle(section: HTMLElement, context: InspectorContext): vo
     colorInput.addEventListener("change", () => {
       const next = colorInputValue(colorInput, fallbackColor);
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (target) target.color = next;
+        setItemsColor(project, [selection], next);
       }, "change");
     });
     colorField.append(colorWithEyedropper(colorInput, colorLabel));
@@ -58,8 +65,7 @@ export function appendStyle(section: HTMLElement, context: InspectorContext): vo
           return;
         }
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (target) target.fontSize = Math.max(0.5, Math.min(300, value));
+          setItemFontSize(project, [selection], value);
         }, "change");
       });
       sizeWrap.append(size, el("span", "context-unit", "pt"));
@@ -75,8 +81,7 @@ export function appendStyle(section: HTMLElement, context: InspectorContext): vo
       width.disabled = locked;
       width.addEventListener("change", () => {
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (target) target.strokeWidth = Number(width.value);
+          setItemsStrokeWidth(project, [selection], Number(width.value));
         }, "change");
       });
       sizeField.append(width);
@@ -91,16 +96,9 @@ export function appendStyle(section: HTMLElement, context: InspectorContext): vo
       fillToggle.checked = Boolean(item.fillColor);
       fillToggle.disabled = locked;
       fillToggle.addEventListener("change", () => {
+        const fillOpacity = store.ui.style.fillOpacity;
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (!target) return;
-          if (fillToggle.checked) {
-            target.fillColor = target.fillColor ?? target.color;
-            target.opacity = target.opacity ?? store.ui.style.fillOpacity;
-          } else {
-            delete target.fillColor;
-          }
-          target.updatedAt = new Date().toISOString();
+          setItemFillEnabled(project, [selection], fillToggle.checked, fillOpacity);
         }, "change");
       });
       fillRow.append(fillToggle, el("span", "", t("context.fill")));
@@ -125,10 +123,7 @@ export function appendStyle(section: HTMLElement, context: InspectorContext): vo
           return;
         }
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (!target) return;
-          target.depth = Math.max(0.001, Math.min(1_000_000, value));
-          target.updatedAt = new Date().toISOString();
+          setItemDepth(project, [selection], value);
         }, "change");
       });
       depthWrap.append(depth, el("span", "context-unit", project.settings.lengthUnit));
@@ -155,11 +150,7 @@ export function appendStyle(section: HTMLElement, context: InspectorContext): vo
       lineStyle.title = locked ? t("inspector.unlockLineStyle") : t("inspector.solidOrDashed");
       lineStyle.addEventListener("change", () => {
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (!target) return;
-          if (lineStyle.value === "dashed") target.lineStyle = "dashed";
-          else delete target.lineStyle;
-          target.updatedAt = new Date().toISOString();
+          setItemLineStyle(project, [selection], lineStyle.value === "dashed" ? "dashed" : "solid");
         }, "change");
       });
       lineField.append(lineStyle);
@@ -192,13 +183,8 @@ export function appendStyle(section: HTMLElement, context: InspectorContext): vo
         rotation.value = String(Math.round(item.rotation ?? 0));
         return;
       }
-      const normalized = ((value % 360) + 360) % 360;
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (!target) return;
-        if (normalized === 0) delete target.rotation;
-        else target.rotation = normalized;
-        target.updatedAt = new Date().toISOString();
+        setItemRotation(project, [selection], value);
       }, "change");
     });
     rotationWrap.append(rotation, el("span", "context-unit", "°"));

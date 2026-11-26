@@ -8,6 +8,7 @@ import {
   setLayerVisibleOnPage,
 } from "../model/layers";
 import { buildLayerHierarchy } from "../model/layerHierarchy";
+import { renameLayer, setLayerColor, setLayerOpacity } from "../model/commands/layerMeta";
 import { layerSubtreeSize } from "../features/layerTree";
 import { store } from "../state/store";
 import { pageIdAt } from "../model/pages";
@@ -171,8 +172,7 @@ function activeLayerSection(
   nameInput.addEventListener("change", () => {
     if (!nameInput.value.trim()) return;
     store.mutate((project) => {
-      const layer = project.layers.find((l) => l.id === active.id);
-      if (layer) layer.name = nameInput.value.trim();
+      renameLayer(project, active.id, nameInput.value);
     }, "layers");
   });
   nameField.append(nameInput);
@@ -187,10 +187,7 @@ function activeLayerSection(
   color.addEventListener("change", () => {
     const next = colorInputValue(color, fallbackColor);
     store.mutate((project) => {
-      const layer = project.layers.find((l) => l.id === active.id);
-      if (!layer) return;
-      layer.color = next;
-      for (const item of layer.items) item.color = next;
+      setLayerColor(project, active.id, next);
     }, "layers");
   });
   colorField.append(colorWithEyedropper(color, t("inspector.layerColour")));
@@ -213,8 +210,7 @@ function activeLayerSection(
   });
   range.addEventListener("change", () => {
     store.mutate((project) => {
-      const layer = project.layers.find((l) => l.id === active.id);
-      if (layer) layer.opacity = Number(range.value) / 100;
+      setLayerOpacity(project, active.id, Number(range.value) / 100);
     }, "layers");
   });
   opacityField.append(opacityHead, range);

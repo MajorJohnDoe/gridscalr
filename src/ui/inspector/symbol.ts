@@ -6,7 +6,7 @@ import {
 } from "../../features/schematics";
 import { t } from "../../i18n";
 import { setItemsStatus } from "../../model/commands";
-import { findItem } from "../../model/layers";
+import { setItemSymbolTag, setItemSymbolTagOffset } from "../../model/commands/itemSymbol";
 import type { InspectionStatus } from "../../model/types";
 import { store } from "../../state/store";
 import { el, option } from "../dom";
@@ -48,11 +48,7 @@ export function appendSymbol(section: HTMLElement, context: InspectorContext): v
     tagInput.disabled = locked;
     tagInput.addEventListener("change", () => {
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (!target) return;
-        const value = tagInput.value.replace(/\s+/g, " ").trim().slice(0, 40);
-        target.tag = value || undefined;
-        target.updatedAt = new Date().toISOString();
+        setItemSymbolTag(project, [selection], tagInput.value);
       }, "change");
     });
     tagField.append(tagInput);
@@ -78,14 +74,7 @@ export function appendSymbol(section: HTMLElement, context: InspectorContext): v
       input.disabled = locked;
       input.addEventListener("change", () => {
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (!target) return;
-          const current = target.tagOffset ?? { x: 0, y: 0 };
-          target.tagOffset = {
-            x: axis === "x" ? Math.round(Number(input.value) || 0) : current.x,
-            y: axis === "y" ? Math.round(Number(input.value) || 0) : current.y,
-          };
-          target.updatedAt = new Date().toISOString();
+          setItemSymbolTagOffset(project, [selection], axis, Number(input.value) || 0);
         }, "change");
       });
       axisField.append(input);

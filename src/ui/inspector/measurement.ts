@@ -3,8 +3,16 @@ import { t } from "../../i18n";
 import { allRooms, categoryForItem, normalizeRoom } from "../../model/categories";
 import { LABEL_MAX_SIZE, LABEL_MIN_SIZE, clampLabelSize } from "../../model/label";
 import { labelFitLabel } from "../../model/labelLayout";
-import { findItem, isMeasurementKind } from "../../model/layers";
+import { isMeasurementKind } from "../../model/layers";
 import { resetItemLabelPlacement } from "../../model/commands";
+import { releaseItemLabelFit, setItemLabelSize } from "../../model/commands/itemLabel";
+import {
+  setItemAreaMode,
+  setItemCategory,
+  setItemCountQuantity,
+  setItemCountType,
+  setItemRoom,
+} from "../../model/commands/itemMeta";
 import type { AreaMode, CountType } from "../../model/types";
 import { formatNumber } from "../../model/units";
 import { store } from "../../state/store";
@@ -14,7 +22,7 @@ import { toast } from "../toast";
 import type { InspectorContext } from "./context";
 
 export function appendMeasurement(section: HTMLElement, context: InspectorContext): void {
-  const { project, item, locked } = context;
+  const { project, item, locked, selection } = context;
   if (isMeasurementKind(item.kind)) {
     section.append(el("div", "empty-note small", t("inspector.labelHelp")));
     if (item.labelOffset || item.labelAnchor || item.labelFit) {
@@ -45,10 +53,7 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
       release.disabled = locked;
       release.addEventListener("click", () => {
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (!target) return;
-          delete target.labelFit;
-          target.updatedAt = new Date().toISOString();
+          releaseItemLabelFit(project, [selection]);
         }, "change");
       });
       section.append(release);
@@ -77,10 +82,7 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
     sizeRange.addEventListener("change", () => {
       const value = clampLabelSize(Number(sizeRange.value));
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (!target) return;
-        target.labelSize = value;
-        target.updatedAt = new Date().toISOString();
+        setItemLabelSize(project, [selection], value);
       }, "change");
     });
     sizeField.append(sizeHead, sizeRange);
@@ -95,10 +97,7 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
         : t("inspector.followProjectDefault", { size: formatNumber(projectLabelSize, 1) });
       resetSize.addEventListener("click", () => {
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (!target) return;
-          delete target.labelSize;
-          target.updatedAt = new Date().toISOString();
+          setItemLabelSize(project, [selection], undefined);
         }, "change");
       });
       section.append(resetSize);
@@ -121,8 +120,7 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
       typeSelect.title = locked ? t("inspector.unlockLayerEdit") : t("inspector.countType");
       typeSelect.addEventListener("change", () => {
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (target) target.countType = typeSelect.value as CountType;
+          setItemCountType(project, [selection], typeSelect.value as CountType);
         }, "change");
       });
       typeField.append(typeSelect);
@@ -164,12 +162,7 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
           return;
         }
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (!target) return;
-          const quantity = Math.max(1, Math.round(value));
-          if (quantity > 1) target.countQuantity = quantity;
-          else delete target.countQuantity;
-          target.updatedAt = new Date().toISOString();
+          setItemCountQuantity(project, [selection], value);
         }, "change");
       });
       quantityField.append(quantityInput);
@@ -189,8 +182,7 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
     categorySelect.title = locked ? t("inspector.unlockLayerEdit") : t("inspector.groupingHelp");
     categorySelect.addEventListener("change", () => {
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (target) target.categoryId = categorySelect.value;
+        setItemCategory(project, [selection], categorySelect.value);
       }, "change");
     });
     categoryField.append(categorySelect);
@@ -224,8 +216,7 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
       modeSelect.title = locked ? t("inspector.unlockLayerEdit") : t("inspector.deductNote");
       modeSelect.addEventListener("change", () => {
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (target) target.areaMode = modeSelect.value as AreaMode;
+          setItemAreaMode(project, [selection], modeSelect.value as AreaMode);
         }, "change");
       });
       modeField.append(modeSelect);
@@ -248,10 +239,7 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
       const room = normalizeRoom(roomInput.value);
       roomInput.value = room ?? "";
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (!target) return;
-        if (room) target.room = room;
-        else delete target.room;
+        setItemRoom(project, [selection], room);
       }, "change");
     });
     roomField.append(roomInput, roomList);

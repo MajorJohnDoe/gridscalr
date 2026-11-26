@@ -3,29 +3,14 @@ import { buildLayerHierarchy, layerEffectiveState } from "../layerHierarchy";
 import { findItem } from "../layers";
 import { resolveSelection } from "../selection";
 import { translatePoints } from "../geometry";
+import { emptyResult, touch } from "./shared";
+import type { ItemCommandResult } from "./shared";
 import type { CustomValue, ImageMode, InspectionStatus, Project, SelectionRef } from "../types";
 
-export interface ItemCommandResult {
-  /** Items that were eligible and received the operation. */
-  changed: number;
-  /** Items skipped because the item or its layer is locked. */
-  skippedLocked: number;
-  /** Items skipped when showing an item on a hidden layer. */
-  skippedLayerHidden: number;
-  /** Items skipped when unlocking an item on a locked layer. */
-  skippedLayerLocked: number;
-}
-
-function emptyResult(): ItemCommandResult {
-  return { changed: 0, skippedLocked: 0, skippedLayerHidden: 0, skippedLayerLocked: 0 };
-}
+export type { ItemCommandResult } from "./shared";
 
 export function emptyItemCommandResult(): ItemCommandResult {
   return emptyResult();
-}
-
-function touch(item: { updatedAt: string }): void {
-  item.updatedAt = new Date().toISOString();
 }
 
 /**

@@ -1,5 +1,14 @@
 import { t } from "../../i18n";
-import { findItem, resolveItemColor } from "../../model/layers";
+import { resolveItemColor } from "../../model/layers";
+import {
+  setItemCloudRadius,
+  setItemFillColor,
+  setItemFillEnabled,
+  setItemFillOpacity,
+  setItemHighlightShape,
+  setItemTextBackground,
+  setItemTextBoxDimension,
+} from "../../model/commands/itemStyle";
 import { store } from "../../state/store";
 import { colorInputValue, setColorInput } from "../colorInput";
 import { colorWithEyedropper } from "../colorPicker";
@@ -7,7 +16,7 @@ import { el, option } from "../dom";
 import type { InspectorContext } from "./context";
 
 export function appendDrawing(section: HTMLElement, context: InspectorContext): void {
-  const { item, actions, locked } = context;
+  const { item, actions, locked, selection } = context;
   if (
     item.kind === "text" ||
     item.kind === "textbox" ||
@@ -44,10 +53,7 @@ export function appendDrawing(section: HTMLElement, context: InspectorContext): 
     background.disabled = locked;
     background.addEventListener("change", () => {
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (!target) return;
-        if (background.checked) target.textBackground = "white";
-        else delete target.textBackground;
+        setItemTextBackground(project, [selection], background.checked);
       }, "change");
     });
     backgroundRow.append(background, el("span", "", t("inspector.whiteBackground")));
@@ -67,13 +73,9 @@ export function appendDrawing(section: HTMLElement, context: InspectorContext): 
     widthInput.value = item.textBoxWidth ? String(item.textBoxWidth) : "";
     widthInput.disabled = locked;
     widthInput.addEventListener("change", () => {
-      const raw = widthInput.value.trim();
-      const value = Number(raw);
+      const value = Number(widthInput.value);
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (!target) return;
-        if (!raw || !Number.isFinite(value) || value <= 0) delete target.textBoxWidth;
-        else target.textBoxWidth = Math.max(20, Math.min(2000, value));
+        setItemTextBoxDimension(project, [selection], "width", value);
       }, "change");
     });
 
@@ -88,13 +90,9 @@ export function appendDrawing(section: HTMLElement, context: InspectorContext): 
     heightInput.value = item.textBoxHeight ? String(item.textBoxHeight) : "";
     heightInput.disabled = locked;
     heightInput.addEventListener("change", () => {
-      const raw = heightInput.value.trim();
-      const value = Number(raw);
+      const value = Number(heightInput.value);
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (!target) return;
-        if (!raw || !Number.isFinite(value) || value <= 0) delete target.textBoxHeight;
-        else target.textBoxHeight = Math.max(15, Math.min(2000, value));
+        setItemTextBoxDimension(project, [selection], "height", value);
       }, "change");
     });
     widthField.append(widthInput);
@@ -116,13 +114,9 @@ export function appendDrawing(section: HTMLElement, context: InspectorContext): 
     radius.value = item.cloudRadius ? String(item.cloudRadius) : "";
     radius.disabled = locked;
     radius.addEventListener("change", () => {
-      const raw = radius.value.trim();
-      const value = Number(raw);
+      const value = Number(radius.value);
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (!target) return;
-        if (!raw || !Number.isFinite(value) || value <= 0) delete target.cloudRadius;
-        else target.cloudRadius = Math.max(2, Math.min(40, value));
+        setItemCloudRadius(project, [selection], value);
       }, "change");
     });
     radiusField.append(radius);
@@ -138,14 +132,7 @@ export function appendDrawing(section: HTMLElement, context: InspectorContext): 
     fillToggle.disabled = locked;
     fillToggle.addEventListener("change", () => {
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (!target) return;
-        if (fillToggle.checked) {
-          target.fillColor = target.fillColor ?? target.color;
-          target.opacity = target.opacity ?? 0.22;
-        } else {
-          delete target.fillColor;
-        }
+        setItemFillEnabled(project, [selection], fillToggle.checked, 0.22);
       }, "change");
     });
     fillRow.append(fillToggle, el("span", "", t("context.fill")));
@@ -161,10 +148,7 @@ export function appendDrawing(section: HTMLElement, context: InspectorContext): 
     fillColor.addEventListener("change", () => {
       const next = colorInputValue(fillColor, itemColor);
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (!target) return;
-        target.fillColor = next;
-        target.opacity = target.opacity ?? 0.22;
+        setItemFillColor(project, [selection], next, 0.22);
       }, "change");
     });
     fillColorField.append(colorWithEyedropper(fillColor, t("inspector.fillColour")));
@@ -189,8 +173,7 @@ export function appendDrawing(section: HTMLElement, context: InspectorContext): 
     });
     opacityRange.addEventListener("change", () => {
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (target) target.opacity = Number(opacityRange.value) / 100;
+        setItemFillOpacity(project, [selection], Number(opacityRange.value) / 100);
       }, "change");
     });
     opacityField.append(opacityHead, opacityRange);
@@ -210,22 +193,11 @@ export function appendDrawing(section: HTMLElement, context: InspectorContext): 
     mode.disabled = locked;
     mode.addEventListener("change", () => {
       store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (!target) return;
-        target.highlightShape = mode.value as "stroke" | "rectangle" | "polygon";
-        if (
-          (target.highlightShape === "rectangle" && target.points.length > 2) ||
-          (target.highlightShape === "polygon" && target.points.length < 3)
-        ) {
-          const xs = target.points.map((point) => point.x);
-          const ys = target.points.map((point) => point.y);
-          const min = { x: Math.min(...xs), y: Math.min(...ys) };
-          const max = { x: Math.max(...xs), y: Math.max(...ys) };
-          target.points =
-            target.highlightShape === "rectangle"
-              ? [min, max]
-              : [min, { x: max.x, y: min.y }, max, { x: min.x, y: max.y }];
-        }
+        setItemHighlightShape(
+          project,
+          [selection],
+          mode.value as "stroke" | "rectangle" | "polygon",
+        );
       }, "change");
     });
     modeField.append(mode);

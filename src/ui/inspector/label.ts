@@ -1,12 +1,12 @@
 import { symbolName } from "../../features/schematics";
 import { t } from "../../i18n";
-import { findItem } from "../../model/layers";
+import { setItemLabel } from "../../model/commands/itemLabel";
 import { store } from "../../state/store";
 import { el } from "../dom";
 import type { InspectorContext } from "./context";
 
 export function appendLabel(section: HTMLElement, context: InspectorContext): void {
-  const { item, locked, metrics } = context;
+  const { item, locked, metrics, selection } = context;
   const labelField = el("label", "field");
   labelField.append(
     el(
@@ -38,8 +38,7 @@ export function appendLabel(section: HTMLElement, context: InspectorContext): vo
       : t("inspector.markupsMetadata");
   labelInput.addEventListener("change", () => {
     store.mutate((project) => {
-      const target = findItem(project, item.id)?.item;
-      if (target) target.label = labelInput.value.trim() || undefined;
+      setItemLabel(project, [selection], labelInput.value);
     }, "change");
   });
   labelField.append(labelInput);
