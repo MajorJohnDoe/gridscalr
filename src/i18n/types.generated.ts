@@ -3388,6 +3388,7 @@ export type MessageKey =
   | "schedules.builder.totals"
   | "schedules.builder.totalField"
   | "schedules.builder.totalOp"
+  | "schedules.builder.totalHidden"
   | "schedules.builder.removeTotal"
   | "schedules.builder.addTotal"
   | "schedules.builder.customFilters"

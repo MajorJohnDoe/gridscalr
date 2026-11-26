@@ -3000,26 +3000,18 @@ remains the scheduling home.
 - **Phase:** Drift Slice 1, phase 2 — custom fields
 - **Severity:** P3
 - **Area:** Project settings dialog / modal stacking
-- **Status:** open — platform behaviour, not a field-editor bug
-- **Evidence:** `openFieldsDialog()` uses `showModal`, which calls
-  `closeActiveModal()` before mounting. Opening **Manage fields…** from
-  **Project settings → Fields** therefore closes the settings dialog, exactly as
-  **Manage count types…** already does; the `onRefresh` callback cannot repaint a
-  closed dialog.
-- **Problem:** The settings dialog disappears while the manager is open, so
-  the user loses the surrounding context. Closing the field editor reopens
-  Project settings on the Fields category, exactly like **Manage count types…**,
-  so the flow recovers; a manager stacked over settings would still be better.
-  The field edits themselves apply immediately and the inspector updates behind
-  the dialog.
-- **Impact:** A small navigation cost, not data loss. Fixing it means a modal
-  stack or a manager that does not close its host, which affects every manager
-  dialog and is larger than this phase.
-- **Next step:** If nested managers become common, add an explicit modal stack
-  or a "reopen settings on this category" host parameter and migrate the
-  category, count-type and field managers together.
-- **Related:** `src/ui/dialogs.ts`, `src/ui/settingsDialog.ts`,
-  `src/features/fields/ui/fieldDialog.ts`, `docs/limitations.md`.
+- **Status:** fixed — ADR 0017 stacks the field editor over the hub
+- **Evidence:** `openFieldsDialog()` uses `showModal`, which now mounts the new
+  window on top of an existing one instead of closing it. Opening **Manage
+  fields…** from **Takeoff settings → Fields** keeps the hub open; closing the
+  editor runs the hub's `onReturn` refresh in place.
+- **Problem:** The host dialog used to disappear while a manager was open. A
+  non-modal stacked window keeps the surrounding context, and the field edits
+  apply immediately so the inspector updates behind both windows.
+- **Impact:** None remaining. The stacked-window rule is covered by
+  `tests/takeoffSettingsUi.test.ts`.
+- **Related:** `src/features/dialogHost/`, `src/features/fields/ui/fieldDialog.ts`,
+  `docs/limitations.md`.
 
 ### F-121 — The space register is a modal, so measuring and linking cannot interleave
 
@@ -3027,22 +3019,22 @@ remains the scheduling home.
 - **Phase:** Drift Slice 1, phase 3 — spaces
 - **Severity:** P3
 - **Area:** Spaces register / selection-driven link action
-- **Status:** open — deliberate for this phase
+- **Status:** fixed — the register is non-modal and repaints on selection changes
 - **Evidence:** `src/features/spaces/ui/dialog.ts` opens the register through
-  `showModal`, and the link and unlink actions read `store.ui.selection` when
-  the dialog renders. A modal blocks the canvas, so the selection cannot change
-  while the register is open.
+  `showModal`, which is a movable non-modal window (ADR 0017). The dialog now
+  subscribes to the store while it is mounted and rebuilds on `selection`,
+  `change`, `layers`, `undo` and `project`, while leaving an in-progress space
+  form alone.
 - **Problem:** The documented flow is "select area measurements, then link them
-  from a space row". That works, but a user who opens the register first has to
-  close it, select and reopen. A dock panel with a live selection count would
-  remove the round trip.
-- **Impact:** A navigation cost, not data loss. Nothing is linked without an
-  explicit action, and the hint under the buttons names the current selection
-  count.
+  from a space row". A user can now leave the register open, select the
+  measurements on the drawing and link them without closing and reopening it.
+- **Impact:** The round trip is gone. Nothing is linked without an explicit
+  action, and the hint under the buttons names the current selection count.
 - **Next step:** If the register becomes a dock panel in a later slice, keep the
   same model functions and move only the view; do not add a second link path.
 - **Related:** `src/features/spaces/ui/dialog.ts`,
-  `src/features/spaces/ui/list.ts`, `docs/user-guide.md` "Rooms and spaces".
+  `src/features/spaces/ui/list.ts`, `tests/spacesUi.test.ts`,
+  `docs/shortcuts.md`.
 
 ### F-122 — A space subtree has no bulk move or delete in the register
 
@@ -3144,17 +3136,20 @@ remains the scheduling home.
 - **Phase:** Drift Slice 1, phase 4 — schedule engine and summary
 - **Severity:** P4
 - **Area:** Schedule table / totals
-- **Status:** open — known presentation choice
+- **Status:** open — mitigated by a non-blocking builder warning
 - **Evidence:** `computeSchedule()` computes every configured total, but
   `scheduleTotalRow()` positions a total under the column with the same field
   ref. A total on a field that is not a visible column has nowhere to render.
+  `scheduleDraftWarnings()` now reports that gap, and the builder lists it next
+  to the draft problems without refusing the table.
 - **Problem:** The builder lets a user add a total for a field they then hide, so
-  the number is calculated but not shown. The builder still lists the total.
+  the number is calculated but not shown. The warning names the field and tells
+  the user to show the column or remove the total.
 - **Impact:** No wrong data, only a hidden total. The user can show the column.
-- **Next step:** Either render unmatched totals in the foot line ("Value (sum):
-  12.5") or block a total whose field has no visible column with an inline
-  problem. Prefer the foot-line summary so a total is never recomputed twice.
-- **Related:** `src/features/schedules/model/totals.ts`,
+- **Next step:** Render unmatched totals in the foot line ("Value (sum): 12.5")
+  so a total is never recomputed twice, then remove the warning.
+- **Related:** `src/features/schedules/model/definition.ts`,
+  `src/features/schedules/ui/builder.ts`, `src/features/schedules/model/totals.ts`,
   `src/features/schedules/ui/tableParts.ts`.
 
 ### F-127 — The Summary panel rebuilds its toolbar on every shell repaint

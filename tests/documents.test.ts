@@ -19,13 +19,7 @@ import {
   pageRecordAt,
   pageStateOf,
 } from "../src/model/pages";
-import {
-  cleanupEmptyLayers,
-  deletePage,
-  duplicatePage,
-  insertPage,
-  movePage,
-} from "../src/features/pageModel";
+import { deletePage, duplicatePage, insertPage, movePage } from "../src/features/pageModel";
 import type { DocumentRef } from "../src/model/types";
 import { pageIdFor, withTestPageIds } from "./helpers/pages";
 
@@ -243,7 +237,6 @@ describe("page operations", () => {
     deletePage(project, "page_2");
     expect(project.layers.length).toBe(before - 1);
     expect(project.layers.find((entry) => entry.id === extra.id)).toBeUndefined();
-    expect(cleanupEmptyLayers(project)).toBe(0);
   });
 
   it("supports an empty project", () => {

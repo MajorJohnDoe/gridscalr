@@ -472,6 +472,28 @@ describe("schedule builder", () => {
     await deleteDone;
   });
 
+  it("warns when a total has no visible column without blocking the save", async () => {
+    const project = makeProject();
+    lengthItem(project, { label: "Wall A" });
+    store.setProject(project, null);
+    const done = openScheduleBuilder();
+    button("Add total")!.click();
+
+    const totalField = labelled<HTMLSelectElement>("Total field")!;
+    const fieldLabel = totalField.selectedOptions[0].textContent!.trim();
+    const visible = labelled<HTMLInputElement>(`Show the ${fieldLabel} column`)!;
+    visible.checked = false;
+    visible.dispatchEvent(new Event("change", { bubbles: true }));
+
+    expect(document.querySelector(".form-warning")?.textContent).toContain("no visible column");
+
+    // The warning is non-blocking: the total is still a valid definition.
+    button("Save")!.click();
+    expect(project.schedules).toHaveLength(1);
+    button("Close", document.querySelector(".modal")!)!.click();
+    await done;
+  });
+
   it("refuses to save a schedule with no visible column", async () => {
     const project = makeProject();
     store.setProject(project, null);

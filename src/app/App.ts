@@ -109,6 +109,7 @@ import { updatePageSizeLabel } from "../ui/pageList";
 import { openQuantitiesDialog } from "../ui/quantityDialog";
 import { openSpacesDialog } from "../features/spaces";
 import { importScheduleCsv, summaryShortcut, toggleSummaryFlow } from "./summaryFlow";
+import { altShortcut } from "./altShortcuts";
 import { updateWindowTitle } from "./windowTitle";
 import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
@@ -603,11 +604,7 @@ export class App {
 
     if (mod) {
       if (summaryShortcut(event, this.actions.refresh)) return;
-      if (event.altKey && event.code === "KeyQ") {
-        event.preventDefault();
-        openQuantitiesDialog(this.actions);
-        return;
-      }
+      if (altShortcut(event, this.actions)) return;
       if (event.shiftKey && event.code === "Digit2") {
         event.preventDefault();
         this.actions.toggleSplitView();

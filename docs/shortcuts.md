@@ -157,6 +157,7 @@ ancestor path of every hit.
 | Search drawing text | `Ctrl+Shift+F` |
 | Open Order | `Ctrl+Alt+Q` |
 | Open Takeoff | `Ctrl+Alt+S` |
+| Open space register | `Ctrl+Alt+R` |
 
 ## Project and file
 

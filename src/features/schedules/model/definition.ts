@@ -5,6 +5,7 @@ import type {
   Project,
   ScheduleColumn,
   ScheduleDefinition,
+  ScheduleFieldRef,
   ScheduleFilter,
   ScheduleRowMode,
   ScheduleSort,
@@ -207,6 +208,33 @@ function filterProblems(project: Project, draft: ScheduleDraft): ScheduleProblem
     }
   }
   return problems;
+}
+
+/**
+ * Whether a total has a visible column to render under. A hidden or absent
+ * column still contributes to the computed total, so the builder has to name
+ * the gap instead of silently dropping the number (F-126).
+ */
+export function totalHasVisibleColumn(
+  draft: Pick<ScheduleDraft, "columns">,
+  field: ScheduleFieldRef,
+): boolean {
+  return draft.columns.some((column) => column.field === field && column.visible !== false);
+}
+
+/**
+ * Non-blocking builder warnings. A total without a visible column is still a
+ * valid definition, so it is reported next to the draft problems but never
+ * rejected by `createSchedule` or `updateSchedule` (F-126).
+ */
+export function scheduleDraftWarnings(draft: ScheduleDraft): ScheduleProblem[] {
+  const warnings: ScheduleProblem[] = [];
+  for (const total of draft.totals) {
+    if (!totalHasVisibleColumn(draft, total.field)) {
+      warnings.push({ code: "totalWithoutColumn", ref: total.field });
+    }
+  }
+  return warnings;
 }
 
 /** Problems the builder shows inline. None of them may crash the panel. */

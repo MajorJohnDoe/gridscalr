@@ -484,7 +484,7 @@ With a drawing tool active, the marker appears as soon as the pointer is over a 
 
 ## Rooms and spaces
 
-Open **View → Spaces…** to keep a register of buildings, floors, rooms and zones next to the drawing. The register is a tree: a building contains floors, and a floor contains rooms or zones. Each row shows the type, the room number, the name and the area.
+Open **View → Spaces…** (`Ctrl+Alt+R`) to keep a register of buildings, floors, rooms and zones next to the drawing. The register is a tree: a building contains floors, and a floor contains rooms or zones. Each row shows the type, the room number, the name and the area.
 
 ![Space register with a building, a floor and two rooms, with measured and manual area badges](screenshots/spaces.png)
 
@@ -584,7 +584,7 @@ When a project has no takeoff table, **Create takeoff table** in the preview add
 1. **Name** the takeoff table and choose the **Source**: measurements or spaces.
 2. **Rows** is **One row per item** or **Grouped**. Grouped shows one row per group with subtotals and is read-only for CSV; items mode is the round-trip mode.
 3. **Columns** lists the built-in fields and the custom fields for the source. Add a column, hide or show it, give it your own header label, and drag the grip or use the arrow buttons to reorder. The insertion line marks the slot the column will take and the dragged row is held visibly, exactly as in Pages and Layers. A custom column keeps the typed value, for example the option label of a choice field.
-4. **Group by** picks one field. **Sort** adds one or more fields with ascending or descending direction. **Totals** adds a sum, count, average, minimum or maximum for a field.
+4. **Group by** picks one field. **Sort** adds one or more fields with ascending or descending direction. **Totals** adds a sum, count, average, minimum or maximum for a field. A total is drawn under its own column, so the builder warns when a total's field has no visible column; show the column or remove the total.
 5. **Filters** narrow by page, category, count type, item kind and space, and by a custom field with equals, contains, is empty or is not empty. The custom value uses the field's own typed control, so an invalid number, date or option is reported before it is stored.
 6. The **Preview** shows the first 20 displayed rows and the real totals over every filtered row.
 

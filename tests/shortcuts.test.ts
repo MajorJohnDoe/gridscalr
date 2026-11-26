@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { altShortcut } from "../src/app/altShortcuts";
 import { APP_SHORTCUTS, TOOL_KEYS, TOOL_SHORTCUTS, formatShortcut } from "../src/ui/shortcuts";
 import { TOOLS } from "../src/ui/toolDefs";
 
@@ -28,5 +29,27 @@ describe("shortcut definitions", () => {
 
   it("formats shortcuts for the current platform", () => {
     expect(formatShortcut("Ctrl+S").length).toBeGreaterThan(0);
+  });
+
+  it("routes the Ctrl+Alt windows without claiming an unrelated key", () => {
+    const calls: string[] = [];
+    const prevented: string[] = [];
+    const actions = {
+      openQuantities: () => calls.push("quantities"),
+      openSpaces: () => calls.push("spaces"),
+    };
+    const event = (code: string, altKey = true): KeyboardEvent =>
+      ({
+        altKey,
+        code,
+        preventDefault: () => prevented.push(code),
+      }) as unknown as KeyboardEvent;
+
+    expect(altShortcut(event("KeyR"), actions)).toBe(true);
+    expect(altShortcut(event("KeyQ"), actions)).toBe(true);
+    expect(altShortcut(event("KeyX"), actions)).toBe(false);
+    expect(altShortcut(event("KeyR", false), actions)).toBe(false);
+    expect(calls).toEqual(["spaces", "quantities"]);
+    expect(prevented).toEqual(["KeyR", "KeyQ"]);
   });
 });

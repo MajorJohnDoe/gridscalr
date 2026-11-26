@@ -226,6 +226,7 @@ use `Cmd` wherever `Ctrl` is shown.
 | Markups list | `Ctrl+L` |
 | Order | `Ctrl+Alt+Q` |
 | Takeoff | `Ctrl+Alt+S` |
+| Spaces | `Ctrl+Alt+R` |
 
 The **Pages**, **Layers** and **Markups** lists share one interaction model:
 

@@ -3386,6 +3386,7 @@
   "schedules.builder.totals": "Totals",
   "schedules.builder.totalField": "Total field",
   "schedules.builder.totalOp": "Total operation",
+  "schedules.builder.totalHidden": "This total is calculated but not shown: its field has no visible column. Show the column or remove the total.",
   "schedules.builder.removeTotal": "Remove total",
   "schedules.builder.addTotal": "Add total",
   "schedules.builder.customFilters": "Custom field filters",

@@ -469,6 +469,7 @@ src/features/takeoffSettings/model.ts pure card feeds, applies-to labels and eff
 src/features/takeoffSettings/ui/ Objects, Fields, Tables and Cards tabs, the shared dialog and object rows
 src/features/dialogHost/ movable, non-modal dialog window: pure stacking/clamping/target rules, controller and shell
 src/app/summaryFlow.ts Ctrl+Alt+S and the View → Takeoff action
+src/app/altShortcuts.ts Ctrl+Alt+Q and Ctrl+Alt+R window shortcuts
 src/styles/schedules.css cards, live table and builder
 src/styles/takeoffSettings.css hub tabs, object table, table list and card feeds
 src/styles/spaces.css  space register rows, area badges and warnings

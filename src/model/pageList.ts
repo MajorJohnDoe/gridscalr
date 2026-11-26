@@ -306,18 +306,6 @@ export function duplicatePage(
   };
 }
 
-/** Removes empty layers left behind by page deletion. Explicit cleanup action. */
-export function cleanupEmptyLayers(project: Project): number {
-  const before = project.layers.length;
-  project.layers = layersAfterPageRemoval(project.layers, layerHasPageReference);
-  ensureLayerKinds(project, project.pages[0]?.id ?? null);
-  if (!project.layers.some((layer) => layer.id === project.activeLayerId)) {
-    project.activeLayerId = project.layers[0]?.id ?? "";
-  }
-  project.updatedAt = new Date().toISOString();
-  return Math.max(0, before - project.layers.length);
-}
-
 /** Explicit cleanup for a superseded document and every page still on it. */
 export function removeDocumentAndPages(project: Project, documentId: string): number {
   const pageIds = project.pages

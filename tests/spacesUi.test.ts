@@ -93,6 +93,22 @@ describe("space register", () => {
     await done;
   });
 
+  it("rebuilds the selection hint while the register stays open", async () => {
+    const project = makeProject();
+    const item = areaItem(project);
+    store.setProject(project, null);
+    const done = openSpacesDialog();
+
+    expect(document.body.textContent).toContain(
+      "Select an area measurement on the drawing to link it from a space.",
+    );
+    store.setSelection({ layerId: measureLayer(project).id, itemId: item.id });
+    expect(document.body.textContent).toContain("1 area measurement is selected.");
+
+    button("Close")?.click();
+    await done;
+  });
+
   it("creates a space from the form and lists it with a missing-area warning", async () => {
     const project = makeProject();
     store.setProject(project, null);

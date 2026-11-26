@@ -11,6 +11,7 @@ import {
   emptyScheduleDraft,
   scheduleDraftProblems,
   setCategorySummaryRole,
+  totalHasVisibleColumn,
   setCountTypeSummaryRole,
   updateSchedule,
   createKeyCache,
@@ -598,6 +599,16 @@ describe("definition rules", () => {
       totals: [],
     });
     expect(problems.map((problem) => problem.code)).toContain("missingName");
+  });
+
+  it("detects a total that has no visible column", () => {
+    expect(
+      totalHasVisibleColumn({ columns: [column("c1", "label"), column("c2", "value")] }, "value"),
+    ).toBe(true);
+    expect(
+      totalHasVisibleColumn({ columns: [column("c2", "value", { visible: false })] }, "value"),
+    ).toBe(false);
+    expect(totalHasVisibleColumn({ columns: [column("c1", "label")] }, "value")).toBe(false);
   });
 
   it("flags filters that do not apply to the space source", () => {

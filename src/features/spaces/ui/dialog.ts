@@ -41,6 +41,7 @@ export function openSpacesDialog(options: SpacesDialogOptions = {}): Promise<voi
   const body = el("div", "form-stack spaces-dialog");
   let editing: SpaceDraft | null = null;
   let close: (() => void) | null = null;
+  let unsubscribe: (() => void) | null = null;
 
   const render = () => {
     const project = store.project;
@@ -222,6 +223,30 @@ export function openSpacesDialog(options: SpacesDialogOptions = {}): Promise<voi
     actions: [{ label: t("common.close"), value: "close", primary: true }],
     onMount: (_modal, closeModal) => {
       close = closeModal;
+      // The window is non-modal, so a drawing selection can change while it is
+      // open. Rebuild the register for that and for project edits, but leave an
+      // in-progress space form alone.
+      unsubscribe = store.subscribe((reason) => {
+        if (!store.project) {
+          close?.();
+          return;
+        }
+        if (editing) return;
+        if (
+          reason !== "selection" &&
+          reason !== "change" &&
+          reason !== "layers" &&
+          reason !== "undo" &&
+          reason !== "project"
+        ) {
+          return;
+        }
+        render();
+      });
+    },
+    onClose: () => {
+      unsubscribe?.();
+      unsubscribe = null;
     },
   }).then(() => undefined);
 }

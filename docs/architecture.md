@@ -352,6 +352,7 @@ src/
   features/dialogHost/controller.ts dialog stack, header drag, focus return and Escape routing
   features/dialogHost/ui.ts dialog shell construction and the shared confirm, message, text, depth, password and unsaved prompts
   app/summaryFlow.ts     Ctrl+Alt+S and the View → Takeoff action
+  app/altShortcuts.ts    Ctrl+Alt+Q and Ctrl+Alt+R window shortcuts
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
   io/platformError.ts    Rust command error codes to localized messages
   io/writeGuard.ts       conservative source-path matching for every save and export

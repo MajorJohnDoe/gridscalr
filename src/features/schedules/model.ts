@@ -36,7 +36,9 @@ export {
   projectSchedules,
   scheduleDraftFor,
   scheduleDraftProblems,
+  scheduleDraftWarnings,
   standardScheduleDraft,
+  totalHasVisibleColumn,
   uniqueScheduleName,
   updateSchedule,
 } from "./model/definition";

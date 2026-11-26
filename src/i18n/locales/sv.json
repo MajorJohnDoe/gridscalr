@@ -3386,6 +3386,7 @@
   "schedules.builder.totals": "Totaler",
   "schedules.builder.totalField": "Totalf\u00e4lt",
   "schedules.builder.totalOp": "Totaloperation",
+  "schedules.builder.totalHidden": "Den här totalen beräknas men visas inte: fältet har ingen synlig kolumn. Visa kolumnen eller ta bort totalen.",
   "schedules.builder.removeTotal": "Ta bort total",
   "schedules.builder.addTotal": "L\u00e4gg till total",
   "schedules.builder.customFilters": "Filter p\u00e5 egna f\u00e4lt",

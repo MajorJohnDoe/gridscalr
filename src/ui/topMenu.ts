@@ -146,6 +146,7 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
           disabled: !hasProject || viewOnly,
         }),
         action(t("menu.view.spaces"), actions.openSpaces, {
+          shortcut: APP_SHORTCUTS.spaces,
           disabled: !hasProject,
         }),
       ],

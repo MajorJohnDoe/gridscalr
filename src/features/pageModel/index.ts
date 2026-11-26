@@ -1,5 +1,4 @@
 export {
-  cleanupEmptyLayers,
   deletePage,
   duplicatePage,
   insertPage,
