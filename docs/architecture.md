@@ -173,7 +173,7 @@ src/
   canvas/editors/labels.ts measurement-label editing
   model/                 project types, geometry, radius/diameter/arc/angle/slope/volume measurement math, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
   model/countTypes.ts    built-in count types, project normalization, lookup, management and presets
-  model/commands.ts      shared item visibility, locking, deletion, movement and style commands
+  model/commands.ts      public item-command barrel; item, label, layer, settings, editor, view and asset command modules
   model/markups.ts       saved Markups views, columns, filters and grouping rules
   model/symbols/         symbol types, categories, sign and schematic catalogues, lookup and render plan
   model/symbols/schematic/ stroke-only schematic symbol library, split by category
@@ -357,7 +357,7 @@ src-tauri/
   src/project_lease.rs   advisory sidecar lease read/write/heartbeat/clear with owner checks
   src/project_backup.rs  app-data backup directory, origin metadata, rolling retention, list and delete commands
   src/conflicted_copy.rs strict conflicted-copy discovery and single-file delete guards
-  src/package.rs         streaming ZIP package create/inspect/extract, manifest and checksum validation
+  src/package/           streaming ZIP package create/inspect/extract, manifest and checksum validation
   src/package_limits.rs  package output cap and destination free-space check before a write
   src/source_copy.rs     verified managed drawing copy, source hash and folder checksum search
   src/temp_cleanup.rs    stale temporary naming, age/process guard and post-load cleanup command

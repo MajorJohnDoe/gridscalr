@@ -577,7 +577,8 @@ src/model/integrity.ts     shared referential-integrity rules and round-trip sha
 src/model/derivedPdf.ts    converter version, derived-PDF cache key rule and marker shape check
 src/features/derivedPdfCache/ cache lifecycle: build on import/save, reuse or rebuild on open, the missing-scan path, the budget warning and the package rule
 src/model/layerHierarchy.ts pure layer parent links, tree order, effective visibility/lock and page-removal keep rules
-src/model/commands.ts      shared item commands for visibility, locks, deletion, movement, style and label/custom values
+src/model/commands.ts      public item-command barrel; domain modules under src/model/commands/
+src/model/commands/        item, label, layer, settings, editor, view and asset command modules (pure model)
 src/model/ids.ts           dependency-free stable identifier creation shared by pages and calibration
 src/model/markups.ts       saved Markups views, columns and grouping helpers
 src/model/symbols/        symbol types, categories, sign and schematic catalogues, lookup and render plan
@@ -702,12 +703,12 @@ src/io/platformError.ts    structured Rust command error codes to localized mess
 src-tauri/src/mail_send.rs  app-cache mail-outbox attachment, ten-file prune, path guard and the compose/reveal commands
 src-tauri/src/mail_launch.rs per-OS mail/reveal launch plans, argument-array commands and the Windows Simple MAPI call
 src-tauri/src/commands.rs  atomic file replacement, canonical source-path checks, structured command errors and Tauri file commands
-src-tauri/src/package.rs   streaming ZIP package create/inspect/extract with manifest checks
+src-tauri/src/package/     streaming ZIP package create/inspect/extract, manifest checks, limits and staged extraction
 docs/user-guide.md         in-app user guide
 docs/workflows.md          role-based workflows for site work and procurement
 docs/shortcuts.md          in-app shortcut reference
 docs/screenshots/          versioned screenshots and capture manifest
-tests/                     model, project-file, hit-test, selection, TIFF, PDF, Markdown, help image, demo project, canvas geometry and autosave tests
+tests/                     model, project-file, hit-test, selection, TIFF, PDF, Markdown, help image, demo project, canvas geometry, canvas pointer and autosave tests
 tests/robustness/          seeded page/save sequences, competing saves, the schema 1–28 migration corpus and source-storage gates
 fixtures/legacy/           committed project fixtures for every supported schema
 fixtures/tiff/             small G4/LZW/PackBits/Deflate and colour TIFF fixtures for the reader and codec tests
@@ -741,6 +742,9 @@ scripts/file-budget-rules.mjs pure budget scope, exception and --update rules
 scripts/check-module-boundaries.mjs foundation feature index, deep-import and Rust command-cap guard
 scripts/check-cycles.mjs   runtime import-cycle gate over src
 scripts/check-cycles.d.mts declaration for the cycle-gate pure exports
+scripts/check-write-sites.mjs ratchet for inline project writes inside store.mutate closures
+scripts/write-site-rules.mjs pure write-site analyzer and budget rules
+write-sites.json          reviewed per-file inline-write baseline (currently store.ts only)
 scripts/rust-module-rules.mjs pure Rust command cap and module-declaration rules
 scripts/check-security-policy.mjs CSP, capability, worker and smoke-command policy guard
 scripts/check-action-pins.mjs 40-character SHA pins for every workflow `uses:` reference
