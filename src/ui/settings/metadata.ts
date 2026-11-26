@@ -2,10 +2,16 @@ import { t } from "../../i18n";
 import { ingestImageBlob } from "../../io/imageIngest";
 import { pickImage } from "../../io/platform";
 import { describeError } from "../../io/platformError";
+import { updateProjectMetadata, updateReportLogo } from "../../model/commands/settings";
+import type { ProjectMetadata } from "../../model/types";
 import { store } from "../../state/store";
 import { el } from "../dom";
 import { field, section } from "../settingsControls";
 import { toast } from "../toast";
+
+function metadataPatch(key: keyof ProjectMetadata, value: string): Partial<ProjectMetadata> {
+  return { [key]: value };
+}
 
 export function metadataSection(onRefresh: () => void): HTMLElement {
   const project = store.project!;
@@ -27,7 +33,7 @@ export function metadataSection(onRefresh: () => void): HTMLElement {
     input.setAttribute("aria-label", label);
     input.addEventListener("change", () => {
       store.mutate((next) => {
-        next.metadata[key] = input.value.trim();
+        updateProjectMetadata(next, metadataPatch(key, input.value));
       }, "change");
     });
     wrap.append(field(label, input));
@@ -37,7 +43,7 @@ export function metadataSection(onRefresh: () => void): HTMLElement {
   notes.setAttribute("aria-label", t("report.meta.notes"));
   notes.addEventListener("change", () => {
     store.mutate((next) => {
-      next.metadata.notes = notes.value.trim();
+      updateProjectMetadata(next, { notes: notes.value });
     }, "change");
   });
   wrap.append(field(t("report.meta.notes"), notes));
@@ -62,15 +68,7 @@ export function metadataSection(onRefresh: () => void): HTMLElement {
       try {
         const asset = await ingestImageBlob(file, file.name);
         store.mutate((next) => {
-          const previous = next.reportLogoAssetId;
-          next.assets[asset.id] = asset;
-          next.reportLogoAssetId = asset.id;
-          if (previous && previous !== asset.id) {
-            const used = next.layers.some((layer) =>
-              layer.items.some((item) => item.image?.assetId === previous),
-            );
-            if (!used) delete next.assets[previous];
-          }
+          updateReportLogo(next, asset);
         }, "change");
         onRefresh();
       } catch (error) {
@@ -84,14 +82,7 @@ export function metadataSection(onRefresh: () => void): HTMLElement {
     removeLogo.type = "button";
     removeLogo.addEventListener("click", () => {
       store.mutate((next) => {
-        const previous = next.reportLogoAssetId;
-        next.reportLogoAssetId = null;
-        if (previous) {
-          const used = next.layers.some((layer) =>
-            layer.items.some((item) => item.image?.assetId === previous),
-          );
-          if (!used) delete next.assets[previous];
-        }
+        updateReportLogo(next, null);
       }, "change");
       onRefresh();
     });

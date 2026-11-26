@@ -1,4 +1,5 @@
 import { t } from "../../i18n";
+import { updateProjectSettings } from "../../model/commands/settings";
 import type { AreaUnit, LengthUnit } from "../../model/types";
 import { AREA_UNITS, LENGTH_UNITS, lengthUnitLabel } from "../../model/units";
 import { store } from "../../state/store";
@@ -19,7 +20,7 @@ export function unitsSection(): HTMLElement {
   }
   length.addEventListener("change", () => {
     store.mutate((project) => {
-      project.settings.lengthUnit = length.value as LengthUnit;
+      updateProjectSettings(project, { lengthUnit: length.value as LengthUnit });
     }, "change");
   });
 
@@ -30,7 +31,7 @@ export function unitsSection(): HTMLElement {
   }
   area.addEventListener("change", () => {
     store.mutate((project) => {
-      project.settings.areaUnit = area.value as AreaUnit;
+      updateProjectSettings(project, { areaUnit: area.value as AreaUnit });
     }, "change");
   });
 
@@ -39,7 +40,7 @@ export function unitsSection(): HTMLElement {
   wrap.append(
     checkRow(t("settings.smartLength"), project.settings.smartLengthUnits, (checked) => {
       store.mutate((project) => {
-        project.settings.smartLengthUnits = checked;
+        updateProjectSettings(project, { smartLengthUnits: checked });
       }, "change");
     }),
   );

@@ -1,4 +1,5 @@
 import { t } from "../../i18n";
+import { updateProjectSettings } from "../../model/commands/settings";
 import { store } from "../../state/store";
 import { el } from "../dom";
 import { checkRow, field, section } from "../settingsControls";
@@ -14,17 +15,17 @@ export function displaySection(onOpenTakeoffSettings: () => void): HTMLElement {
   wrap.append(
     checkRow(t("settings.showGrid"), project.settings.showGrid, (checked) => {
       store.mutate((project) => {
-        project.settings.showGrid = checked;
+        updateProjectSettings(project, { showGrid: checked });
       }, "change");
     }),
     checkRow(t("settings.showScale"), project.settings.showCalibration, (checked) => {
       store.mutate((project) => {
-        project.settings.showCalibration = checked;
+        updateProjectSettings(project, { showCalibration: checked });
       }, "change");
     }),
     checkRow(t("settings.snap"), project.settings.snapToGeometry, (checked) => {
       store.mutate((project) => {
-        project.settings.snapToGeometry = checked;
+        updateProjectSettings(project, { snapToGeometry: checked });
       }, "change");
     }),
   );
@@ -43,9 +44,9 @@ export function displaySection(onOpenTakeoffSettings: () => void): HTMLElement {
     readout.textContent = `${input.value} px`;
   });
   input.addEventListener("change", () => {
-    const value = Math.max(2, Math.min(24, Number(input.value)));
+    const value = Number(input.value);
     store.mutate((project) => {
-      project.settings.snapTolerancePx = value;
+      updateProjectSettings(project, { snapTolerancePx: value });
     }, "change");
   });
   range.append(input, readout);

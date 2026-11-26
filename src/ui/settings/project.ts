@@ -1,4 +1,5 @@
 import { t } from "../../i18n";
+import { updateProjectName } from "../../model/commands/settings";
 import { PROJECT_NAME_MAX_LENGTH, normalizeProjectName } from "../../model/projectName";
 import { store } from "../../state/store";
 import { el } from "../dom";
@@ -25,7 +26,7 @@ export function projectSection(): HTMLElement {
     input.value = name;
     if (name === current.name) return;
     store.mutate((next) => {
-      next.name = name;
+      updateProjectName(next, name);
     }, "change");
   });
   wrap.append(

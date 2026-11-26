@@ -1,4 +1,5 @@
 import { t } from "../../i18n";
+import { updateProjectSettings } from "../../model/commands/settings";
 import { LABEL_MAX_SIZE, LABEL_MIN_SIZE, clampLabelSize } from "../../model/label";
 import { formatNumber } from "../../model/units";
 import { store } from "../../state/store";
@@ -27,7 +28,7 @@ export function labelsSection(): HTMLElement {
   input.addEventListener("change", () => {
     const value = clampLabelSize(Number(input.value));
     store.mutate((project) => {
-      project.settings.labelSize = value;
+      updateProjectSettings(project, { labelSize: value });
     }, "change");
   });
   range.append(input, readout);
@@ -35,7 +36,7 @@ export function labelsSection(): HTMLElement {
     sizeField,
     checkRow(t("settings.compactArea"), project.settings.compactAreaLabels, (checked) => {
       store.mutate((project) => {
-        project.settings.compactAreaLabels = checked;
+        updateProjectSettings(project, { compactAreaLabels: checked });
       }, "change");
     }),
   );

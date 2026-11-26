@@ -1,5 +1,6 @@
 import { t } from "../../i18n";
 import { loadGlobalStampPresets } from "../../io/stampDefaults";
+import { updateStampPresets } from "../../model/commands/settings";
 import { store } from "../../state/store";
 import { el } from "../dom";
 import { presetEditor, section } from "../settingsControls";
@@ -13,7 +14,7 @@ export function stampsSection(onRefresh: () => void): HTMLElement {
     project.settings.stampPresets,
     (next) => {
       store.mutate((current) => {
-        current.settings.stampPresets = next;
+        updateStampPresets(current, next);
       }, "change");
     },
     t("settings.newPreset"),
@@ -24,7 +25,7 @@ export function stampsSection(onRefresh: () => void): HTMLElement {
   loadDefaults.addEventListener("click", () => {
     const next = loadGlobalStampPresets();
     store.mutate((current) => {
-      current.settings.stampPresets = next;
+      updateStampPresets(current, next);
     }, "change");
     toast(t("settings.stampsUpdated"), "success");
     onRefresh();
