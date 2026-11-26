@@ -52,6 +52,18 @@ export function setLayerColor(
   return true;
 }
 
+/** Sets the layer opacity, clamped to the 0–1 range used by the project file. */
+export function setLayerOpacity(
+  project: Pick<Project, "layers">,
+  layerId: string,
+  opacity: number,
+): boolean {
+  const layer = findLayer(project, layerId);
+  if (!layer || !Number.isFinite(opacity)) return false;
+  layer.opacity = Math.max(0, Math.min(1, opacity));
+  return true;
+}
+
 /**
  * Sets the layer's own visibility on one page. Ancestor visibility is not
  * touched: effective visibility still resolves through the hierarchy.

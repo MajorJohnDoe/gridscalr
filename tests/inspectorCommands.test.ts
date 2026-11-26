@@ -29,7 +29,7 @@ import {
   setItemTextBoxDimension,
 } from "../src/model/commands/itemStyle";
 import { setItemSymbolTag, setItemSymbolTagOffset } from "../src/model/commands/itemSymbol";
-import { renameLayer, setLayerColor, setLayerOpacity } from "../src/model/commands/layerMeta";
+import { renameLayer, setLayerColor, setLayerOpacity } from "../src/model/commands/layers";
 import type { ItemKind, Layer, MarkupItem, Project, SelectionRef } from "../src/model/types";
 
 const MEASUREMENT_KINDS: ReadonlySet<ItemKind> = new Set([

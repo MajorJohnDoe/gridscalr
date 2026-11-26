@@ -8,7 +8,7 @@ import {
   setLayerVisibleOnPage,
 } from "../model/layers";
 import { buildLayerHierarchy } from "../model/layerHierarchy";
-import { renameLayer, setLayerColor, setLayerOpacity } from "../model/commands/layerMeta";
+import { renameLayer, setLayerColor, setLayerOpacity } from "../model/commands/layers";
 import { layerSubtreeSize } from "../features/layerTree";
 import { store } from "../state/store";
 import { pageIdAt } from "../model/pages";
