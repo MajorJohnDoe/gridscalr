@@ -11,25 +11,14 @@ import {
   inspectionStatusLabel,
   symbolCategoryLabel,
   symbolCategoryOf,
-  symbolName,
 } from "../../features/schematics";
 import { t } from "../../i18n";
-import {
-  matchesFilterText,
-  normalizeFilterQuery,
-  selectionAfterClick,
-} from "../../features/listInteraction";
+import { selectionAfterClick } from "../../features/listInteraction";
 import { categoryForItem } from "../../model/categories";
-import { buildLayerHierarchy, type LayerHierarchy } from "../../model/layerHierarchy";
+import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import { setItemsLocked, setItemsStatus, setItemsVisible } from "../../model/commands";
-import { formatTimestamp, timestampValue } from "../../model/dates";
-import {
-  currentPageId,
-  pageBuilding,
-  pageDisplayName,
-  pageFloor,
-  pageNumber,
-} from "../../model/pages";
+import { formatTimestamp } from "../../model/dates";
+import { currentPageId, pageDisplayName, pageNumber } from "../../model/pages";
 import {
   findItem,
   isMeasurementKind,
@@ -42,15 +31,7 @@ import {
 } from "../../model/layers";
 import { itemKindLabel, itemLabel, itemMetrics, itemScaleWarning } from "../../model/measure";
 import { selectionKey } from "../../model/selection";
-import type {
-  InspectionStatus,
-  Layer,
-  MarkupItem,
-  MarkupsColumnId,
-  MarkupsGroupField,
-  Project,
-  SelectionRef,
-} from "../../model/types";
+import type { InspectionStatus, Project, SelectionRef } from "../../model/types";
 import { store } from "../../state/store";
 import { el, option } from "../dom";
 import { icon } from "../icons";
@@ -58,157 +39,24 @@ import { markupIcon } from "../itemIcon";
 import { layerAction } from "../layerList";
 import type { PanelActions } from "../panels";
 import { showSelectionMenuAt } from "../selectionMenu";
+import {
+  compareRows as compareRowModel,
+  filteredRows as filterMarkupRows,
+  groupValue,
+  sortValue,
+  type MarkupRow,
+} from "./rowModel";
 import { markupsState } from "./state";
 
-export interface MarkupRow {
-  item: MarkupItem;
-  layer: Layer;
-}
+export { groupValue, sortValue };
+export type { MarkupRow };
 
 export function filteredRows(project: Project): MarkupRow[] {
-  const query = normalizeFilterQuery(markupsState.settings.search);
-  const rows: MarkupRow[] = [];
-  for (const layer of project.layers) {
-    for (const item of layer.items) {
-      if (
-        markupsState.settings.pageFilter === "current" &&
-        item.pageId !== currentPageId(project, store.ui.page)
-      )
-        continue;
-      const kind = isMeasurementKind(item.kind)
-        ? "measure"
-        : item.kind === "symbol"
-          ? "symbol"
-          : "draw";
-      if (markupsState.settings.typeFilter === "count") {
-        if (item.kind !== "count") continue;
-      } else if (
-        markupsState.settings.typeFilter !== "all" &&
-        kind !== markupsState.settings.typeFilter
-      )
-        continue;
-      const category = isMeasurementKind(item.kind) ? categoryForItem(project, item) : undefined;
-      if (markupsState.settings.categoryId) {
-        if (!isMeasurementKind(item.kind) || category?.id !== markupsState.settings.categoryId)
-          continue;
-      }
-      const symbolCategory = item.kind === "symbol" ? symbolCategoryOf(item.symbolId) : undefined;
-      if (
-        markupsState.settings.symbolCategory &&
-        symbolCategory !== markupsState.settings.symbolCategory
-      )
-        continue;
-      if (
-        markupsState.settings.countType &&
-        (item.kind !== "count" || (item.countType ?? "other") !== markupsState.settings.countType)
-      ) {
-        continue;
-      }
-      if (query) {
-        const created = formatTimestamp(item.createdAt);
-        const modified = formatTimestamp(item.updatedAt);
-        const haystack = `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${item.room ?? ""} ${category?.name ?? ""} ${item.kind === "count" ? countTypeLabel(project, item.countType) : ""} ${item.kind === "symbol" ? `${symbolName(item.symbolId)} ${symbolCategoryLabel(symbolCategory)} ${inspectionStatusLabel(item.status)}` : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "deduct deduction" : ""} ${created} ${modified} ${item.createdAt ?? ""} ${item.updatedAt ?? ""}`;
-        if (!matchesFilterText(haystack, query)) continue;
-      }
-      rows.push({ item, layer });
-    }
-  }
-  rows.sort((a, b) => compareRows(a, b, project));
-  return rows;
+  return filterMarkupRows(project, markupsState.settings, currentPageId(project, store.ui.page));
 }
 
 export function compareRows(a: MarkupRow, b: MarkupRow, project: Project): number {
-  const sort = markupsState.settings.sort;
-  if (sort) {
-    const hierarchy = buildLayerHierarchy(project.layers);
-    const left = sortValue(a, sort.column, project, hierarchy);
-    const right = sortValue(b, sort.column, project, hierarchy);
-    let result: number;
-    if (typeof left === "number" && typeof right === "number") result = left - right;
-    else result = String(left).localeCompare(String(right), undefined, { numeric: true });
-    if (result !== 0) return sort.direction === "desc" ? -result : result;
-  }
-  return (
-    pageNumber(project, a.item.pageId) - pageNumber(project, b.item.pageId) ||
-    a.layer.name.localeCompare(b.layer.name) ||
-    itemLabel(a.item, project).localeCompare(itemLabel(b.item, project), undefined, {
-      numeric: true,
-    })
-  );
-}
-
-export function sortValue(
-  row: MarkupRow,
-  column: MarkupsColumnId,
-  project: Project,
-  hierarchy?: LayerHierarchy,
-): string | number {
-  const category = isMeasurementKind(row.item.kind)
-    ? categoryForItem(project, row.item)
-    : undefined;
-  switch (column) {
-    case "name":
-      return itemLabel(row.item, project).toLocaleLowerCase();
-    case "type":
-      return itemKindLabel(row.item.kind);
-    case "page":
-      return pageNumber(project, row.item.pageId);
-    case "layer":
-      return row.layer.name.toLocaleLowerCase();
-    case "value":
-      return itemMetrics(row.item, project)?.rawPoints ?? 0;
-    case "countType":
-      return row.item.kind === "count"
-        ? countTypeLabel(project, row.item.countType).toLocaleLowerCase()
-        : "";
-    case "category":
-      return row.item.kind === "symbol"
-        ? symbolCategoryLabel(symbolCategoryOf(row.item.symbolId)).toLocaleLowerCase()
-        : (category?.name.toLocaleLowerCase() ?? "");
-    case "room":
-      return (row.item.room ?? "").toLocaleLowerCase();
-    case "status":
-      return row.item.kind === "symbol"
-        ? inspectionStatusLabel(row.item.status).toLocaleLowerCase()
-        : "";
-    case "created":
-      return timestampValue(row.item.createdAt);
-    case "modified":
-      return timestampValue(row.item.updatedAt);
-    case "visible":
-      return itemIsVisible(row.item, row.layer, hierarchy) ? 0 : 1;
-    case "locked":
-      return itemIsLocked(row.item, row.layer, hierarchy) ? 0 : 1;
-  }
-}
-
-export function groupValue(row: MarkupRow, field: MarkupsGroupField, project: Project): string {
-  switch (field) {
-    case "category": {
-      if (row.item.kind === "symbol") {
-        return symbolCategoryLabel(symbolCategoryOf(row.item.symbolId));
-      }
-      if (!isMeasurementKind(row.item.kind)) return t("markups.uncategorized");
-      return categoryForItem(project, row.item)?.name ?? t("markups.uncategorized");
-    }
-    case "room":
-      return row.item.room?.trim() || t("markups.unassigned");
-    case "countType":
-      return row.item.kind === "count"
-        ? countTypeLabel(project, row.item.countType)
-        : t("markups.other");
-    case "page": {
-      const page = pageNumber(project, row.item.pageId);
-      const name = pageDisplayName(project, row.item.pageId);
-      return name ? t("markups.pageWithName", { page, name }) : t("markups.pageOnly", { page });
-    }
-    case "layer":
-      return row.layer.name;
-    case "building":
-      return pageBuilding(project, row.item.pageId) ?? t("markups.unassigned");
-    case "floor":
-      return pageFloor(project, row.item.pageId) ?? t("markups.unassigned");
-  }
+  return compareRowModel(a, b, project, markupsState.settings.sort);
 }
 
 export function beginMarkupRename(label: HTMLElement, itemId: string, fallback: string): void {
