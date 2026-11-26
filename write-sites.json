@@ -1,20 +1,9 @@
 {
-  "total": 20,
+  "total": 4,
   "files": {
-    "src/app/App.ts": 1,
-    "src/app/imageFlows.ts": 1,
-    "src/app/projectNameEditor.ts": 1,
-    "src/features/countTypes/ui.ts": 1,
-    "src/features/schematics/ui/lineTypeDialog.ts": 1,
-    "src/features/schematics/ui/railDialog.ts": 4,
-    "src/features/schematics/ui/sheetFieldsDialog.ts": 1,
-    "src/features/takeoffSettings/ui/cards.ts": 1,
     "src/state/store.ts": {
       "max": 4,
       "reason": "Store setter methods are the command seam itself; per-command extraction is a later write-path phase."
-    },
-    "src/ui/markups/rows.ts": 2,
-    "src/ui/markups/views.ts": 2,
-    "src/ui/topMenu.ts": 1
+    }
   }
 }

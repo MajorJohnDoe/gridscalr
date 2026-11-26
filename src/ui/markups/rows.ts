@@ -17,7 +17,7 @@ import { selectionAfterClick } from "../../features/listInteraction";
 import { categoryForItem } from "../../model/categories";
 import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import { setItemsLocked, setItemsStatus, setItemsVisible } from "../../model/commands";
-import { setItemLabel } from "../../model/commands/labels";
+import { setItemLabel } from "../../model/commands/editorLabels";
 import { formatTimestamp } from "../../model/dates";
 import { currentPageId, pageDisplayName, pageNumber } from "../../model/pages";
 import {

@@ -6,7 +6,7 @@ import { setCountTypeGlyph } from "../src/model/countTypes";
 import { normalizeLineTypes, setLineTypes } from "../src/model/lineTypes";
 import { setRailItemOptions } from "../src/model/rail";
 import { addImageItem, createImageItem } from "../src/model/images";
-import { setItemLabel } from "../src/model/commands/labels";
+import { setItemLabel } from "../src/model/commands/editorLabels";
 import {
   addMarkupsView,
   replaceMarkupsViews,

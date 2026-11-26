@@ -18,7 +18,10 @@ function touch(item: { updatedAt: string }): void {
 export function setItemLabel(project: Project, itemId: string, value: string): boolean {
   const item = findItem(project, itemId)?.item;
   if (!item) return false;
-  item.label = value.trim() || undefined;
+  const next = value.trim() || undefined;
+  if (item.label === next) return false;
+  if (next === undefined) delete item.label;
+  else item.label = next;
   touch(item);
   return true;
 }

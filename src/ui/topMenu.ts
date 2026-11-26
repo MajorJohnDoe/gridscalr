@@ -1,4 +1,5 @@
 import { hasClipboard } from "../model/clipboard";
+import { updateProjectSettings } from "../model/commands/settings";
 import { store } from "../state/store";
 import { el } from "./dom";
 import { openHelp } from "./helpDialog";
@@ -193,7 +194,7 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
 
 function toggleSetting(key: "showGrid" | "showCalibration" | "snapToGeometry"): void {
   store.mutate((project) => {
-    project.settings[key] = !project.settings[key];
+    updateProjectSettings(project, { [key]: !project.settings[key] });
   }, "change");
 }
 
