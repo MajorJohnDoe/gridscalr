@@ -108,3 +108,68 @@ export function updateProjectName(project: Project, value: string): boolean {
   project.name = next;
   return true;
 }
+
+/** The project-wide quantity defaults a plain settings edit may change. */
+export type QuantityDefaultsPatch = {
+  wastePercent?: number;
+  roundingStep?: number;
+};
+
+/** The per-category quantity overrides a category edit may change. */
+export type CategoryQuantityField = "wastePercent" | "roundingStep";
+
+/**
+ * Applies normalized quantity defaults. A non-finite value is refused; waste
+ * clamps to 0–100 and rounding to non-negative. The return value says whether a
+ * value changed, so a no-op edit adds no undo step.
+ */
+export function setQuantityDefaults(
+  project: Pick<Project, "settings">,
+  patch: QuantityDefaultsPatch,
+): boolean {
+  if (
+    (patch.wastePercent !== undefined && !Number.isFinite(patch.wastePercent)) ||
+    (patch.roundingStep !== undefined && !Number.isFinite(patch.roundingStep))
+  ) {
+    return false;
+  }
+  const quantity = project.settings.quantity;
+  const wastePercent =
+    patch.wastePercent === undefined
+      ? quantity.wastePercent
+      : Math.max(0, Math.min(100, patch.wastePercent));
+  const roundingStep =
+    patch.roundingStep === undefined ? quantity.roundingStep : Math.max(0, patch.roundingStep);
+  if (wastePercent === quantity.wastePercent && roundingStep === quantity.roundingStep) {
+    return false;
+  }
+  quantity.wastePercent = wastePercent;
+  quantity.roundingStep = roundingStep;
+  return true;
+}
+
+/**
+ * Sets or clears one category's quantity override. `null` removes the override
+ * so the project default applies again. A missing category or a non-finite
+ * value is refused, and the return value says whether a value changed.
+ */
+export function setCategoryQuantityOverride(
+  project: Pick<Project, "categories">,
+  id: string,
+  field: CategoryQuantityField,
+  value: number | null,
+): boolean {
+  if (value !== null && !Number.isFinite(value)) return false;
+  const category = project.categories.find((entry) => entry.id === id);
+  if (!category) return false;
+  const normalized =
+    value === null
+      ? undefined
+      : field === "wastePercent"
+        ? Math.max(0, Math.min(100, value))
+        : Math.max(0, value);
+  if (category[field] === normalized) return false;
+  if (normalized === undefined) delete category[field];
+  else category[field] = normalized;
+  return true;
+}

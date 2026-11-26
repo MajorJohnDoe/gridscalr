@@ -10,8 +10,12 @@ import {
 } from "../features/pageModel";
 import { perfMark } from "../features/perfMonitor";
 import type { CloudFillPreset } from "../model/cloud";
+import {
+  setCategoryQuantityOverride as applyCategoryQuantityOverride,
+  setQuantityDefaults as applyQuantityDefaults,
+} from "../model/commands/settings";
 import { includedLocalPages } from "../model/documents";
-import { addLayer, findItem } from "../model/layers";
+import { addLayer } from "../model/layers";
 import {
   currentPageId,
   ensurePageState,
@@ -48,8 +52,8 @@ import type {
   SelectionRef,
   SheetPaperSize,
 } from "../model/types";
+import { ProjectStore } from "./projectStore";
 import { SessionStore } from "./sessionStore";
-import { SnapshotHistory } from "./snapshotHistory";
 import type {
   AutosaveFailure,
   ChangeReason,
@@ -65,8 +69,16 @@ export type { AutosaveFailure, ChangeReason, DrawStyle, FileStamp, LeftTab, Tool
 
 type Listener = (reason: ChangeReason) => void;
 
+/**
+ * Compatibility facade over the project and session stores.
+ *
+ * Project data, history and the dirty flag live in `ProjectStore`; UI state
+ * lives in `SessionStore`. Callers keep the single `store` surface, while the
+ * facade owns the wiring: one notification after an open or close, and the
+ * session cleanup that follows undo or redo. Page, category, quantity and image
+ * methods remain here until their own extraction phases.
+ */
 export class Store {
-  project: Project | null = null;
   /**
    * Session and UI state, split out of the project store. The `ui` getter below
    * keeps the existing facade for every caller.
@@ -76,31 +88,80 @@ export class Store {
     project: () => this.project,
     readOnly: () => this.readOnly,
   });
-  projectPath: string | null = null;
+  readonly projectState = new ProjectStore({
+    session: this.session,
+    mark: (name) => perfMark(name),
+  });
+
+  get project(): Project | null {
+    return this.projectState.project;
+  }
+
+  set project(project: Project | null) {
+    this.projectState.project = project;
+  }
+
+  get projectPath(): string | null {
+    return this.projectState.projectPath;
+  }
+
+  set projectPath(projectPath: string | null) {
+    this.projectState.projectPath = projectPath;
+  }
+
   /** Expected disk state captured on open and after a verified save. */
-  fileStamp: FileStamp | null = null;
-  dirty = false;
+  get fileStamp(): FileStamp | null {
+    return this.projectState.fileStamp;
+  }
+
+  set fileStamp(fileStamp: FileStamp | null) {
+    this.projectState.fileStamp = fileStamp;
+  }
+
+  get dirty(): boolean {
+    return this.projectState.dirty;
+  }
+
+  set dirty(dirty: boolean) {
+    this.projectState.dirty = dirty;
+  }
+
   /**
    * View-only: inspection, export, package and Save a copy work, but no command
-   * may change project data. The guards below and in the UI enforce it.
+   * may change project data. The guards and the UI enforce it.
    */
-  readOnly = false;
+  get readOnly(): boolean {
+    return this.projectState.readOnly;
+  }
+
+  set readOnly(readOnly: boolean) {
+    this.projectState.readOnly = readOnly;
+  }
+
   /** Last recovery-snapshot error, consumed by the UI after an autosave attempt. */
-  autosaveError: AutosaveFailure | null = null;
+  get autosaveError(): AutosaveFailure | null {
+    return this.projectState.autosaveError;
+  }
+
+  set autosaveError(autosaveError: AutosaveFailure | null) {
+    this.projectState.autosaveError = autosaveError;
+  }
+
   /** Increments whenever project data changes, including undo and redo. */
-  revision = 0;
-  private listeners = new Set<Listener>();
-  private history = new SnapshotHistory();
-  /** Project revision captured when the open gesture started. */
-  private gestureRevision = 0;
+  get revision(): number {
+    return this.projectState.revision;
+  }
+
+  set revision(revision: number) {
+    this.projectState.revision = revision;
+  }
 
   subscribe(listener: Listener): () => void {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    return this.projectState.subscribe(listener);
   }
 
   emit(reason: ChangeReason): void {
-    for (const listener of this.listeners) listener(reason);
+    this.projectState.emit(reason);
   }
 
   get ui(): UIState {
@@ -108,44 +169,27 @@ export class Store {
   }
 
   get canUndo(): boolean {
-    return this.history.canUndo;
+    return this.projectState.canUndo;
   }
 
   get canRedo(): boolean {
-    return this.history.canRedo;
+    return this.projectState.canRedo;
   }
 
   setProject(project: Project, projectPath: string | null, dirty = false): void {
-    this.project = project;
-    this.projectPath = projectPath;
-    this.fileStamp = null;
-    this.dirty = dirty;
-    this.readOnly = false;
-    this.autosaveError = null;
-    this.revision += 1;
-    if (!project.assets) project.assets = {};
-    this.clearHistory();
+    this.projectState.loadProject(project, projectPath, dirty);
     this.session.reset(project);
     this.emit("project");
   }
 
   closeProject(): void {
-    this.project = null;
-    this.projectPath = null;
-    this.fileStamp = null;
-    this.dirty = false;
-    this.readOnly = false;
-    this.autosaveError = null;
-    this.revision += 1;
-    this.clearHistory();
+    this.projectState.unloadProject();
     this.session.resetDefaults();
     this.emit("project");
   }
 
   setReadOnly(readOnly: boolean): void {
-    if (this.readOnly === readOnly) return;
-    this.readOnly = readOnly;
-    this.emit("save");
+    this.projectState.setReadOnly(readOnly);
   }
 
   setView(zoom: number, panX: number, panY: number): void {
@@ -209,7 +253,7 @@ export class Store {
    * structure. Page reorder and page insert are undoable and never call this.
    */
   clearHistory(): void {
-    this.history.seed(this.project);
+    this.projectState.clearHistory();
   }
 
   /**
@@ -223,7 +267,7 @@ export class Store {
     const result = deletePageRecord(this.project, pageId);
     if (!result) return null;
     this.clearHistory();
-    this.history.prunePayloads(this.project);
+    this.projectState.prunePayloads();
     this.ui.page = result.nextPageId ? pageNumber(this.project, result.nextPageId) : 1;
     this.ui.selection = [];
     this.ui.hover = null;
@@ -240,16 +284,7 @@ export class Store {
    * explicit boundary that clears history instead.
    */
   private mutatePageList(change: (project: Project) => boolean): boolean {
-    if (!this.project || this.readOnly) return false;
-    const before = this.history.currentText(this.project);
-    if (!before) return false;
-    if (!change(this.project)) return false;
-    this.history.commit(before);
-    this.history.capture(this.project);
-    this.dirty = true;
-    this.revision += 1;
-    this.emit("project");
-    return true;
+    return this.projectState.mutateIfChanged(change, "project");
   }
 
   /**
@@ -278,23 +313,27 @@ export class Store {
     if (!this.project || this.readOnly) return null;
     const source = pageRecordById(this.project, pageId);
     if (!source) return null;
-    const before = this.history.currentText(this.project);
-    if (!before) return null;
-    const record = insertPageRecord(this.project, {
-      documentId: source.documentId,
-      localPage: source.localPage,
-      index,
-    });
-    if (!record) return null;
-    this.history.commit(before);
-    this.history.capture(this.project);
-    this.ui.page = pageNumber(this.project, record.id);
-    this.ui.selection = [];
-    this.ui.hover = null;
-    this.dirty = true;
-    this.revision += 1;
-    this.emit("project");
-    return record.id;
+    let createdId: PageId | null = null;
+    const changed = this.projectState.mutateIfChanged(
+      (project) => {
+        const record = insertPageRecord(project, {
+          documentId: source.documentId,
+          localPage: source.localPage,
+          index,
+        });
+        if (!record) return false;
+        createdId = record.id;
+        return true;
+      },
+      "project",
+      (project) => {
+        if (!createdId) return;
+        this.ui.page = pageNumber(project, createdId);
+        this.ui.selection = [];
+        this.ui.hover = null;
+      },
+    );
+    return changed ? createdId : null;
   }
 
   setLineType(id: string): void {
@@ -533,20 +572,7 @@ export class Store {
     ) {
       return false;
     }
-    const quantity = this.project.settings.quantity;
-    const wastePercent =
-      patch.wastePercent === undefined
-        ? quantity.wastePercent
-        : Math.max(0, Math.min(100, patch.wastePercent));
-    const roundingStep =
-      patch.roundingStep === undefined ? quantity.roundingStep : Math.max(0, patch.roundingStep);
-    if (wastePercent === quantity.wastePercent && roundingStep === quantity.roundingStep) {
-      return true;
-    }
-    this.mutate((project) => {
-      project.settings.quantity.wastePercent = wastePercent;
-      project.settings.quantity.roundingStep = roundingStep;
-    }, "change");
+    this.projectState.mutateIfChanged((project) => applyQuantityDefaults(project, patch), "change");
     return true;
   }
 
@@ -558,28 +584,16 @@ export class Store {
     const project = this.project;
     if (!project || !findCategory(project, id)) return false;
     if (value !== null && !Number.isFinite(value)) return false;
-    const normalized =
-      value === null
-        ? undefined
-        : field === "wastePercent"
-          ? Math.max(0, Math.min(100, value))
-          : Math.max(0, value);
-    const category = findCategory(project, id);
-    if (!category) return false;
-    if (category[field] === normalized) return true;
-    this.mutate((project) => {
-      const target = findCategory(project, id);
-      if (!target) return;
-      if (normalized === undefined) delete target[field];
-      else target[field] = normalized;
-    }, "change");
+    this.projectState.mutateIfChanged(
+      (next) => applyCategoryQuantityOverride(next, id, field, value),
+      "change",
+    );
     return true;
   }
 
   /** Keeps embedded image payloads available across undo and redo. */
   registerImageAsset(asset: ImageAsset): void {
-    if (this.readOnly) return;
-    this.history.registerPayload(asset);
+    this.projectState.registerImageAsset(asset);
   }
 
   mutate(
@@ -587,21 +601,11 @@ export class Store {
     reason: ChangeReason = "change",
     options: { history?: boolean; dirty?: boolean } = {},
   ): void {
-    if (!this.project || this.readOnly) return;
-    const history = options.history !== false;
-    const before = history ? this.history.currentText(this.project) : null;
-    mutator(this.project);
-    if (before) this.history.commit(before);
-    this.history.capture(this.project);
-    this.revision += 1;
-    if (options.dirty !== false) this.dirty = true;
-    this.emit(reason);
+    this.projectState.mutate(mutator, reason, options);
   }
 
   beginGesture(): void {
-    if (!this.project || this.readOnly) return;
-    this.history.beginGesture(this.project);
-    this.gestureRevision = this.revision;
+    this.projectState.beginGesture();
   }
 
   /**
@@ -610,81 +614,27 @@ export class Store {
    * that counter instead of serialising the project a second time.
    */
   noteGestureChange(): void {
-    if (!this.history.gestureOpen) return;
-    if (this.revision === this.gestureRevision) this.revision += 1;
+    this.projectState.noteGestureChange();
   }
 
   endGesture(reason: ChangeReason = "change"): void {
-    if (!this.history.gestureOpen) return;
-    if (this.revision !== this.gestureRevision && this.project) {
-      // The direct edit already bumped the revision when the pointer moved, so
-      // committing the gesture does not bump it again.
-      this.history.commitGesture(this.project);
-      this.dirty = true;
-      this.emit(reason);
-    } else {
-      this.history.discardGesture();
-    }
+    this.projectState.endGesture(reason);
   }
 
   cancelGesture(): void {
-    const restored = this.history.cancelGesture(this.project);
-    if (restored) {
-      this.project = restored;
-      this.revision += 1;
-    }
+    this.projectState.cancelGesture();
   }
 
   undo(): void {
-    if (this.readOnly || !this.project || !this.history.canUndo) return;
-    perfMark("undo");
-    const visiblePageId = currentPageId(this.project, this.ui.page);
-    const previous = this.history.undo(this.project);
-    if (!previous) return;
-    this.project = this.history.restore(previous);
-    this.afterHistoryRestore(visiblePageId);
-    this.emit("undo");
+    this.projectState.undo();
   }
 
   redo(): void {
-    if (this.readOnly || !this.project || !this.history.canRedo) return;
-    perfMark("redo");
-    const visiblePageId = currentPageId(this.project, this.ui.page);
-    const next = this.history.redo(this.project);
-    if (!next) return;
-    this.project = this.history.restore(next);
-    this.afterHistoryRestore(visiblePageId);
-    this.emit("undo");
-  }
-
-  /**
-   * Restores view state after undo or redo. The visible page follows its
-   * `PageId` while that page still exists, so undoing a reorder or a page
-   * insert keeps the same drawing on screen. When the page is gone, the display
-   * position is clamped instead. Display numbers are never stored references.
-   */
-  private afterHistoryRestore(visiblePageId: PageId | null): void {
-    if (!this.project) return;
-    this.revision += 1;
-    this.dirty = true;
-    const followed = visiblePageId ? pageNumber(this.project, visiblePageId) : 0;
-    this.ui.page =
-      followed > 0
-        ? followed
-        : Math.max(1, Math.min(Math.max(1, this.project.pages.length), this.ui.page));
-    this.ui.selection = this.ui.selection.filter((ref) => {
-      const found = findItem(this.project!, ref.itemId);
-      return Boolean(found && found.layer.id === ref.layerId);
-    });
-    if (!this.project.layers.some((l) => l.id === this.project!.activeLayerId)) {
-      this.project.activeLayerId = this.project.layers[0]?.id ?? "";
-    }
+    this.projectState.redo();
   }
 
   markSaved(path: string | null): void {
-    this.projectPath = path;
-    this.dirty = false;
-    this.emit("save");
+    this.projectState.markSaved(path);
   }
 }
 
