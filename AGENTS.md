@@ -221,6 +221,7 @@ The local gate (target: under two minutes):
 ```bash
 npm run check:versions
 npm run check:file-budgets
+npm run check:write-sites
 npm run check:modules
 npm run check:cycles
 npm run check:security

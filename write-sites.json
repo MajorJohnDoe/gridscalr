@@ -1,0 +1,42 @@
+{
+  "total": 164,
+  "files": {
+    "src/app/App.ts": 1,
+    "src/app/imageFlows.ts": 1,
+    "src/app/projectNameEditor.ts": 1,
+    "src/canvas/editors/labels.ts": 2,
+    "src/canvas/editors/textCommit.ts": 44,
+    "src/canvas/pointer/contextMenu.ts": 14,
+    "src/canvas/pointer/doubleClick.ts": 1,
+    "src/canvas/pointer/draft.ts": {
+      "max": 5,
+      "reason": "Gesture-time draft edits write through the store before a command module exists; extract in the write-path wave."
+    },
+    "src/features/countTypes/ui.ts": 1,
+    "src/features/schematics/ui/lineTypeDialog.ts": 1,
+    "src/features/schematics/ui/railDialog.ts": 4,
+    "src/features/schematics/ui/sheetFieldsDialog.ts": 1,
+    "src/features/takeoffSettings/ui/cards.ts": 1,
+    "src/state/store.ts": {
+      "max": 4,
+      "reason": "Store setter methods are the command seam itself; per-command extraction is a later write-path phase."
+    },
+    "src/ui/inspector.ts": 4,
+    "src/ui/inspector/drawing.ts": 16,
+    "src/ui/inspector/label.ts": 1,
+    "src/ui/inspector/measurement.ts": 14,
+    "src/ui/inspector/style.ts": 15,
+    "src/ui/inspector/symbol.ts": 4,
+    "src/ui/layers/layerRow.ts": 3,
+    "src/ui/layers/menu.ts": 2,
+    "src/ui/markups/rows.ts": 2,
+    "src/ui/markups/views.ts": 2,
+    "src/ui/settings/display.ts": 4,
+    "src/ui/settings/labels.ts": 2,
+    "src/ui/settings/metadata.ts": 7,
+    "src/ui/settings/project.ts": 1,
+    "src/ui/settings/stamps.ts": 2,
+    "src/ui/settings/units.ts": 3,
+    "src/ui/topMenu.ts": 1
+  }
+}

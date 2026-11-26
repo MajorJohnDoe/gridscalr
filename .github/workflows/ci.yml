@@ -57,6 +57,7 @@ jobs:
       - run: npm ci
       - run: npm run check:versions
       - run: npm run check:file-budgets
+      - run: npm run check:write-sites
       - run: npm run check:modules
       - run: npm run check:cycles
       - run: npm run check:security
