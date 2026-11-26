@@ -3,7 +3,7 @@ import { el } from "./dom";
 import { icon } from "./icons";
 import { showModal } from "./dialogs";
 import type { PanelActions } from "./panels";
-import { mountQuantities, unmountQuantities } from "./quantityPanel";
+import { mountQuantities, unmountQuantities } from "../features/quantities";
 import { t } from "../i18n";
 
 export function openQuantitiesDialog(actions: PanelActions): void {

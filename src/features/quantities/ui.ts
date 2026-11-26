@@ -1,39 +1,18 @@
+import { t } from "../../i18n";
+import { currentPageId } from "../../model/pages";
+import type { QuantitySummary, QuantityType, QuantityTypeTotal } from "../../model/quantity";
+import { formatNumber } from "../../model/units";
+import { store } from "../../state/store";
+import { clear, el, option } from "../../ui/dom";
+import { icon } from "../../ui/icons";
+import { resolveQuantitySummary } from "./model";
 import {
-  calculateQuantities,
-  type QuantitySummary,
-  type QuantityType,
-  type QuantityTypeTotal,
-} from "../model/quantity";
-import { formatNumber } from "../model/units";
-import { currentPageId } from "../model/pages";
-import { store } from "../state/store";
-import { clear, el, option } from "./dom";
-import { icon } from "./icons";
-import { t } from "../i18n";
+  quantityPanelState,
+  resetQuantityPanelFilters,
+  sanitizeQuantityPanelFilters,
+} from "./state";
 
-let pageFilter: "current" | "all" = "current";
-let categoryFilter = "";
-let roomFilter = "";
-let includeHidden = false;
-let layerFilter: Set<string> | null = null;
-let layersOpen = false;
-
-let projectIdentity = "";
-let cachedRevision = -1;
-let cachedKey = "";
-let cachedSummary: QuantitySummary | null = null;
-
-function resetFilters(): void {
-  pageFilter = "current";
-  categoryFilter = "";
-  roomFilter = "";
-  includeHidden = false;
-  layerFilter = null;
-  layersOpen = false;
-  cachedRevision = -1;
-  cachedKey = "";
-  cachedSummary = null;
-}
+const state = quantityPanelState;
 
 function formatValue(value: number, type: QuantityType): string {
   return formatNumber(value, type === "count" ? 0 : type === "angle" || type === "slope" ? 1 : 2);
@@ -56,35 +35,17 @@ function typeLabel(type: QuantityType): string {
   return t("quantity.type.count");
 }
 
-function filtersKey(projectId: string): string {
-  return JSON.stringify({
-    projectId,
-    page: pageFilter,
-    currentPage: currentPageId(store.project!, store.ui.page),
-    category: categoryFilter,
-    room: roomFilter,
-    hidden: includeHidden,
-    layers: layerFilter ? [...layerFilter].sort() : null,
-  });
-}
-
 function currentSummary(): QuantitySummary | null {
   const project = store.project;
   if (!project) return null;
-  const key = filtersKey(project.id);
-  if (cachedSummary && cachedRevision === store.revision && cachedKey === key) {
-    return cachedSummary;
-  }
-  cachedSummary = calculateQuantities(project, {
-    page: pageFilter === "current" ? (currentPageId(project, store.ui.page) ?? "all") : "all",
-    layerIds: layerFilter ? [...layerFilter] : null,
-    categoryId: categoryFilter || null,
-    room: roomFilter,
-    includeHidden,
+  state.cache = resolveQuantitySummary({
+    project,
+    revision: store.revision,
+    currentPage: currentPageId(project, store.ui.page),
+    filters: state,
+    cache: state.cache,
   });
-  cachedRevision = store.revision;
-  cachedKey = key;
-  return cachedSummary;
+  return state.cache.summary;
 }
 
 function totalsChips(totals: QuantityTypeTotal[], label: string): HTMLElement {
@@ -212,19 +173,6 @@ function renderRows(summary: QuantitySummary): HTMLElement {
   return list;
 }
 
-function sanitizeFilters(project: NonNullable<typeof store.project>): void {
-  if (categoryFilter && !project.categories.some((category) => category.id === categoryFilter)) {
-    categoryFilter = "";
-  }
-  if (layerFilter) {
-    const valid = new Set(
-      project.layers.filter((layer) => layer.kind === "measure").map((layer) => layer.id),
-    );
-    const next = new Set([...layerFilter].filter((id) => valid.has(id)));
-    layerFilter = next.size ? next : null;
-  }
-}
-
 function renderFilters(): HTMLElement {
   const project = store.project!;
   const wrap = el("div", "quantity-filters");
@@ -234,11 +182,11 @@ function renderFilters(): HTMLElement {
   const pageSelect = el("select", "select");
   pageSelect.setAttribute("aria-label", t("quantity.filterPage"));
   pageSelect.append(
-    option("current", t("quantity.currentPage", { page: store.ui.page }), pageFilter === "current"),
-    option("all", t("quantity.allPages"), pageFilter === "all"),
+    option("current", t("quantity.currentPage", { page: store.ui.page }), state.page === "current"),
+    option("all", t("quantity.allPages"), state.page === "all"),
   );
   pageSelect.addEventListener("change", () => {
-    pageFilter = pageSelect.value === "all" ? "all" : "current";
+    state.page = pageSelect.value === "all" ? "all" : "current";
     rerender();
   });
   pageField.append(pageSelect);
@@ -247,12 +195,12 @@ function renderFilters(): HTMLElement {
   categoryField.append(el("span", "field-label", t("quantity.category")));
   const categorySelect = el("select", "select");
   categorySelect.setAttribute("aria-label", t("quantity.filterCategory"));
-  categorySelect.append(option("", t("quantity.allCategories"), !categoryFilter));
+  categorySelect.append(option("", t("quantity.allCategories"), !state.categoryId));
   for (const category of project.categories) {
-    categorySelect.append(option(category.id, category.name, category.id === categoryFilter));
+    categorySelect.append(option(category.id, category.name, category.id === state.categoryId));
   }
   categorySelect.addEventListener("change", () => {
-    categoryFilter = categorySelect.value;
+    state.categoryId = categorySelect.value;
     rerender();
   });
   categoryField.append(categorySelect);
@@ -262,10 +210,10 @@ function renderFilters(): HTMLElement {
   const roomInput = el("input", "input");
   roomInput.type = "search";
   roomInput.placeholder = t("quantity.filterRoom");
-  roomInput.value = roomFilter;
+  roomInput.value = state.room;
   roomInput.setAttribute("aria-label", t("quantity.filterRoomAria"));
   roomInput.addEventListener("change", () => {
-    roomFilter = roomInput.value;
+    state.room = roomInput.value;
     rerender();
   });
   roomField.append(roomInput);
@@ -273,15 +221,15 @@ function renderFilters(): HTMLElement {
   const layers = project.layers.filter((layer) => layer.kind === "measure");
   const layerDetails = el("details", "quantity-layers quantity-field-wide");
   layerDetails.setAttribute("aria-label", t("quantity.filterLayer"));
-  layerDetails.open = layersOpen;
+  layerDetails.open = state.layersOpen;
   layerDetails.addEventListener("toggle", () => {
-    layersOpen = layerDetails.open;
+    state.layersOpen = layerDetails.open;
   });
-  const selectedCount = layerFilter === null ? layers.length : layerFilter.size;
+  const selectedCount = state.layerIds === null ? layers.length : state.layerIds.size;
   const layerSummary = el(
     "summary",
     "quantity-layers-summary",
-    layerFilter === null
+    state.layerIds === null
       ? t("quantity.allLayers")
       : selectedCount === 0
         ? t("quantity.noLayers")
@@ -293,9 +241,9 @@ function renderFilters(): HTMLElement {
   const allRow = el("label", "check-row");
   const allInput = el("input");
   allInput.type = "checkbox";
-  allInput.checked = layerFilter === null;
+  allInput.checked = state.layerIds === null;
   allInput.addEventListener("change", () => {
-    layerFilter = allInput.checked ? null : new Set();
+    state.layerIds = allInput.checked ? null : new Set();
     rerender();
   });
   allRow.append(allInput, el("span", "", t("quantity.allMeasurementLayers")));
@@ -305,17 +253,18 @@ function renderFilters(): HTMLElement {
     const row = el("label", "check-row");
     const input = el("input");
     input.type = "checkbox";
-    input.checked = layerFilter === null || layerFilter.has(layer.id);
+    input.checked = state.layerIds === null || state.layerIds.has(layer.id);
     input.addEventListener("change", () => {
-      if (layerFilter === null) {
+      const layerIds = state.layerIds;
+      if (layerIds === null) {
         if (!input.checked) {
-          layerFilter = new Set(layers.map((entry) => entry.id).filter((id) => id !== layer.id));
+          state.layerIds = new Set(layers.map((entry) => entry.id).filter((id) => id !== layer.id));
         }
       } else {
-        const next = new Set(layerFilter);
+        const next = new Set(layerIds);
         if (input.checked) next.add(layer.id);
         else next.delete(layer.id);
-        layerFilter =
+        state.layerIds =
           layers.length > 0 && layers.every((entry) => next.has(entry.id)) ? null : next;
       }
       rerender();
@@ -328,9 +277,9 @@ function renderFilters(): HTMLElement {
   const hiddenRow = el("label", "check-row quantity-field-wide");
   const hiddenInput = el("input");
   hiddenInput.type = "checkbox";
-  hiddenInput.checked = includeHidden;
+  hiddenInput.checked = state.includeHidden;
   hiddenInput.addEventListener("change", () => {
-    includeHidden = hiddenInput.checked;
+    state.includeHidden = hiddenInput.checked;
     rerender();
   });
   hiddenRow.append(hiddenInput, el("span", "", t("quantity.includeHidden")));
@@ -339,7 +288,7 @@ function renderFilters(): HTMLElement {
   const reset = el("button", "btn btn-small btn-ghost", t("quantity.resetFilters"));
   reset.type = "button";
   reset.addEventListener("click", () => {
-    resetFilters();
+    resetQuantityPanelFilters();
     rerender();
   });
   actions.append(reset);
@@ -350,7 +299,7 @@ function renderFilters(): HTMLElement {
 
 function renderNotice(summary: QuantitySummary): HTMLElement | null {
   const notes: string[] = [];
-  if (!includeHidden && summary.hiddenExcluded > 0) {
+  if (!state.includeHidden && summary.hiddenExcluded > 0) {
     notes.push(t("quantity.hiddenExcluded", { count: summary.hiddenExcluded }));
   }
   if (summary.uncalibratedExcluded > 0) {
@@ -364,14 +313,14 @@ function renderNotice(summary: QuantitySummary): HTMLElement | null {
 }
 
 function rerender(): void {
-  if (!activeContainer) return;
-  renderQuantitiesBody(activeContainer);
+  if (!state.activeContainer) return;
+  renderQuantitiesBody(state.activeContainer);
 }
 
 function renderQuantitiesBody(body: HTMLElement): void {
   const project = store.project;
   if (!project) return;
-  sanitizeFilters(project);
+  sanitizeQuantityPanelFilters(state, project);
   clear(body);
   const summary = currentSummary();
   if (!summary) return;
@@ -383,20 +332,18 @@ function renderQuantitiesBody(body: HTMLElement): void {
   body.append(panel);
 }
 
-let activeContainer: HTMLElement | null = null;
-
 export function unmountQuantities(): void {
-  activeContainer = null;
+  state.activeContainer = null;
 }
 
 export function mountQuantities(container: HTMLElement): void {
   const project = store.project;
   if (!project) return;
   const identity = `${project.id}\u0000${project.documents.map((document) => document.sha256).join("+")}`;
-  if (identity !== projectIdentity) {
-    projectIdentity = identity;
-    resetFilters();
+  if (identity !== state.projectIdentity) {
+    state.projectIdentity = identity;
+    resetQuantityPanelFilters();
   }
-  activeContainer = container;
+  state.activeContainer = container;
   renderQuantitiesBody(container);
 }

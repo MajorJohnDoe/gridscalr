@@ -50,6 +50,7 @@ const FOUNDATION_FEATURES = [
   "src/features/lineContinuation",
   "src/features/measurementFlyout",
   "src/features/railConnections",
+  "src/features/quantities",
 ];
 
 const frontendErrors = [];
