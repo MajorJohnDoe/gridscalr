@@ -1,10 +1,12 @@
 import { t } from "../../i18n";
 import type { LayerTreeRow } from "../../features/layerTree";
 import {
-  defaultColorForLayer,
+  renameLayer,
+  setLayerColor,
   setLayerLockedOnPage,
   setLayerVisibleOnPage,
-} from "../../model/layers";
+} from "../../model/commands/layers";
+import { defaultColorForLayer } from "../../model/layers";
 import type { Layer, Project } from "../../model/types";
 import { store } from "../../state/store";
 import { colorInputValue, setColorInput } from "../colorInput";
@@ -64,8 +66,7 @@ function beginInlineRename(name: HTMLElement, layerId: string): void {
     done = true;
     if (save && input.value.trim()) {
       store.mutate((project) => {
-        const layer = project.layers.find((l) => l.id === layerId);
-        if (layer) layer.name = input.value.trim();
+        renameLayer(project, layerId, input.value);
       }, "layers");
     } else {
       store.emit("layers");
@@ -187,10 +188,7 @@ export function renderLayerRow(
     const next = colorInputValue(colorInput, fallbackColor);
     color.style.background = next;
     store.mutate((current) => {
-      const target = current.layers.find((l) => l.id === layer.id);
-      if (!target) return;
-      target.color = next;
-      for (const item of target.items) item.color = next;
+      setLayerColor(current, layer.id, next);
     }, "layers");
   });
 
@@ -218,9 +216,9 @@ export function renderLayerRow(
   eye.disabled = store.readOnly || Boolean(treeRow.inheritedHiddenBy);
   eye.addEventListener("click", (event) => {
     event.stopPropagation();
+    const nextVisible = !layerOwnVisible(layer, pageId);
     store.mutate((current) => {
-      const target = current.layers.find((l) => l.id === layer.id);
-      if (target) setLayerVisibleOnPage(target, pageId, !layerOwnVisible(target, pageId));
+      setLayerVisibleOnPage(current, layer.id, pageId, nextVisible);
     }, "layers");
   });
   const lock = layerAction(
@@ -240,9 +238,9 @@ export function renderLayerRow(
   lock.disabled = store.readOnly || Boolean(treeRow.inheritedLockedBy);
   lock.addEventListener("click", (event) => {
     event.stopPropagation();
+    const nextLocked = !layerOwnLocked(layer, pageId);
     store.mutate((current) => {
-      const target = current.layers.find((l) => l.id === layer.id);
-      if (target) setLayerLockedOnPage(target, pageId, !layerOwnLocked(target, pageId));
+      setLayerLockedOnPage(current, layer.id, pageId, nextLocked);
     }, "layers");
   });
   const menu = layerAction("markups", t("layer.actions"), "layer-menu-btn");

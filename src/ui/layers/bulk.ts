@@ -1,6 +1,10 @@
 import { t } from "../../i18n";
 import { planLayerDeletion } from "../../features/layerTree";
-import { removeLayer, setLayerLockedOnPage, setLayerVisibleOnPage } from "../../model/layers";
+import {
+  deleteLayer,
+  setLayersLockedOnPage,
+  setLayersVisibleOnPage,
+} from "../../model/commands/layers";
 import { pageIdAt } from "../../model/pages";
 import type { Layer } from "../../model/types";
 import { store } from "../../state/store";
@@ -36,10 +40,7 @@ export function setSelectedLayersVisible(visible: boolean): void {
   const pageId = pageIdAt(store.project!, store.ui.page) ?? "";
   const ids = selectedLayers().map((layer) => layer.id);
   store.mutate((current) => {
-    for (const id of ids) {
-      const target = current.layers.find((layer) => layer.id === id);
-      if (target) setLayerVisibleOnPage(target, pageId, visible);
-    }
+    setLayersVisibleOnPage(current, ids, pageId, visible);
   }, "layers");
 }
 
@@ -47,10 +48,7 @@ export function setSelectedLayersLocked(locked: boolean): void {
   const pageId = pageIdAt(store.project!, store.ui.page) ?? "";
   const ids = selectedLayers().map((layer) => layer.id);
   store.mutate((current) => {
-    for (const id of ids) {
-      const target = current.layers.find((layer) => layer.id === id);
-      if (target) setLayerLockedOnPage(target, pageId, locked);
-    }
+    setLayersLockedOnPage(current, ids, pageId, locked);
   }, "layers");
 }
 
@@ -98,7 +96,7 @@ export function deleteSelectedLayers(actions: PanelActions): void {
   ).then((confirmed) => {
     if (!confirmed) return;
     store.mutate((current) => {
-      for (const id of totals.roots) removeLayer(current, id);
+      for (const id of totals.roots) deleteLayer(current, id);
     }, "layers");
     layerTreeController.reset();
     actions.refresh();

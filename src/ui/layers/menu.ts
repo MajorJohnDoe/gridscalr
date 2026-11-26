@@ -1,6 +1,12 @@
 import { t } from "../../i18n";
+import {
+  clearLayerItemsOnPage,
+  deleteLayer,
+  moveLayerWithinKind,
+  renameLayer,
+} from "../../model/commands/layers";
 import { selectionKind } from "../../model/selection";
-import { duplicateLayer, layerLockedOnPage, moveLayer } from "../../model/layers";
+import { duplicateLayer, layerLockedOnPage } from "../../model/layers";
 import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import { pageIdAt } from "../../model/pages";
 import { store } from "../../state/store";
@@ -9,7 +15,6 @@ import type { PanelActions } from "../panels";
 import type { PopoverItem } from "../popover";
 import { showPopover, showPopoverAt } from "../popover";
 import {
-  deleteLayerSubtree,
   duplicateLayerSubtree,
   layerSubtreeSize,
   moveLayerOutOfGroup,
@@ -79,8 +84,7 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
         ).then((value) => {
           if (!value) return;
           store.mutate((current) => {
-            const target = current.layers.find((entry) => entry.id === layerId);
-            if (target) target.name = value;
+            renameLayer(current, layerId, value);
           }, "layers");
         });
       },
@@ -112,13 +116,13 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
       label: t("layer.moveUp"),
       icon: "up",
       disabled: index <= 0,
-      action: () => store.mutate((current) => moveLayer(current, layerId, 1), "layers"),
+      action: () => store.mutate((current) => moveLayerWithinKind(current, layerId, 1), "layers"),
     },
     {
       label: t("layer.moveDown"),
       icon: "down",
       disabled: index < 0 || index >= group.length - 1,
-      action: () => store.mutate((current) => moveLayer(current, layerId, -1), "layers"),
+      action: () => store.mutate((current) => moveLayerWithinKind(current, layerId, -1), "layers"),
     },
     {
       label: t("layer.moveOutOfGroup"),
@@ -161,8 +165,7 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
         ).then((confirmed) => {
           if (!confirmed) return;
           store.mutate((current) => {
-            const target = current.layers.find((entry) => entry.id === layerId);
-            if (target) target.items = target.items.filter((item) => item.pageId !== pageId);
+            clearLayerItemsOnPage(current, layerId, pageId);
           }, "layers");
         });
       },
@@ -196,7 +199,7 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
         }).then((confirmed) => {
           if (!confirmed) return;
           store.mutate((current) => {
-            deleteLayerSubtree(current, layerId);
+            deleteLayer(current, layerId);
           }, "layers");
           actions.refresh();
         });
