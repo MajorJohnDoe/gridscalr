@@ -96,6 +96,21 @@ function fieldLabels(
     .map((field) => field.label);
 }
 
+/**
+ * Shows or hides one KPI card by its stable id. Other cards keep their own
+ * visibility, and an unchanged value is reported as no change.
+ */
+export function setSummaryCardVisible(
+  project: Pick<Project, "settings">,
+  id: SummaryCardId,
+  visible: boolean,
+): boolean {
+  const target = project.settings.summary.cards.find((entry) => entry.id === id);
+  if (!target || target.visible === visible) return false;
+  target.visible = visible;
+  return true;
+}
+
 /** A category override falls back to the project default when it is unset. */
 export function effectiveWaste(category: Category, quantity: QuantitySettings): number {
   return category.wastePercent ?? quantity.wastePercent;

@@ -4,7 +4,7 @@ import type { SummaryCardId } from "../../../model/types";
 import { store } from "../../../state/store";
 import { clear, el } from "../../../ui/dom";
 import { t, type MessageKey } from "../../../i18n";
-import { TAKEOFF_CARD_IDS, cardFeed, cardHasObjectFeed } from "../model";
+import { TAKEOFF_CARD_IDS, cardFeed, cardHasObjectFeed, setSummaryCardVisible } from "../model";
 
 /**
  * Cards tab. Each of the four KPI cards shows its visibility switch and, for
@@ -59,8 +59,7 @@ function cardBlock(id: SummaryCardId, onChanged: () => void): HTMLElement {
   input.setAttribute("aria-label", t("takeoffSettings.cards.visibleAria", { card: cardLabel }));
   input.addEventListener("change", () => {
     store.mutate((current) => {
-      const target = current.settings.summary.cards.find((entry) => entry.id === id);
-      if (target) target.visible = input.checked;
+      setSummaryCardVisible(current, id, input.checked);
     }, "change");
     onChanged();
   });

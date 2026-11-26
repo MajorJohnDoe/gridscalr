@@ -3,8 +3,9 @@ import { store } from "../../../state/store";
 import { showModal } from "../../../ui/dialogs";
 import { el } from "../../../ui/dom";
 import { toast } from "../../../ui/toast";
+import { pageIdAt } from "../../../model/pages";
 import type { SheetPaperSize } from "../../../model/types";
-import { templateDocumentForPage } from "../model/sheetDocument";
+import { setSheetFields, templateDocumentForPage } from "../model/sheetDocument";
 import {
   resolveSheetLabels,
   revisionFieldId,
@@ -148,6 +149,8 @@ export async function openSheetFieldsDialog(
   if (!project) return;
   const document = templateDocumentForPage(project, page);
   if (!document?.template) return;
+  const pageId = pageIdAt(project, page);
+  if (!pageId) return;
   const sheetLabels = labels();
   const spec = sheetTemplateFor(document.template.id, document.template.paper, sheetLabels);
   if (!spec) {
@@ -229,8 +232,7 @@ export async function openSheetFieldsDialog(
   const next = { ...values };
   for (const [id, input] of inputs) next[id] = input.value;
   store.mutate((current) => {
-    const target = templateDocumentForPage(current, page);
-    if (target?.template) target.template.fields = next;
+    setSheetFields(current, pageId, next);
   }, "change");
 
   const paper: SheetPaperSize = paperSelect.value === "A2" ? "A2" : "A3";

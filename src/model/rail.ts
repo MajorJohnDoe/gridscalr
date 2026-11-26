@@ -1,5 +1,5 @@
 import { t } from "../i18n";
-import type { MarkupItem, RailRow } from "./types";
+import type { MarkupItem, Project, RailRow } from "./types";
 
 /** 5 mm between rail rows, in PDF points. */
 export const RAIL_ROW_SPACING = (5 * 72) / 25.4;
@@ -70,4 +70,53 @@ export function railGeometry(item: MarkupItem): RailGeometry | null {
 export function railLegendY(geometry: RailGeometry): number {
   const last = geometry.rows[geometry.rows.length - 1];
   return (last?.y ?? geometry.top) + geometry.rowSpacing;
+}
+
+export interface RailItemOptions {
+  rows: readonly RailRow[];
+  showBadges: boolean;
+  showLegend: boolean;
+}
+
+/**
+ * Replaces the rows and display switches of one I/O rail. Blank labels are
+ * dropped, ids stay unique and a true switch is stored as absent so the
+ * project file keeps its compact default. A rail with no usable row is refused.
+ */
+export function setRailItemOptions(
+  project: Project,
+  itemId: string,
+  options: RailItemOptions,
+): boolean {
+  let target: MarkupItem | undefined;
+  for (const layer of project.layers) {
+    target = layer.items.find((entry) => entry.id === itemId);
+    if (target) break;
+  }
+  if (!target || target.kind !== "rail") return false;
+  const seen = new Set<string>();
+  const rows: RailRow[] = [];
+  options.rows.forEach((row, index) => {
+    const label = String(row.label ?? "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 20);
+    if (!label) return;
+    let id = typeof row.id === "string" && row.id ? row.id : `row_${index + 1}`;
+    while (seen.has(id)) id = `row_${index + 1}_${rows.length + 1}`;
+    const legend = String(row.legend ?? "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 80);
+    rows.push({ id, label, ...(legend ? { legend } : {}) });
+    seen.add(id);
+  });
+  if (!rows.length) return false;
+  target.rows = rows;
+  if (options.showBadges) delete target.showBadges;
+  else target.showBadges = false;
+  if (options.showLegend) delete target.showLegend;
+  else target.showLegend = false;
+  target.updatedAt = new Date().toISOString();
+  return true;
 }

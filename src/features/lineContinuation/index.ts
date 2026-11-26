@@ -6,6 +6,7 @@
 export {
   CONTINUATION_HIT_TOLERANCE_PX,
   canContinuePolyline,
+  continuePolyline,
   isContinuablePolyline,
   mergeContinuedPoints,
   nearestContinuableEndpoint,

@@ -1,7 +1,7 @@
-import { itemLocalToPage } from "../../model/geometry";
-import type { LayerHierarchy } from "../../model/layerHierarchy";
-import { itemIsLocked, itemIsVisible } from "../../model/layers";
-import type { Layer, MarkupItem, Point } from "../../model/types";
+import { itemLocalToPage, pointToItemLocal } from "../../model/geometry";
+import { buildLayerHierarchy, type LayerHierarchy } from "../../model/layerHierarchy";
+import { findItem, itemIsLocked, itemIsVisible } from "../../model/layers";
+import type { Layer, MarkupItem, Point, Project } from "../../model/types";
 
 /** Screen-pixel radius around a polyline end vertex that still counts as a hit. */
 export const CONTINUATION_HIT_TOLERANCE_PX = 12;
@@ -106,4 +106,30 @@ export function mergeContinuedPoints(
     return [...tail.reverse(), ...existing];
   }
   return [...existing, ...tail];
+}
+
+/**
+ * Appends one drafted tail to the existing polyline in the given project. The
+ * layer, lock and visibility guards are re-checked against that project, so the
+ * caller can use it as the whole body of a single store mutation. Returns false
+ * when the target is no longer continuable or the tail adds no point.
+ */
+export function continuePolyline(
+  project: Project,
+  target: PolylineContinuationTarget,
+  pagePoints: readonly Point[],
+): boolean {
+  const found = findItem(project, target.itemId);
+  if (!found || found.layer.id !== target.layerId) return false;
+  const hierarchy = buildLayerHierarchy(project.layers);
+  if (!canContinuePolyline(found.item, found.layer, hierarchy)) return false;
+  const merged = mergeContinuedPoints(
+    found.item.points,
+    pagePoints.map((point) => pointToItemLocal(found.item, point)),
+    target.vertexIndex,
+  );
+  if (!merged) return false;
+  found.item.points = merged;
+  found.item.updatedAt = new Date().toISOString();
+  return true;
 }

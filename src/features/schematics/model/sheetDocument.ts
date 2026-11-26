@@ -1,6 +1,6 @@
 import { makeId } from "../../../model/calibration";
-import { documentForPageRecord, pageRecordAt } from "../../../model/pages";
-import type { DocumentRef, Project } from "../../../model/types";
+import { documentForPageRecord, pageDocument, pageRecordAt } from "../../../model/pages";
+import type { DocumentRef, PageId, Project } from "../../../model/types";
 import {
   SHEET_FIELD,
   SHEET_TEMPLATE_VERSION,
@@ -38,6 +38,22 @@ export function templateDocumentForPage(
 ): DocumentRef | undefined {
   const document = documentForPageRecord(project, pageRecordAt(project, page));
   return document?.kind === "template" ? document : undefined;
+}
+
+/**
+ * Replaces the field values of the template document on one page. The page is
+ * resolved by stable id, and only that document's field object is replaced, so
+ * two sheets that share a template keep independent values.
+ */
+export function setSheetFields(
+  project: Pick<Project, "pages" | "documents">,
+  pageId: PageId,
+  fields: Readonly<Record<string, string>>,
+): boolean {
+  const document = pageDocument(project, pageId);
+  if (!document?.template) return false;
+  document.template.fields = { ...fields };
+  return true;
 }
 
 /** A blank page shares the template document shape but has no sheet fields. */

@@ -285,6 +285,15 @@ export function renameCountType(project: Project, id: CountType, name: string): 
   return true;
 }
 
+/** Applies one glyph to an existing count type. Unknown ids and glyphs are ignored. */
+export function setCountTypeGlyph(project: Project, id: CountType, glyph: CountGlyph): boolean {
+  if (!isCountGlyph(glyph)) return false;
+  const type = project.countTypes.find((entry) => entry.id === id);
+  if (!type || type.glyph === glyph) return false;
+  type.glyph = glyph;
+  return true;
+}
+
 /** Removes a custom type and reassigns its counts to `other` in one mutation. */
 export function removeCountType(project: Project, id: CountType): RemoveCountTypeResult {
   const index = project.countTypes.findIndex((entry) => entry.id === id);

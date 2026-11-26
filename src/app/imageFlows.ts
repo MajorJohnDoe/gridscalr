@@ -1,5 +1,4 @@
-import { addItem } from "../model/layers";
-import { createImageItem } from "../model/images";
+import { addImageItem, createImageItem } from "../model/images";
 import { pageIdAt } from "../model/pages";
 import type { ImageAsset, Layer, PageSize } from "../model/types";
 import { ingestImageBlob, isSupportedImageFile } from "../io/imageIngest";
@@ -66,8 +65,7 @@ export async function insertImageFile(host: ImageFlowHost, file: File): Promise<
   const item = createImageItem(asset, pageId, pageSize, "background");
   store.registerImageAsset(asset);
   store.mutate((project) => {
-    project.assets[asset.id] = asset;
-    addItem(project, layer.id, item);
+    addImageItem(project, layer.id, asset, item);
   }, "change");
   store.setSelection({ layerId: layer.id, itemId: item.id });
   toast(t("app.imageAdded", { layer: layer.name }), "success");

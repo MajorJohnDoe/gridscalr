@@ -17,6 +17,7 @@ import { selectionAfterClick } from "../../features/listInteraction";
 import { categoryForItem } from "../../model/categories";
 import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import { setItemsLocked, setItemsStatus, setItemsVisible } from "../../model/commands";
+import { setItemLabel } from "../../model/commands/labels";
 import { formatTimestamp } from "../../model/dates";
 import { currentPageId, pageDisplayName, pageNumber } from "../../model/pages";
 import {
@@ -77,11 +78,7 @@ export function beginMarkupRename(label: HTMLElement, itemId: string, fallback: 
     const value = input.value.trim();
     if (commit && value !== (label.textContent ?? "")) {
       store.mutate((project) => {
-        const item = findItem(project, itemId)?.item;
-        if (item) {
-          item.label = value || undefined;
-          item.updatedAt = new Date().toISOString();
-        }
+        setItemLabel(project, itemId, value);
       }, "change");
     } else {
       input.replaceWith(label);

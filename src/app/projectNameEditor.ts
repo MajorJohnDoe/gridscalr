@@ -1,3 +1,4 @@
+import { updateProjectName } from "../model/commands/settings";
 import { normalizeProjectName } from "../model/projectName";
 import { store } from "../state/store";
 
@@ -20,7 +21,7 @@ export function beginProjectRename(name: HTMLElement): void {
       return;
     }
     store.mutate((current) => {
-      current.name = value;
+      updateProjectName(current, value);
     }, "change");
   };
   const onBlur = () => finish(true);

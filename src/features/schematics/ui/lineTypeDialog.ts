@@ -1,4 +1,5 @@
 import { makeId } from "../../../model/calibration";
+import { normalizeLineTypes, setLineTypes } from "../../../model/lineTypes";
 import type { LineType } from "../../../model/types";
 import { store } from "../../../state/store";
 import { colorInputValue, setColorInput } from "../../../ui/colorInput";
@@ -112,17 +113,11 @@ export async function openLineTypeDialog(): Promise<void> {
   });
   if (result !== "apply") return;
 
-  const next: LineType[] = types.map((type) => ({
-    id: type.id || makeId("line"),
-    name: type.name.replace(/\s+/g, " ").trim().slice(0, 80),
-    color: /^#[0-9a-f]{6}$/i.test(type.color) ? type.color : "#4cc9f0",
-    widthPt: Math.max(0.3, Math.min(20, type.widthPt || 2)),
-    style: type.style === "dashed" ? "dashed" : "solid",
-  }));
+  const next = normalizeLineTypes(types);
   if (!next.length) return;
 
   store.mutate((current) => {
-    current.lineTypes = next;
+    setLineTypes(current, next);
   }, "change");
   store.setLineType(
     next.some((type) => type.id === store.ui.lineTypeId) ? store.ui.lineTypeId : next[0].id,

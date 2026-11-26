@@ -7,6 +7,7 @@ import {
   isBuiltInCountType,
   removeCountType,
   renameCountType,
+  setCountTypeGlyph,
 } from "../../model/countTypes";
 import type { CountGlyph } from "../../model/types";
 import { store } from "../../state/store";
@@ -107,8 +108,7 @@ export function countTypeObjectRows(options: CountTypeRowOptions): HTMLTableRowE
       el("span", "takeoff-object-symbol", countGlyphLabel(type.glyph)),
       glyphSelect(type.glyph, t("countTypeUi.glyphAria", { name: label }), (value) => {
         store.mutate((next) => {
-          const target = next.countTypes.find((entry) => entry.id === type.id);
-          if (target) target.glyph = value;
+          setCountTypeGlyph(next, type.id, value);
         }, "change");
         options.onChanged();
       }),

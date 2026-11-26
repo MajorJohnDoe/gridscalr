@@ -3,7 +3,7 @@ import { store } from "../../../state/store";
 import { showModal } from "../../../ui/dialogs";
 import { el } from "../../../ui/dom";
 import { findItem } from "../../../model/layers";
-import { defaultRailRows, type RailPreset } from "../../../model/rail";
+import { defaultRailRows, setRailItemOptions, type RailPreset } from "../../../model/rail";
 import type { RailRow } from "../../../model/types";
 
 /** Edits the rows, labels, legends and display options of one I/O rail. */
@@ -148,20 +148,7 @@ export async function openRailDialog(itemId: string): Promise<void> {
   });
   if (result !== "apply") return;
 
-  const next = rows
-    .map((row, index) => ({
-      id: row.id || `row_${index + 1}`,
-      label: row.label.replace(/\s+/g, " ").trim().slice(0, 20),
-      legend: row.legend?.replace(/\s+/g, " ").trim().slice(0, 80) || undefined,
-    }))
-    .filter((row) => row.label);
-
   store.mutate((current) => {
-    const target = findItem(current, itemId)?.item;
-    if (!target || target.kind !== "rail") return;
-    target.rows = next;
-    target.showBadges = showBadges ? undefined : false;
-    target.showLegend = showLegend ? undefined : false;
-    target.updatedAt = new Date().toISOString();
+    setRailItemOptions(current, itemId, { rows, showBadges, showLegend });
   }, "change");
 }

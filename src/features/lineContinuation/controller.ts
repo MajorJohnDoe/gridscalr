@@ -1,11 +1,10 @@
-import { pointToItemLocal } from "../../model/geometry";
 import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import { findItem } from "../../model/layers";
 import type { PageId, Point } from "../../model/types";
 import { store } from "../../state/store";
 import {
   canContinuePolyline,
-  mergeContinuedPoints,
+  continuePolyline,
   polylineEndpoint,
   type PolylineContinuationTarget,
 } from "./model";
@@ -52,21 +51,10 @@ export function appendContinuedPolyline(
   if (!found || found.layer.id !== target.layerId) return false;
   const hierarchy = buildLayerHierarchy(project.layers);
   if (!canContinuePolyline(found.item, found.layer, hierarchy)) return false;
-  const merged = mergeContinuedPoints(
-    found.item.points,
-    pagePoints.map((point) => pointToItemLocal(found.item, point)),
-    target.vertexIndex,
-  );
-  if (!merged) return false;
 
   let changed = false;
   store.mutate((current) => {
-    const live = findItem(current, target.itemId);
-    if (!live || live.layer.id !== target.layerId) return;
-    if (!canContinuePolyline(live.item, live.layer, buildLayerHierarchy(current.layers))) return;
-    live.item.points = merged;
-    live.item.updatedAt = new Date().toISOString();
-    changed = true;
+    changed = continuePolyline(current, target, pagePoints);
   }, "change");
   return changed;
 }

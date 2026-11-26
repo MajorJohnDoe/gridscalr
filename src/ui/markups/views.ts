@@ -13,6 +13,7 @@ import {
   viewFromSettings,
 } from "../../model/markups";
 import type { MarkupsColumnId, MarkupsView, Project } from "../../model/types";
+import { addMarkupsView, replaceMarkupsViews, upsertMarkupsView } from "../../model/commands/views";
 import { store } from "../../state/store";
 import { showModal, textDialog } from "../dialogs";
 import { el } from "../dom";
@@ -161,7 +162,7 @@ export async function saveViewAs(actions: PanelActions): Promise<void> {
   markupsState.viewDirty = false;
   saveActiveViewId(latest.id, view.id);
   store.mutate((current) => {
-    current.markupsViews.push(view);
+    addMarkupsView(current, view);
   }, "change");
   actions.refresh();
 }
@@ -183,9 +184,7 @@ export function saveCurrentView(actions: PanelActions): void {
   markupsState.viewDirty = false;
   updateViewControls();
   store.mutate((current) => {
-    const index = current.markupsViews.findIndex((view) => view.id === existing.id);
-    if (index >= 0) current.markupsViews[index] = next;
-    else current.markupsViews.push(next);
+    upsertMarkupsView(current, next);
   }, "change");
   actions.refresh();
 }
@@ -293,10 +292,14 @@ export function openManageViews(project: Project, actions: PanelActions): void {
       ]),
     );
     store.mutate((current) => {
-      current.markupsViews = kept.map((entry) => {
-        const source = current.markupsViews.find((view) => view.id === entry.view.id) ?? entry.view;
-        return { ...source, name: names.get(entry.view.id) ?? source.name };
-      });
+      replaceMarkupsViews(
+        current,
+        kept.map((entry) => {
+          const source =
+            current.markupsViews.find((view) => view.id === entry.view.id) ?? entry.view;
+          return { ...source, name: names.get(entry.view.id) ?? source.name };
+        }),
+      );
     }, "change");
     actions.refresh();
   });

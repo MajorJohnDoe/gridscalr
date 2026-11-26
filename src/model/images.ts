@@ -50,6 +50,25 @@ export function initialImageSize(asset: ImageAsset, pageSize: PageSize): PageSiz
   return natural;
 }
 
+/**
+ * Registers one embedded asset and adds its image item in the same mutation, so
+ * undo removes both together and no item can point at an unregistered asset.
+ * The layer is checked first to keep the write all-or-nothing.
+ */
+export function addImageItem(
+  project: Project,
+  layerId: string,
+  asset: ImageAsset,
+  item: MarkupItem,
+): boolean {
+  if (item.kind !== "image" || item.image?.assetId !== asset.id) return false;
+  const layer = project.layers.find((entry) => entry.id === layerId);
+  if (!layer) return false;
+  project.assets[asset.id] = asset;
+  layer.items.push(item);
+  return true;
+}
+
 export function createImageItem(
   asset: ImageAsset,
   pageId: PageId,

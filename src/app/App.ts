@@ -1,6 +1,7 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { CanvasView, type CanvasTestApi } from "../canvas/CanvasView";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
+import { updateProjectSettings } from "../model/commands/settings";
 import { documentPageMaps } from "../model/documents";
 import { documentPageOrder, pageIdAt } from "../model/pages";
 import type { PageSize, Project } from "../model/types";
@@ -1010,7 +1011,7 @@ export class App {
       record("project reopened", store.projectPath === savePath);
 
       store.mutate((project) => {
-        project.settings.showGrid = !project.settings.showGrid;
+        updateProjectSettings(project, { showGrid: !project.settings.showGrid });
       }, "change");
       const pending = this.session.confirmUnsavedChanges("smoke test close prompt");
       await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
