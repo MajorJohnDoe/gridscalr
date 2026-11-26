@@ -181,7 +181,11 @@ src/
   model/symbolTag.ts     free-text symbol tag offsets shared by canvas and PDF
   model/richText.ts      rich text runs, wrapping, selection formatting and fallbacks
   model/symbolPaths.ts   shared SVG path parsing and transforms for symbol artwork
-  state/store.ts         immutable project snapshots, undo/redo, multi-selection and read-only UI state
+  state/store.ts         compatibility facade over the project, session, page and taxonomy stores
+  state/projectStore.ts  project data, history, dirty flag, gestures and undo/redo
+  state/sessionStore.ts  UI, tool and selection state
+  state/projectPages.ts  page, document and source-storage actions
+  state/projectTaxonomy.ts category and quantity-setting actions
   state/history.ts       adaptive undo-history limits from the serialized snapshot size
   state/snapshot.ts      undo-history text without embedded image payloads, one plain stringify per snapshot
   state/snapshotHistory.ts undo/redo stacks, cached current text, gesture snapshot and image payload cache
@@ -278,7 +282,8 @@ src/
   ui/diagnosticsDialog.ts copy diagnostics and the report-a-problem support dialog
   model/pages.ts         PageId, PageRecord and every page resolver
   model/openTarget.ts    PDF/TIF/project classification shared by window and Pages-panel drops
-  features/pageModel/    page insert/reorder/delete/duplicate, source replacement and import mapping
+  model/pageList.ts      page insert/reorder/delete/duplicate rules and page-removal layer keeps
+  features/pageModel/    source replacement, page-scoped layers and import mapping
   app/replacementFlows.ts PDF/TIF file pick, page-size and scale warnings, previews, renderer swap and checkpoint
   model/cloud.ts         revision-cloud bezier geometry
   model/annotations.ts   callout, stamp, delta, and cloud-label layout

@@ -23,7 +23,6 @@ const LEGACY_LARGE_FILES = [
   "src/features/schematics/model/sheetTemplate.ts",
   "src/i18n/types.generated.ts",
   "src/model/labelLayout.ts",
-  "src/state/store.ts",
 ];
 
 export default tseslint.config(
