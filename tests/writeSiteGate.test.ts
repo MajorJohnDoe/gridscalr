@@ -185,9 +185,9 @@ describe("write-site budget", () => {
     expect(update.next?.total).toBe(2);
   });
 
-  it("keeps the committed baseline valid", () => {
+  it("keeps the committed baseline valid and at zero writes", () => {
     const config = JSON.parse(readFileSync(resolve(root, "write-sites.json"), "utf8"));
     expect(validateBudget(config)).toEqual([]);
-    expect(config.total).toBeGreaterThan(0);
+    expect(config.total).toBe(0);
   });
 });

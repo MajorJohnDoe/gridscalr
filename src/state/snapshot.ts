@@ -1,9 +1,29 @@
-import { perfSpan } from "../features/perfMonitor";
 import type { ImageAsset, Project } from "../model/types";
 
 interface DetachedPayload {
   asset: ImageAsset;
   data: string;
+}
+
+/** The opt-in span the app registers; absent means a plain passthrough. */
+export type SnapshotSpan = (
+  name: "serialize",
+  run: () => string,
+  detail: (text: string) => number,
+) => string;
+
+function passthroughSpan(_name: "serialize", run: () => string): string {
+  return run();
+}
+
+let span: SnapshotSpan = passthroughSpan;
+
+/**
+ * Installs the performance span without making the state layer import the
+ * feature module. `src/main.ts` registers the real recorder at startup.
+ */
+export function setSnapshotPerfSpan(next: SnapshotSpan | null): void {
+  span = next ?? passthroughSpan;
 }
 
 /**
@@ -31,7 +51,7 @@ export function serializeProject(project: Project): string {
   }
   for (const { asset } of detached) (asset as { data?: string }).data = undefined;
   try {
-    return perfSpan(
+    return span(
       "serialize",
       () => JSON.stringify(project),
       (text) => text.length,

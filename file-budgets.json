@@ -28,7 +28,7 @@
     "src/canvas/CanvasView.ts": 1584,
     "src/features/schematics/model/sheetTemplate.ts": 714,
     "src/model/labelLayout.ts": 812,
-    "src/state/store.ts": 963,
+    "src/state/store.ts": 400,
     "src/styles/dialogs.css": 1665,
     "src/styles/markups.css": 1051,
     "src/styles/panels.css": 1085,

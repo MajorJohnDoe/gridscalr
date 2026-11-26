@@ -299,6 +299,23 @@ export function layerIdsKeptAfterPageRemoval(
   return kept;
 }
 
+/**
+ * Layers that survive a page-scoped reference change such as a page deletion.
+ * A group stays while any descendant is still referenced, so a page delete can
+ * never orphan or silently flatten a subtree. Order is preserved.
+ */
+export function layersAfterPageRemoval(
+  layers: readonly Layer[],
+  referenced: (layer: Layer) => boolean,
+): Layer[] {
+  const hierarchy = buildLayerHierarchy(layers);
+  const referencedIds = new Set(
+    layers.filter((layer) => referenced(layer)).map((layer) => layer.id),
+  );
+  const kept = layerIdsKeptAfterPageRemoval(hierarchy, referencedIds);
+  return layers.filter((layer) => kept.has(layer.id));
+}
+
 /** Issues keyed by layer, for the integrity validator. */
 export function layerHierarchyIssues(layers: readonly Layer[]): LayerHierarchyIssue[] {
   return [...buildLayerHierarchy(layers).issues];

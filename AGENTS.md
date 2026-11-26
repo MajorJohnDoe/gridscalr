@@ -587,7 +587,11 @@ src/model/symbols/signs/  one facility-sign artwork module per category prefix
 src/model/symbolTag.ts     free-text symbol tag offsets shared by canvas and PDF
 src/model/richText.ts      rich text runs, wrapping, selection formatting and fallbacks
 src/model/symbolPaths.ts   shared SVG path parsing and transforms for symbol artwork
-src/state/store.ts         immutable snapshots, undo/redo, multi-selection, autosave
+src/state/store.ts         compatibility facade over the project, session, page and taxonomy stores
+src/state/projectStore.ts  project data, history, dirty flag, gestures and undo/redo
+src/state/sessionStore.ts  UI, tool and selection state
+src/state/projectPages.ts  page, document and source-storage actions; explicit boundaries and undoable reorder/insert
+src/state/projectTaxonomy.ts category, default-category and quantity-setting actions
 src/state/history.ts       adaptive undo-history limits from the serialized snapshot size
 src/state/snapshot.ts      undo-history text without image payloads, one plain stringify per snapshot
 src/state/snapshotHistory.ts undo/redo stacks, cached current text, gesture snapshot and payload cache
@@ -683,7 +687,8 @@ src/io/tiff/deflate.ts     bounded Deflate strip decoding
 src/io/tiff/predictor.ts   horizontal differencing (predictor 2)
 src/model/documents.ts     source-document page math, included-page lists and import maps
 src/model/pages.ts         PageId, PageRecord and every page resolver
-src/features/pageModel/    page insert/reorder/delete/duplicate, source replacement and import mapping
+src/model/pageList.ts      page insert/reorder/delete/duplicate rules and page-removal layer keeps
+src/features/pageModel/    source replacement, page-scoped layers and import mapping
 src/features/layerTree/    layer tree rows, inherited state, drag/keyboard nesting, subtree duplicate, deletion plan and page-removal keep rules
 src/features/saveIntegrity/backupController.ts backup listing, restore-as-copy, explicit replace and delete
 src/features/saveIntegrity/backupManagerModel.ts pure backup selection and origin-warning rules

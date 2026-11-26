@@ -2,7 +2,6 @@ import {
   buildLayerHierarchy,
   layerDescendantIds,
   layerEffectiveState,
-  layerIdsKeptAfterPageRemoval,
   layerTreeDepth,
   type LayerEffectiveState,
   type LayerHierarchy,
@@ -138,21 +137,4 @@ export function deleteLayerSubtree(
   if (!plan) return null;
   removeLayer(project, layerId);
   return plan;
-}
-
-/**
- * Layers that survive a page-scoped reference change such as a page deletion.
- * A group stays while any descendant is still referenced, so a page delete can
- * never orphan or silently flatten a subtree. Order is preserved.
- */
-export function layersAfterPageRemoval(
-  layers: readonly Layer[],
-  referenced: (layer: Layer) => boolean,
-): Layer[] {
-  const hierarchy = buildLayerHierarchy(layers);
-  const referencedIds = new Set(
-    layers.filter((layer) => referenced(layer)).map((layer) => layer.id),
-  );
-  const kept = layerIdsKeptAfterPageRemoval(hierarchy, referencedIds);
-  return layers.filter((layer) => kept.has(layer.id));
 }

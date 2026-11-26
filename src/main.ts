@@ -31,10 +31,12 @@ import "./styles/perfMonitor.css";
 import "./styles/responsive.css";
 import { App } from "./app/App";
 import { installDiagnosticsLogging, logEvent } from "./features/diagnostics";
+import { perfMark, perfSpan } from "./features/perfMonitor";
 import { applyStoredLanguage, setLanguagePreference, t } from "./i18n";
 import { sourceStatus } from "./source/sourceStatus";
-import { applyTheme, currentThemePreference, watchSystemTheme } from "./theme/theme";
+import { setSnapshotPerfSpan } from "./state/snapshot";
 import { store } from "./state/store";
+import { applyTheme, currentThemePreference, watchSystemTheme } from "./theme/theme";
 
 const root = document.getElementById("app");
 
@@ -120,6 +122,8 @@ function localizeBootFallback(): void {
 }
 
 installDiagnosticsLogging();
+store.setPerfMark(perfMark);
+setSnapshotPerfSpan(perfSpan);
 
 try {
   await applyStoredLanguage();

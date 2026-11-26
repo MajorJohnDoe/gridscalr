@@ -1,22 +1,14 @@
-import { makeId } from "../../model/calibration";
-import { createLayer, normalizeLayerOrder } from "../../model/layers";
+import { makeId } from "./calibration";
+import { createLayer, normalizeLayerOrder } from "./layers";
+import { layersAfterPageRemoval } from "./layerHierarchy";
 import {
   pageIndex,
   pageListAfterMove,
   pageListOrderChanges,
   pageNumber,
   pageRecordById,
-} from "../../model/pages";
-import type {
-  Layer,
-  LayerKind,
-  MarkupItem,
-  PageId,
-  PageRecord,
-  PageState,
-  Project,
-} from "../../model/types";
-import { layersAfterPageRemoval } from "../layerTree";
+} from "./pages";
+import type { Layer, LayerKind, MarkupItem, PageId, PageRecord, PageState, Project } from "./types";
 
 /** Structural page operations. Every function mutates the project in place. */
 

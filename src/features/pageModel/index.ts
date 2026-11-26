@@ -8,13 +8,13 @@ export {
   movePageBy,
   movePages,
   removeDocumentAndPages,
-} from "./pageList";
+} from "../../model/pageList";
 export type {
   DeletePageSummary,
   DuplicatePageOptions,
   DuplicatePageSummary,
   InsertPageOptions,
-} from "./pageList";
+} from "../../model/pageList";
 export {
   applySourceReplacement,
   defaultReplacementMappings,

@@ -1,13 +1,13 @@
 export {
   buildLayerTree,
   deleteLayerSubtree,
-  layersAfterPageRemoval,
   layerTreeDescendantCount,
   layerTreeDisplayOrder,
   layerTreeState,
   planLayerDeletion,
 } from "./model";
 export type { LayerDeletionPlan, LayerTreeNode, LayerTree } from "./model";
+export { layersAfterPageRemoval } from "../../model/layerHierarchy";
 export {
   buildLayerTreeRows,
   layerAncestorRowIds,
