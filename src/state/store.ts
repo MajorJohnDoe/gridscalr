@@ -9,7 +9,9 @@ import {
   type DuplicatePageSummary,
 } from "../features/pageModel";
 import { perfMark } from "../features/perfMonitor";
+import type { CloudFillPreset } from "../model/cloud";
 import { includedLocalPages } from "../model/documents";
+import { addLayer, findItem } from "../model/layers";
 import {
   currentPageId,
   ensurePageState,
@@ -17,13 +19,6 @@ import {
   pageNumber,
   pageRecordById,
 } from "../model/pages";
-import { normalizeColor } from "../model/color";
-import type { CloudFillPreset } from "../model/cloud";
-import type { ArrowHeads, SheetPaperSize } from "../model/types";
-import { DEFAULT_DRAWING_STROKE_WIDTH, mergeDrawStyle, mergeLineStyle } from "../model/style";
-import { DEFAULT_LINE_TYPE_ID } from "../model/lineTypes";
-import { DEFAULT_SYMBOL_ID } from "../model/symbols";
-import { addLayer, ensureActiveLayer, findItem } from "../model/layers";
 import {
   addCategory as addCategoryToProject,
   categoryNameError,
@@ -35,220 +30,52 @@ import {
   setDefaultCategory as setDefaultCategoryInProject,
 } from "../model/categories";
 import type { RemoveCategoryResult } from "../model/categories";
-import { selectionKey, uniqueSelectionRefs } from "../model/selection";
-import { resolveViewOnlyTool } from "../features/viewOnly";
-import { SnapshotHistory } from "./snapshotHistory";
 import type {
   AreaMode,
-  PageId,
   AreaShape,
-  HighlightShape,
+  ArrowHeads,
   Category,
   CountType,
   DocumentRef,
+  HighlightShape,
   ImageAsset,
   InspectionStatus,
   LayerKind,
   OcrPage,
+  PageId,
   Point,
   Project,
   SelectionRef,
+  SheetPaperSize,
 } from "../model/types";
+import { SessionStore } from "./sessionStore";
+import { SnapshotHistory } from "./snapshotHistory";
+import type {
+  AutosaveFailure,
+  ChangeReason,
+  DrawStyle,
+  FileStamp,
+  LeftTab,
+  ToolId,
+  UIState,
+} from "./types";
 
-export type ToolId =
-  | "select"
-  | "pan"
-  | "calibrate"
-  | "length"
-  | "area"
-  | "count"
-  | "radius"
-  | "diameter"
-  | "arc"
-  | "angle"
-  | "slope"
-  | "volume"
-  | "pen"
-  | "line"
-  | "arrow"
-  | "rect"
-  | "ellipse"
-  | "highlight"
-  | "text"
-  | "textbox"
-  | "polyline"
-  | "rail"
-  | "cloud"
-  | "callout"
-  | "stamp"
-  | "delta"
-  | "symbol";
-
-export type LeftTab = "pages" | "layers" | "symbols";
-
-/**
- * Tools armed from the symbol library keep that tab open so the tile stays
- * visibly selected, including for library-only operation-card tools such as
- * the I/O rail.
- */
-const LIBRARY_TOOLS: ReadonlySet<ToolId> = new Set<ToolId>(["symbol", "rail"]);
-
-export interface DrawStyle {
-  color: string;
-  strokeWidth: number;
-  fillOpacity: number;
-  fontSize: number;
-  /** Fill mode for new rectangles and ellipses. */
-  shapeFill: "outline" | "filled";
-  /** Whether new shape outlines are dashed. */
-  dashed: boolean;
-}
-
-export interface UIState {
-  activeTool: ToolId;
-  page: number;
-  zoom: number;
-  panX: number;
-  panY: number;
-  selection: SelectionRef[];
-  hover: { layerId: string; itemId: string; vertexIndex: number } | null;
-  cursor: Point | null;
-  leftTab: LeftTab;
-  style: DrawStyle;
-  /** Text used by the next stamp or revision delta. */
-  stampText: string;
-  deltaText: string;
-  highlightShape: HighlightShape;
-  cloudText: boolean;
-  cloudFill: CloudFillPreset;
-  arrowHeads: ArrowHeads;
-  /** Category for new measurements. null means the project default. */
-  measureCategoryId: string | null;
-  /** Sticky room for new measurements, trimmed when an item is created. */
-  measureRoom: string;
-  /** Sticky object type for new count measurements. */
-  measureCountType: CountType;
-  /** Sticky pieces per count object for new count measurements. */
-  measureCountQuantity: number;
-  /** Sticky add/subtract mode for new area measurements. */
-  measureAreaMode: AreaMode;
-  /** Sticky quick-area shape for the area tool. */
-  measureAreaShape: AreaShape;
-  /** Symbol used by the next placement. */
-  symbolId: string;
-  /** Sticky inspection status for new symbols. null means Not assessed. */
-  symbolStatus: InspectionStatus | null;
-  /** Sticky line type for new schematic polylines. */
-  lineTypeId: string;
-  /** Editable line style for the next pipe/duct run. */
-  lineStyle: { color: string; widthPt: number; dashed: boolean };
-}
-
-export type ChangeReason =
-  | "project"
-  | "change"
-  | "view"
-  | "page"
-  | "tool"
-  | "selection"
-  | "cursor"
-  | "layers"
-  | "save"
-  | "undo";
+export { toolLayerKind } from "./sessionStore";
+export type { AutosaveFailure, ChangeReason, DrawStyle, FileStamp, LeftTab, ToolId, UIState };
 
 type Listener = (reason: ChangeReason) => void;
 
-/** Runtime-only fingerprint of the file the editor loaded. Never serialized. */
-export interface FileStamp {
-  sha256: string;
-  sizeBytes: number;
-  modifiedAt: number;
-}
-
-/** Runtime autosave state consumed by the status bar and diagnostics. */
-export interface AutosaveFailure {
-  message: string;
-  quotaExceeded: boolean;
-}
-
-export function toolLayerKind(tool: ToolId): LayerKind | null {
-  switch (tool) {
-    case "length":
-    case "area":
-    case "count":
-    case "radius":
-    case "diameter":
-    case "arc":
-    case "angle":
-    case "slope":
-    case "volume":
-    case "calibrate":
-      return "measure";
-    case "pen":
-    case "line":
-    case "arrow":
-    case "rect":
-    case "ellipse":
-    case "highlight":
-    case "text":
-    case "textbox":
-    case "polyline":
-    case "rail":
-    case "cloud":
-    case "callout":
-    case "stamp":
-    case "delta":
-    case "symbol":
-      return "draw";
-    case "pan":
-    case "select":
-      return null;
-    default:
-      return null;
-  }
-}
-
-function defaultUI(): UIState {
-  return {
-    activeTool: "select",
-    page: 1,
-    zoom: 1,
-    panX: 0,
-    panY: 0,
-    selection: [],
-    hover: null,
-    cursor: null,
-    leftTab: "pages",
-    style: {
-      color: "#f2a93b",
-      strokeWidth: DEFAULT_DRAWING_STROKE_WIDTH,
-      fillOpacity: 0.15,
-      fontSize: 12,
-      shapeFill: "outline",
-      dashed: false,
-    },
-    stampText: "APPROVED",
-    deltaText: "A",
-    highlightShape: "stroke",
-    cloudText: false,
-    cloudFill: "none",
-    arrowHeads: "end",
-    measureCategoryId: null,
-    measureRoom: "",
-    measureCountType: "other",
-    measureCountQuantity: 1,
-    measureAreaMode: "add",
-    measureAreaShape: "polygon",
-    symbolId: DEFAULT_SYMBOL_ID,
-    symbolStatus: null,
-    lineTypeId: DEFAULT_LINE_TYPE_ID,
-    lineStyle: { color: "#e30613", widthPt: 2, dashed: false },
-  };
-}
-
 export class Store {
   project: Project | null = null;
-  ui: UIState = defaultUI();
+  /**
+   * Session and UI state, split out of the project store. The `ui` getter below
+   * keeps the existing facade for every caller.
+   */
+  readonly session = new SessionStore({
+    notify: (reason) => this.emit(reason),
+    project: () => this.project,
+    readOnly: () => this.readOnly,
+  });
   projectPath: string | null = null;
   /** Expected disk state captured on open and after a verified save. */
   fileStamp: FileStamp | null = null;
@@ -276,6 +103,10 @@ export class Store {
     for (const listener of this.listeners) listener(reason);
   }
 
+  get ui(): UIState {
+    return this.session.ui;
+  }
+
   get canUndo(): boolean {
     return this.history.canUndo;
   }
@@ -294,31 +125,7 @@ export class Store {
     this.revision += 1;
     if (!project.assets) project.assets = {};
     this.clearHistory();
-    this.ui.page = 1;
-    this.ui.selection = [];
-    this.ui.hover = null;
-    this.ui.activeTool = "select";
-    this.ui.cursor = null;
-    this.ui.leftTab = "pages";
-    this.ui.stampText = project.settings.stampPresets[0] ?? "APPROVED";
-    this.ui.measureCategoryId = null;
-    this.ui.measureRoom = "";
-    this.ui.measureCountType = "other";
-    this.ui.measureAreaMode = "add";
-    this.ui.measureAreaShape = "polygon";
-    this.ui.symbolId = DEFAULT_SYMBOL_ID;
-    this.ui.lineTypeId = project.lineTypes.some((entry) => entry.id === this.ui.lineTypeId)
-      ? this.ui.lineTypeId
-      : (project.lineTypes[0]?.id ?? DEFAULT_LINE_TYPE_ID);
-    const activeLineType = project.lineTypes.find((entry) => entry.id === this.ui.lineTypeId);
-    if (activeLineType) {
-      this.ui.lineStyle = {
-        color: activeLineType.color,
-        widthPt: activeLineType.widthPt,
-        dashed: activeLineType.style === "dashed",
-      };
-    }
-    this.ui.symbolStatus = null;
+    this.session.reset(project);
     this.emit("project");
   }
 
@@ -331,7 +138,7 @@ export class Store {
     this.autosaveError = null;
     this.revision += 1;
     this.clearHistory();
-    this.ui = defaultUI();
+    this.session.resetDefaults();
     this.emit("project");
   }
 
@@ -342,10 +149,7 @@ export class Store {
   }
 
   setView(zoom: number, panX: number, panY: number): void {
-    this.ui.zoom = zoom;
-    this.ui.panX = panX;
-    this.ui.panY = panY;
-    this.emit("view");
+    this.session.setView(zoom, panX, panY);
   }
 
   /**
@@ -494,152 +298,92 @@ export class Store {
   }
 
   setLineType(id: string): void {
-    const lineType = this.project?.lineTypes.find((entry) => entry.id === id);
-    if (!lineType) return;
-    this.ui.lineTypeId = id;
-    this.ui.lineStyle = {
-      color: normalizeColor(lineType.color, this.ui.lineStyle.color),
-      widthPt: lineType.widthPt,
-      dashed: lineType.style === "dashed",
-    };
-    this.emit("tool");
+    this.session.setLineType(id);
   }
 
   setLineStyle(patch: Partial<UIState["lineStyle"]>): void {
-    this.ui.lineStyle = mergeLineStyle(this.ui.lineStyle, patch);
-    this.emit("tool");
+    this.session.setLineStyle(patch);
   }
 
   setPage(page: number): void {
-    if (!this.project) return;
-    const clamped = Math.max(1, Math.min(Math.max(1, this.project.pages.length), Math.round(page)));
-    if (clamped === this.ui.page) return;
-    this.ui.page = clamped;
-    this.ui.selection = [];
-    this.ui.hover = null;
-    this.emit("page");
+    this.session.setPage(page);
   }
 
   setTool(tool: ToolId): void {
-    const next = this.readOnly ? resolveViewOnlyTool(tool) : tool;
-    if (this.readOnly && next === this.ui.activeTool) return;
-    this.ui.activeTool = next;
-    if (this.project && !this.readOnly) {
-      const kind = toolLayerKind(tool);
-      if (kind) {
-        ensureActiveLayer(
-          this.project,
-          kind,
-          currentPageId(this.project, this.ui.page) ?? undefined,
-        );
-        // Every markup tool targets a layer, so surface the Layers tab while
-        // the user draws. Library tools keep the symbol library in view.
-        this.ui.leftTab = LIBRARY_TOOLS.has(tool) ? "symbols" : "layers";
-      }
-    }
-    this.emit("tool");
+    this.session.setTool(tool);
   }
 
   /** Arms a built-in symbol and keeps the Symbols tab open for repeated use. */
   selectSymbol(symbolId: string): void {
-    this.ui.symbolId = symbolId;
-    this.setTool("symbol");
+    this.session.selectSymbol(symbolId);
   }
 
   setSymbolStatus(status: InspectionStatus | null): void {
-    this.ui.symbolStatus = status;
-    this.emit("tool");
+    this.session.setSymbolStatus(status);
   }
 
   setLeftTab(tab: LeftTab): void {
-    this.ui.leftTab = tab;
-    this.emit("change");
+    this.session.setLeftTab(tab);
   }
 
   setStampText(text: string): void {
-    this.ui.stampText = text;
-    this.emit("tool");
+    this.session.setStampText(text);
   }
 
   setDeltaText(text: string): void {
-    this.ui.deltaText = text;
-    // Typing must not rebuild the context bar and steal focus.
-    this.emit("cursor");
+    this.session.setDeltaText(text);
   }
 
   setHighlightShape(shape: HighlightShape): void {
-    this.ui.highlightShape = shape;
-    this.emit("tool");
+    this.session.setHighlightShape(shape);
   }
 
   setCloudText(enabled: boolean): void {
-    this.ui.cloudText = enabled;
-    this.emit("tool");
+    this.session.setCloudText(enabled);
   }
 
   setCloudFill(preset: CloudFillPreset): void {
-    this.ui.cloudFill = preset;
-    this.emit("tool");
+    this.session.setCloudFill(preset);
   }
 
   setArrowHeads(heads: ArrowHeads): void {
-    this.ui.arrowHeads = heads;
-    this.emit("tool");
+    this.session.setArrowHeads(heads);
   }
 
   get primarySelection(): SelectionRef | null {
-    return this.ui.selection[0] ?? null;
+    return this.session.primarySelection;
   }
 
   setSelection(selection: SelectionRef | SelectionRef[] | null): void {
-    this.setSelectionMany(
-      selection === null ? [] : Array.isArray(selection) ? selection : [selection],
-    );
+    this.session.setSelection(selection);
   }
 
   setSelectionMany(selection: SelectionRef[]): void {
-    const next = uniqueSelectionRefs(selection);
-    if (
-      next.length === this.ui.selection.length &&
-      next.every((ref, index) => selectionKey(ref) === selectionKey(this.ui.selection[index]))
-    ) {
-      return;
-    }
-    this.ui.selection = next;
-    this.emit("selection");
+    this.session.setSelectionMany(selection);
   }
 
   toggleSelection(ref: SelectionRef): void {
-    const key = selectionKey(ref);
-    if (this.ui.selection.some((entry) => selectionKey(entry) === key)) {
-      this.setSelectionMany(this.ui.selection.filter((entry) => selectionKey(entry) !== key));
-    } else {
-      this.setSelectionMany([...this.ui.selection, ref]);
-    }
+    this.session.toggleSelection(ref);
   }
 
   isSelected(ref: SelectionRef): boolean {
-    const key = selectionKey(ref);
-    return this.ui.selection.some((entry) => selectionKey(entry) === key);
+    return this.session.isSelected(ref);
   }
 
   clearSelection(): void {
-    this.setSelectionMany([]);
+    this.session.clearSelection();
   }
 
   setHover(hover: UIState["hover"]): void {
-    this.ui.hover = hover;
-    this.emit("cursor");
+    this.session.setHover(hover);
   }
 
   setCursor(cursor: Point | null): void {
-    this.ui.cursor = cursor;
-    this.emit("cursor");
+    this.session.setCursor(cursor);
   }
 
   setStyle(style: Partial<DrawStyle>): void {
-    this.ui.style = mergeDrawStyle(this.ui.style, style);
-    this.emit("tool");
+    this.session.setStyle(style);
   }
 
   /**
@@ -647,43 +391,27 @@ export class Store {
    * "cursor" so typing a room name does not rebuild the panels and steal focus.
    */
   setMeasureCategory(categoryId: string | null): void {
-    if (!this.project) return;
-    if (categoryId !== null && !findCategory(this.project, categoryId)) return;
-    if (this.ui.measureCategoryId === categoryId) return;
-    this.ui.measureCategoryId = categoryId;
-    this.emit("cursor");
+    this.session.setMeasureCategory(categoryId);
   }
 
   setMeasureRoom(room: string): void {
-    if (this.ui.measureRoom === room) return;
-    this.ui.measureRoom = room;
-    this.emit("cursor");
+    this.session.setMeasureRoom(room);
   }
 
   setMeasureCountType(type: CountType): void {
-    if (this.ui.measureCountType === type) return;
-    this.ui.measureCountType = type;
-    this.emit("cursor");
+    this.session.setMeasureCountType(type);
   }
 
   setMeasureCountQuantity(quantity: number): void {
-    if (!Number.isFinite(quantity)) return;
-    const value = Math.max(1, Math.min(100000, Math.round(quantity)));
-    if (this.ui.measureCountQuantity === value) return;
-    this.ui.measureCountQuantity = value;
-    this.emit("cursor");
+    this.session.setMeasureCountQuantity(quantity);
   }
 
   setMeasureAreaMode(mode: AreaMode): void {
-    if (this.ui.measureAreaMode === mode) return;
-    this.ui.measureAreaMode = mode;
-    this.emit("cursor");
+    this.session.setMeasureAreaMode(mode);
   }
 
   setMeasureAreaShape(shape: AreaShape): void {
-    if (this.ui.measureAreaShape === shape) return;
-    this.ui.measureAreaShape = shape;
-    this.emit("cursor");
+    this.session.setMeasureAreaShape(shape);
   }
 
   setActiveLayer(layerId: string): void {
