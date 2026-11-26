@@ -1,5 +1,6 @@
 import { t } from "../../../i18n";
-import { findItem, isMeasurementKind } from "../../../model/layers";
+import { setItemCustomValue } from "../../../model/commands";
+import { isMeasurementKind } from "../../../model/layers";
 import type { MarkupItem, Project } from "../../../model/types";
 import { store } from "../../../state/store";
 import { el, option } from "../../../ui/dom";
@@ -74,17 +75,7 @@ export function appendFieldsSection(section: HTMLElement, options: FieldsSection
         disabled,
         onChange: (next) => {
           store.mutate((project) => {
-            const target = findItem(project, item.id)?.item;
-            if (!target) return;
-            if (next === undefined) {
-              if (target.custom) {
-                delete target.custom[field.id];
-                if (!Object.keys(target.custom).length) delete target.custom;
-              }
-            } else {
-              target.custom = { ...target.custom, [field.id]: next };
-            }
-            target.updatedAt = new Date().toISOString();
+            setItemCustomValue(project, item.id, field.id, next);
           }, "change");
         },
       }),

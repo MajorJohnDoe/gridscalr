@@ -3,6 +3,8 @@ import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { createProject, defaultDocument } from "../src/model/layers";
 import {
   deleteItems,
+  resetItemLabelPlacement,
+  setItemCustomValue,
   setItemsColor,
   setItemsImageMode,
   setItemsLocked,
@@ -151,5 +153,77 @@ describe("item commands", () => {
     expect(drawItem.opacity).toBe(0.4);
 
     expect(setItemsImageMode(project, [measureRef], "background").changed).toBe(0);
+  });
+});
+
+describe("single item commands", () => {
+  it("sets and deletes a custom value and drops the empty custom object", () => {
+    const { project, measureItem } = setup();
+
+    const setResult = setItemCustomValue(project, measureItem.id, "field_a", 12);
+    expect(setResult.changed).toBe(1);
+    expect(measureItem.custom).toEqual({ field_a: 12 });
+
+    const secondResult = setItemCustomValue(project, measureItem.id, "field_b", "text");
+    expect(secondResult.changed).toBe(1);
+    expect(measureItem.custom).toEqual({ field_a: 12, field_b: "text" });
+
+    const deleteResult = setItemCustomValue(project, measureItem.id, "field_a", undefined);
+    expect(deleteResult.changed).toBe(1);
+    expect(measureItem.custom).toEqual({ field_b: "text" });
+
+    const clearResult = setItemCustomValue(project, measureItem.id, "field_b", undefined);
+    expect(clearResult.changed).toBe(1);
+    expect(measureItem.custom).toBeUndefined();
+  });
+
+  it("keeps the custom object when another field still has a value", () => {
+    const { project, measureItem } = setup();
+    measureItem.custom = { field_a: 1, field_b: false };
+
+    setItemCustomValue(project, measureItem.id, "field_a", undefined);
+
+    expect(measureItem.custom).toEqual({ field_b: false });
+  });
+
+  it("treats a missing item as a no-op for both commands", () => {
+    const { project } = setup();
+
+    expect(setItemCustomValue(project, "missing", "field_a", 1)).toEqual({
+      changed: 0,
+      skippedLocked: 0,
+      skippedLayerHidden: 0,
+      skippedLayerLocked: 0,
+    });
+    expect(resetItemLabelPlacement(project, "missing")).toEqual({
+      changed: 0,
+      skippedLocked: 0,
+      skippedLayerHidden: 0,
+      skippedLayerLocked: 0,
+    });
+  });
+
+  it("updates updatedAt when a custom value changes", () => {
+    const { project, measureItem } = setup();
+    expect(measureItem.updatedAt).toBe("2026-01-01T00:00:00.000Z");
+
+    setItemCustomValue(project, measureItem.id, "field_a", 5);
+    expect(measureItem.updatedAt).not.toBe("2026-01-01T00:00:00.000Z");
+  });
+
+  it("removes offset, anchor and fit when resetting the label placement", () => {
+    const { project, measureItem } = setup();
+    measureItem.labelOffset = { x: 4, y: 8 };
+    measureItem.labelAnchor = { x: 12, y: 16 };
+    measureItem.labelFit = "center";
+    expect(measureItem.updatedAt).toBe("2026-01-01T00:00:00.000Z");
+
+    const result = resetItemLabelPlacement(project, measureItem.id);
+
+    expect(result.changed).toBe(1);
+    expect(measureItem).not.toHaveProperty("labelOffset");
+    expect(measureItem).not.toHaveProperty("labelAnchor");
+    expect(measureItem).not.toHaveProperty("labelFit");
+    expect(measureItem.updatedAt).not.toBe("2026-01-01T00:00:00.000Z");
   });
 });

@@ -1,8 +1,9 @@
 import { canonicalColor } from "./color";
 import { buildLayerHierarchy, layerEffectiveState } from "./layerHierarchy";
+import { findItem } from "./layers";
 import { resolveSelection } from "./selection";
 import { translatePoints } from "./geometry";
-import type { ImageMode, InspectionStatus, Project, SelectionRef } from "./types";
+import type { CustomValue, ImageMode, InspectionStatus, Project, SelectionRef } from "./types";
 
 export interface ItemCommandResult {
   /** Items that were eligible and received the operation. */
@@ -202,5 +203,41 @@ export function setItemsOpacity(
     touch(entry.item);
     result.changed += 1;
   }
+  return result;
+}
+
+/** Removes every manual label placement so the label returns to its default spot. */
+export function resetItemLabelPlacement(project: Project, itemId: string): ItemCommandResult {
+  const result = emptyResult();
+  const target = findItem(project, itemId)?.item;
+  if (!target) return result;
+  delete target.labelOffset;
+  delete target.labelAnchor;
+  delete target.labelFit;
+  touch(target);
+  result.changed += 1;
+  return result;
+}
+
+/** Sets or clears one measurement custom value, dropping an empty custom object. */
+export function setItemCustomValue(
+  project: Project,
+  itemId: string,
+  fieldId: string,
+  value: CustomValue | undefined,
+): ItemCommandResult {
+  const result = emptyResult();
+  const target = findItem(project, itemId)?.item;
+  if (!target) return result;
+  if (value === undefined) {
+    if (target.custom) {
+      delete target.custom[fieldId];
+      if (!Object.keys(target.custom).length) delete target.custom;
+    }
+  } else {
+    target.custom = { ...target.custom, [fieldId]: value };
+  }
+  touch(target);
+  result.changed += 1;
   return result;
 }

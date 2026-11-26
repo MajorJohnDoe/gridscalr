@@ -4,6 +4,7 @@ import { allRooms, categoryForItem, normalizeRoom } from "../../model/categories
 import { LABEL_MAX_SIZE, LABEL_MIN_SIZE, clampLabelSize } from "../../model/label";
 import { labelFitLabel } from "../../model/labelLayout";
 import { findItem, isMeasurementKind } from "../../model/layers";
+import { resetItemLabelPlacement } from "../../model/commands";
 import type { AreaMode, CountType } from "../../model/types";
 import { formatNumber } from "../../model/units";
 import { store } from "../../state/store";
@@ -25,12 +26,7 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
         : t("inspector.resetLabelPositionTitle");
       resetLabel.addEventListener("click", () => {
         store.mutate((project) => {
-          const target = findItem(project, item.id)?.item;
-          if (!target) return;
-          delete target.labelOffset;
-          delete target.labelAnchor;
-          delete target.labelFit;
-          target.updatedAt = new Date().toISOString();
+          resetItemLabelPlacement(project, item.id);
         }, "change");
       });
       section.append(resetLabel);
