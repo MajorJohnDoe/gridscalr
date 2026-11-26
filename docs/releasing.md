@@ -77,9 +77,9 @@ produced, so a number is never claimed without a run behind it:
 - every performance row from the reference profile, with the profile shape and
   the measured serialized project size.
 
-A lower-impact accessibility finding that is deferred needs an entry in
-[`plan/foundation-findings.md`](plan/foundation-findings.md) with severity and
-next step. Do not add an allowlist or lower a threshold to make a release pass.
+A lower-impact accessibility finding that is deferred needs a row in
+[`plan/foundation-findings.md`](plan/foundation-findings.md) with severity and an
+owner issue. Do not add an allowlist or lower a threshold to make a release pass.
 
 `npm run check:dependencies` runs `npm audit` and `cargo audit` against
 `security/dependency-allowlist.json`. A new unaccepted advisory at or above

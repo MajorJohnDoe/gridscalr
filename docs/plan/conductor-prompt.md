@@ -93,6 +93,8 @@ Defensive review:
   test. For a schema change, confirm the previous-schema fixture and migration
   tests exist and pass.
 - If the head SHA changed after verification, verify again.
+- The findings register holds open rows only, each names a live issue, and the
+  file is within one screen.
 - Merge only after this pass.
 
 Context policy:
@@ -142,8 +144,9 @@ Follow ADR 0013:
 
 Implement the issue scope and acceptance criteria.
 Fix in-scope problems immediately.
-Record larger or out-of-scope findings in docs/plan/foundation-findings.md with
-severity, evidence, impact and next step.
+Record larger or out-of-scope findings as one row in
+docs/plan/foundation-findings.md with severity and an owner issue. Do not add
+history there; a fixed finding moves to docs/plan/archive/foundation-findings.md.
 Update the relevant documentation in the same change.
 Add focused tests, including migration tests for schema changes and invariant
 tests for page changes.
@@ -220,6 +223,8 @@ Confirm:
 - the file list matches the issue scope;
 - no unrelated refactor, version bump, generated file, secret or credential is
   included;
+- the findings register gained no fixed or accepted entry, and any new row names
+  a live issue;
 - the acceptance criteria are covered by code and tests;
 - for a schema phase, the previous-schema fixture exists and the migration and
   corpus tests pass;

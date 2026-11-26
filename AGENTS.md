@@ -132,9 +132,10 @@ the short term and much more expensive later.
   rules and `tests/rustModuleRules.test.ts` proves them.
 - Each foundation phase issue records its module map before production code is
   added. A new responsibility gets a new file, not a larger existing one.
-- Fix an in-scope problem immediately. Record a larger or out-of-scope finding in
-  [`docs/plan/foundation-findings.md`](docs/plan/foundation-findings.md), triage it
-  at the phase exit and convert accepted work into an issue.
+- Fix an in-scope problem immediately. Record a larger or out-of-scope finding as
+  one row in [`docs/plan/foundation-findings.md`](docs/plan/foundation-findings.md)
+  with a live owner issue. The register holds open work only: a fixed finding or
+  an accepted trade-off leaves it for the archive or `docs/limitations.md`.
 - `App.ts` and `CanvasView.ts` remain wiring only; the 50–100 line rule in ADR
   0001 still applies.
 
@@ -189,8 +190,10 @@ grow a static TODO list in the roadmap.
 - During a foundation phase, use
   [`docs/plan/foundation-findings.md`](docs/plan/foundation-findings.md) for
   larger findings that are out of scope or need a later decision. Fix in-scope
-  problems immediately. Review the log at every phase exit and before a release;
-  convert accepted entries into issues.
+  problems immediately. Review the register at every phase exit and before a
+  release: every open row names a live issue, the file stays within one screen,
+  and every fixed or accepted finding has moved to the archive or
+  `docs/limitations.md`.
 - Security and dependency alerts stay open until they are fixed or explicitly
   accepted. A tracking issue may reference them but must not replace them.
 
@@ -287,8 +290,9 @@ confirm:
 - a source drawing is never written by the new path;
 - planned conflict, page-order or source-storage behavior is not described as
   shipped;
-- new out-of-scope findings are recorded in
-  `docs/plan/foundation-findings.md` and the log is reviewed at the phase exit.
+- new out-of-scope findings are recorded as one register row with an owner issue
+  in `docs/plan/foundation-findings.md`, and the register is reviewed at the
+  phase exit.
 
 Before a feature or GUI change is reported as complete, either update `docs/user-guide.md`
 and the affected screenshots, or record `Docs impact: deferred — <what>` in the PR.

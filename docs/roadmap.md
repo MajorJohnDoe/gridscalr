@@ -419,7 +419,8 @@ These are internal improvements, not user-facing promises. Record concrete
 items as GitHub issues with the `tech-debt` or `refactor` label rather than
 anonymous `TODO` comments in code; see **Issue tracking** in `AGENTS.md`.
 
-During the foundation phases, larger out-of-scope findings are recorded in
+During the foundation phases, larger out-of-scope findings are recorded as one
+row with an owner issue in
 [`plan/foundation-findings.md`](plan/foundation-findings.md) and triaged at each
 phase exit.
 
