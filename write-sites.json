@@ -1,17 +1,9 @@
 {
-  "total": 86,
+  "total": 20,
   "files": {
     "src/app/App.ts": 1,
     "src/app/imageFlows.ts": 1,
     "src/app/projectNameEditor.ts": 1,
-    "src/canvas/editors/labels.ts": 2,
-    "src/canvas/editors/textCommit.ts": 44,
-    "src/canvas/pointer/contextMenu.ts": 14,
-    "src/canvas/pointer/doubleClick.ts": 1,
-    "src/canvas/pointer/draft.ts": {
-      "max": 5,
-      "reason": "Gesture-time draft edits write through the store before a command module exists; extract in the write-path wave."
-    },
     "src/features/countTypes/ui.ts": 1,
     "src/features/schematics/ui/lineTypeDialog.ts": 1,
     "src/features/schematics/ui/railDialog.ts": 4,
