@@ -1,4 +1,4 @@
-import { matchesFilterText, normalizeFilterQuery } from "../../features/listInteraction";
+import { matchesFilterText, normalizeFilterQuery } from "../../model/textFilter";
 import { t } from "../../i18n";
 import { categoryForItem } from "../../model/categories";
 import { countTypeLabel } from "../../model/countTypes";

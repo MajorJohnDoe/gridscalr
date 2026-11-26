@@ -416,6 +416,7 @@ src/app/clipboardPaste.ts  clipboard image and item paste entry point
 src/app/pageZoomGuard.ts   suppresses WebView2 page zoom for Ctrl + wheel and pinch
 src/app/referenceController.ts reference pane, comparison session and comparison PDF lifecycle
 src/app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
+src/app/pageActions.ts     store-backed page insert/reorder/cleanup actions and their host
 src/app/shareByEmailFlow.ts File -> Send by e-mail wiring: shared drawing dialog and PDF builder
 src/app/selectionActions.ts selection, bulk edits and item commands
 src/app/documentImport.ts  PDF/TIF import, password retries and checksum checks
@@ -444,6 +445,7 @@ src/features/              feature modules; see docs/adr/0001-feature-modules.md
 src/features/countTypes/index.ts public surface for the counted-object rows of the Takeoff settings hub
 src/features/countTypes/ui.ts counted-object table rows: rename, glyph, usage and delete request
 src/features/fields/index.ts public surface for custom fields, typed values and field sets
+src/features/quantities/   public surface, pure filter/cache rules, one state object and the quantities panel
 src/features/fields/model.ts pure custom-field rules, value coercion, deletion and field-set application
 src/features/fields/ui.ts Takeoff settings Fields tab entry, the field editor and the inspector fields section
 src/features/fields/ui/ field editor, field list, field sets, applies-to and typed value control
@@ -574,7 +576,8 @@ src/model/integrity.ts     shared referential-integrity rules and round-trip sha
 src/model/derivedPdf.ts    converter version, derived-PDF cache key rule and marker shape check
 src/features/derivedPdfCache/ cache lifecycle: build on import/save, reuse or rebuild on open, the missing-scan path, the budget warning and the package rule
 src/model/layerHierarchy.ts pure layer parent links, tree order, effective visibility/lock and page-removal keep rules
-src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
+src/model/commands.ts      shared item commands for visibility, locks, deletion, movement, style and label/custom values
+src/model/ids.ts           dependency-free stable identifier creation shared by pages and calibration
 src/model/markups.ts       saved Markups views, columns and grouping helpers
 src/model/symbols/        symbol types, categories, sign and schematic catalogues, lookup and render plan
 src/model/symbols/schematic/ stroke-only schematic symbol library, split by category
@@ -735,6 +738,8 @@ scripts/shortcut-docs.mjs  pure shortcut-table rules for docs/shortcuts.md and R
 scripts/check-file-budgets.mjs blocking line budget for frontend and Rust source files
 scripts/file-budget-rules.mjs pure budget scope, exception and --update rules
 scripts/check-module-boundaries.mjs foundation feature index, deep-import and Rust command-cap guard
+scripts/check-cycles.mjs   runtime import-cycle gate over src
+scripts/check-cycles.d.mts declaration for the cycle-gate pure exports
 scripts/rust-module-rules.mjs pure Rust command cap and module-declaration rules
 scripts/check-security-policy.mjs CSP, capability, worker and smoke-command policy guard
 scripts/check-action-pins.mjs 40-character SHA pins for every workflow `uses:` reference

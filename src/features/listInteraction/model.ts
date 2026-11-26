@@ -265,15 +265,9 @@ export function moveOutcome(
 }
 
 /** Case- and locale-aware query normalization shared by every list filter. */
-export function normalizeFilterQuery(query: string): string {
-  return query.trim().toLocaleLowerCase();
-}
-
-/** True when the searchable text contains the already-normalized query. */
-export function matchesFilterText(haystack: string, normalizedQuery: string): boolean {
-  if (!normalizedQuery) return true;
-  return haystack.toLocaleLowerCase().includes(normalizedQuery);
-}
+// The rule lives in `model` so pure row models can reuse it without importing
+// this feature surface. Re-exported here so existing callers keep one path.
+export { matchesFilterText, normalizeFilterQuery } from "../../model/textFilter";
 
 /** Collapse state after toggling one group key. */
 export function toggleCollapsedKey(collapsed: ReadonlySet<string>, key: string): Set<string> {
