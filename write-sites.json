@@ -1,9 +1,4 @@
 {
-  "total": 4,
-  "files": {
-    "src/state/store.ts": {
-      "max": 4,
-      "reason": "Store setter methods are the command seam itself; per-command extraction is a later write-path phase."
-    }
-  }
+  "total": 0,
+  "files": {}
 }
