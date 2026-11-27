@@ -959,7 +959,7 @@ the variability: under the live first-tile rule zoom 1 and zoom 3 were
 verification record; the next CI run forces each level there too.
 
 macOS WKWebView (packaged CI smoke test, 234 016 px viewport) used the live
-tiled path at all three zooms on head `5a5f368`:
+tiled path at all three zooms before forcing was added (head `5a5f368`):
 
 | Zoom | Path | `tilesUsed` | Differing pixels | Max delta | Verdict |
 | --- | --- | --- | --- | --- | --- |
@@ -968,7 +968,8 @@ tiled path at all three zooms on head `5a5f368`:
 | 6 | live tiled | yes | 257 / 234 016 (0.110 %) | 1 | match |
 
 Windows WebView2 (packaged CI smoke test, 266 800 px viewport) used the live
-tiled path at all three zooms on the same head:
+tiled path at all three zooms on the same head; the forced run reproduces the
+same verdicts:
 
 | Zoom | Path | `tilesUsed` | Differing pixels | Max delta | Verdict |
 | --- | --- | --- | --- | --- | --- |

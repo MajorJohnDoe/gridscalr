@@ -229,7 +229,8 @@ rather than a decision of the live first-tile cost rule; the live app keeps that
 rule. The packaged local Linux WebKitGTK forced run used the tiled path at
 zoom 1, 3 and 6: zoom 1 and 6 matched, while zoom 3 differed on 1.006 % of
 pixels (max delta 156) and is recorded as `mismatch` under the tightened verdict.
-On macOS WKWebView the head `5a5f368` CI run used tiles at all three zooms:
+On macOS WKWebView the packaged CI smoke test used the forced tiled path at all
+three zooms:
 zoom 6 matched (0.110 % differing, max delta 1), zoom 3 differed on 1.179 % with
 max delta 119, and zoom 1 differed on 4.008 % of pixels (max delta 161); zoom 3
 and zoom 1 are `mismatch`. The WebKit zoom-3 differences have a page-wide

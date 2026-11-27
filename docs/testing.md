@@ -85,18 +85,19 @@ reviewed decision, not an assumption.
 Observed results (the same numbers are in
 [`performance/history.md`](performance/history.md) under the renderer follow-up
 entry). The Linux rows are the forced tiled path produced locally on this head.
-The macOS and Windows rows are the packaged CI smoke results on head `5a5f368`
-(run 46025400494), where the live path already served tiles at all three zooms:
+The macOS and Windows rows are the packaged CI smoke results from the desktop
+matrix; the probe forces the tiled path, so the numbers do not depend on which
+run's first-tile rule fired:
 
 | Platform and run | Capture | Zoom | Tiles used | Differing pixels | Max delta | Verdict |
 | --- | --- | --- | --- | --- | --- | --- |
 | Packaged local Linux WebKitGTK (820 × 820, DPR 1) | forced tiled path | 1 | yes | 1 130 / 672 256 (0.168 %) | 6 | match |
 | | | 3 | yes | 6 760 / 672 256 (1.006 %) | 156 | mismatch |
 | | | 6 | yes | 0 | 0 | match |
-| CI macOS WKWebView (head 5a5f368, job 140595395018) | live tiled path | 1 | yes | 9 380 / 234 016 (4.008 %) | 161 | mismatch |
+| CI macOS WKWebView | forced tiled path | 1 | yes | 9 380 / 234 016 (4.008 %) | 161 | mismatch |
 | | | 3 | yes | 2 760 / 234 016 (1.179 %) | 119 | mismatch |
 | | | 6 | yes | 257 / 234 016 (0.110 %) | 1 | match |
-| CI Windows WebView2 (head 5a5f368, job 140595395526) | live tiled path | 1 | yes | 12 474 / 266 800 (4.675 %) | 132 | mismatch |
+| CI Windows WebView2 | forced tiled path | 1 | yes | 12 474 / 266 800 (4.675 %) | 132 | mismatch |
 | | | 3 | yes | 6 658 / 266 800 (2.496 %) | 145 | mismatch |
 | | | 6 | yes | 6 216 / 266 800 (2.330 %) | 156 | mismatch |
 
