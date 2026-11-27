@@ -202,11 +202,13 @@ on each pull request.
 - **F-149** — `src/features/tileProbe/` compares the tiled and whole-page base
   raster at zoom 1, 3 and 6. The packaged smoke test runs it on Linux, macOS and
   Windows and records a report-only `tile path probe` step with the verdict,
-  difference, best 1-px shift, blank-block count, `tilesUsed` and
-  `tilePathExercised`. The local packaged Linux WebKitGTK run used tiles at all
-  three zooms (match, mismatch, match). The CI Ubuntu WebKitGTK job used the tile
-  path at all three zooms with the same result, and macOS WKWebView used tiles at
-  all three zooms (mismatch, mismatch, match). Windows WebView2 used tiles at all
+  difference, best 1-px shift, blank-block count, `forced`, `tilesUsed` and
+  `tilePathExercised`. The probe forces the tiled path past the live first-tile
+  cost rule when the platform supports it, so each level is real verification
+  and `not-used` now means a missing platform capability or a failed force. The
+  packaged Linux WebKitGTK forced run used tiles at all three zooms (match,
+  mismatch, match). The head `5a5f368` macOS WKWebView CI run used tiles at all
+  three zooms (mismatch, mismatch, match), and Windows WebView2 used tiles at all
   three zooms and recorded mismatches (2.33–4.68 %). The WebKit zoom-3
   differences are page-wide with no blank or
   material integer shift, but their maximum channel delta (156/119) exceeds the
@@ -224,8 +226,8 @@ on each pull request.
 
 - New: `src/features/gestureRender/signal.ts`,
   `src/features/tileProbe/{index,model,controller,access}.ts`,
-  `src/app/tileProbeFlow.ts`, `tests/tileProbe.test.ts`,
-  `tests/gestureRenderController.test.ts`.
+  `src/canvas/rasterCadence.ts`, `src/app/tileProbeFlow.ts`,
+  `tests/tileProbe.test.ts`, `tests/gestureRenderController.test.ts`.
 - Changed: `src/features/gestureRender/{controller,index}.ts`,
   `src/canvas/{CanvasView,raster}.ts`, `src/app/{App,referenceController}.ts`,
   `scripts/{canvas-regression,perf-probe}.mjs`, `tests/gestureRender.test.ts`,
@@ -240,7 +242,10 @@ on each pull request.
   controller path.
 - The probe disables the display-level underlay and forces each path so it
   compares raster to raster; otherwise an exact level can serve both paths and
-  mask a tile difference.
+  mask a tile difference. When the platform supports the tile cache it also
+  forces the tiled path past the live first-tile cost rule for each capture and
+  records `forced`, so the verification no longer depends on a run-dependent
+  fallback. The live app keeps the cost rule.
 - A level where `tilesUsed` is false is `not-used` and can never pass. Reporting
   the full-page fallback as a match was the review's P2 evidence-integrity
   finding; `tilePathExercised` makes the distinction explicit in the report.
@@ -278,9 +283,10 @@ on each pull request.
   pass.
 - `test:canvas` — pass.
 - `npm run tauri build -- --debug --no-bundle` and the packaged Linux WebKitGTK
-  smoke probe — re-run after the review fixes. `tilePathExercised:true`; zoom 1
-  match (0.168 %), zoom 3 mismatch (1.007 %, max delta 156) and zoom 6 match. The
-  probe step stays `ok:true` because it is report-only.
+  smoke probe — re-run after the forced-path fix. Every level records
+  `forced:true` and `tilesUsed:true`; zoom 1 match (0.168 %), zoom 3 mismatch
+  (1.006 %, max delta 156) and zoom 6 match. `tilePathExercised:true`. The probe
+  step stays `ok:true` because it is report-only.
 - Left to CI: the remaining browser suites and the desktop matrix on the final
   handover commit.
 
@@ -292,6 +298,12 @@ on each pull request.
   artifacts and four P4s: the stale handover claim, two gesture content-key
   holes, the invalidate-without-settle state and the Linux/macOS-only platform
   comments. All are fixed in this commit; re-review is pending.
+- Delta review on `5a5f368` found that `tilesUsed` still depended on the live
+  first-tile cost rule, so CI Ubuntu reported `not-used` on some levels on one
+  run and tiles on another. The probe now forces the tiled path for each capture
+  when the platform supports the cache and records `forced`; the Linux forced
+  run is recorded in `docs/testing.md` and the platform prose no longer pins the
+  variable live-run tile activity.
 
 ### Next
 

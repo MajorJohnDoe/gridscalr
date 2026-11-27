@@ -24,8 +24,12 @@ export interface TileProbeHost {
   tileSupported(): boolean;
   /** True when the tiled path is actually serving the current view. */
   tilePathActive(): boolean;
-  /** Forces the tiled or whole-page path and hides or shows the level underlay. */
-  setPath(tiled: boolean, levels: boolean): void;
+  /**
+   * Forces the tiled or whole-page path and hides or shows the level underlay.
+   * `force` keeps the tiled path for a capture even when the live first-tile
+   * cost rule would abandon it; it is only meaningful when `tileSupported()`.
+   */
+  setPath(tiled: boolean, levels: boolean, force?: boolean): void;
   setView(zoom: number, panX: number, panY: number): void;
   /** Resolves true once the base raster for the current view is settled. */
   waitForRaster(timeoutMs?: number): Promise<boolean>;
@@ -65,7 +69,13 @@ function verdictFor(
 export interface TileProbeLevel {
   zoom: number;
   ready: boolean;
+  /** True when tiles served this capture, whether the live path chose them or the probe forced them. */
   tilesUsed: boolean;
+  /**
+   * True when the probe forced the tiled path for this capture, so `tilesUsed`
+   * says nothing about the live first-tile cost rule.
+   */
+  forced: boolean;
   differing: number;
   total: number;
   differingRatio: number;
@@ -96,6 +106,11 @@ export interface TileProbeReport {
  * path at the same centred views, and compares the pixels. The probe is
  * debug-only: the packaged smoke test runs it on Linux, macOS and Windows, so
  * WebKitGTK, WKWebView and WebView2 exercise the same code path that ships.
+ *
+ * When the runtime supports the tile cache the probe forces the tiled path for
+ * each capture, so a level is real tile verification rather than a decision of
+ * the live first-tile cost rule. Each forced level records `forced`; a runtime
+ * without tile support, or a force that fails, stays `not-used` and never passes.
  */
 export async function runTileProbe(
   host: TileProbeHost,
@@ -111,21 +126,18 @@ export async function runTileProbe(
   try {
     for (const zoom of zooms) {
       const view = centeredView(pageSize, host.viewportSize(), zoom);
-      host.setPath(true, false);
+      // Force tiles for every capture when the runtime supports them. Otherwise
+      // the live first-tile cost rule decides per run whether a level is tiled,
+      // and the same platform reports `not-used` on one run and tiles on the
+      // next. A runtime without the bitmap APIs cannot force and stays
+      // `not-used`; a force that fails leaves `tilesUsed` false.
+      const force = supported;
+      host.setPath(true, false, force);
       host.setView(view.zoom, view.panX, view.panY);
-      let tiledReady = await host.waitForRaster();
-      let tilesUsed = tiledReady && host.tilePathActive();
-      let tiled = tiledReady ? host.captureBase() : null;
-      if (supported && tiledReady && !tilesUsed) {
-        // The tile controller abandons the tiled path when its first tile is
-        // slow. Give the warm page one retry so the probe verifies tiles rather
-        // than comparing the fallback with itself.
-        host.setPath(true, false);
-        host.setView(view.zoom, view.panX, view.panY);
-        tiledReady = await host.waitForRaster();
-        tilesUsed = tiledReady && host.tilePathActive();
-        tiled = tiledReady ? host.captureBase() : null;
-      }
+      const tiledReady = await host.waitForRaster();
+      const tilesUsed = tiledReady && host.tilePathActive();
+      const forced = force && tilesUsed;
+      const tiled = tiledReady ? host.captureBase() : null;
 
       host.setPath(false, false);
       host.setView(view.zoom, view.panX, view.panY);
@@ -137,6 +149,7 @@ export async function runTileProbe(
           zoom,
           ready: false,
           tilesUsed,
+          forced,
           differing: 0,
           total: 0,
           differingRatio: 1,
@@ -171,6 +184,7 @@ export async function runTileProbe(
         zoom,
         ready: true,
         tilesUsed,
+        forced,
         differing: diff.differing,
         total: diff.total,
         differingRatio: diff.differingRatio,

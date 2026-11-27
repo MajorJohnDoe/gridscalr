@@ -185,15 +185,27 @@ describe("tile probe blank regions", () => {
   });
 });
 
-function probeHost(tiled: RasterPixels, full: RasterPixels, supported = true, active = true) {
+interface ProbeHostOptions {
+  /** False when the runtime lacks the bitmap APIs. */
+  supported?: boolean;
+  /** Whether the live first-tile cost rule would leave tiles serving this view. */
+  liveTilesActive?: boolean;
+  /** Whether a forced tile path actually serves tiles. */
+  forceWorks?: boolean;
+}
+
+function probeHost(tiled: RasterPixels, full: RasterPixels, options: ProbeHostOptions = {}) {
+  const { supported = true, liveTilesActive = true, forceWorks = true } = options;
   let useTiles = true;
+  let forced = false;
   return {
     pageSize: () => ({ width: 100, height: 100 }),
     viewportSize: () => ({ width: 100, height: 100 }),
     tileSupported: () => supported,
-    tilePathActive: () => active && useTiles,
-    setPath: (next: boolean) => {
+    tilePathActive: () => supported && useTiles && (forced ? forceWorks : liveTilesActive),
+    setPath: (next: boolean, _levels: boolean, force = false) => {
       useTiles = next;
+      forced = force && supported && forceWorks;
     },
     setView: () => undefined,
     waitForRaster: async () => true,
@@ -328,11 +340,54 @@ describe("tile probe verdicts", () => {
   it("never passes a level where the tile path was not exercised", async () => {
     const image = raster(100, 100, 255);
     setPixel(image, 50, 50, 20);
-    const report = await runTileProbe(probeHost(image, image, true, false), [1]);
+    const report = await runTileProbe(probeHost(image, image, { supported: false }), [1]);
     expect(report.levels[0]).toMatchObject({
       ready: true,
       tilesUsed: false,
+      forced: false,
       strictMatch: true,
+      verdict: "not-used",
+      passed: false,
+    });
+    expect(report.tilePathExercised).toBe(false);
+    expect(report.passed).toBe(false);
+  });
+
+  it("forces the tiled path when the live first-tile rule would fall back", async () => {
+    const image = raster(100, 100, 255);
+    setPixel(image, 50, 50, 20);
+    const report = await runTileProbe(probeHost(image, image, { liveTilesActive: false }), [1]);
+    expect(report.levels[0]).toMatchObject({
+      ready: true,
+      tilesUsed: true,
+      forced: true,
+      verdict: "match",
+      passed: true,
+    });
+    expect(report.tilePathExercised).toBe(true);
+    expect(report.passed).toBe(true);
+  });
+
+  it("does not claim a forced capture when the runtime cannot force tiles", async () => {
+    const image = raster(100, 100, 255);
+    setPixel(image, 50, 50, 20);
+    const report = await runTileProbe(probeHost(image, image, { supported: false }), [1]);
+    expect(report.levels[0].forced).toBe(false);
+    expect(report.levels[0].tilesUsed).toBe(false);
+    expect(report.levels[0].verdict).toBe("not-used");
+    expect(report.tilePathExercised).toBe(false);
+  });
+
+  it("keeps a failed forced capture as not-used", async () => {
+    const image = raster(100, 100, 255);
+    setPixel(image, 50, 50, 20);
+    const report = await runTileProbe(
+      probeHost(image, image, { liveTilesActive: false, forceWorks: false }),
+      [1],
+    );
+    expect(report.levels[0]).toMatchObject({
+      tilesUsed: false,
+      forced: false,
       verdict: "not-used",
       passed: false,
     });
@@ -346,5 +401,6 @@ describe("tile probe verdicts", () => {
     const report = await runTileProbe(probeHost(image, image), [1]);
     expect(report.tilePathExercised).toBe(true);
     expect(report.levels[0].tilesUsed).toBe(true);
+    expect(report.levels[0].forced).toBe(true);
   });
 });

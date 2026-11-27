@@ -31,7 +31,7 @@ function runSmokeTileProbe(
     viewportSize: () => canvas.viewportSize,
     tileSupported: () => probe.tileSupported(),
     tilePathActive: () => probe.tilePathActive(),
-    setPath: (tiled, levels) => probe.setPath(tiled, levels),
+    setPath: (tiled, levels, force) => probe.setPath(tiled, levels, force),
     setView,
     waitForRaster: (timeoutMs = 15000) => waitForProbeRaster(canvas, timeoutMs),
     captureBase: () => probe.capture(),

@@ -124,7 +124,8 @@ src/
   compare/referenceSession.ts session-only revision project or raw PDF reference, renderer and source paths
   compare/revisionDiff.ts pure item matching and added/removed/changed classification
   canvas/CanvasView.ts   rendering orchestration, hit testing, inline editing, resize/rotate, PNG compositing
-  canvas/raster.ts       primary canvas render scheduling, cover check, cost cadence, display levels, tile-cache selection and full-page fallback
+  canvas/raster.ts       primary canvas render scheduling, cover check, display levels, tile-cache selection and full-page fallback
+  canvas/rasterCadence.ts pure raster cadence and the first-tile cost rule
   canvas/itemRenderer.ts thin public entry point; delegates item drawing to canvas/items/
   canvas/items/context.ts shared item render context, panel drawer and label helper
   canvas/items/dispatch.ts rotation, shared canvas setup and the item-family switch

@@ -939,62 +939,60 @@ evidence for the resting image.
 ### F-149 — packaged tile-path probe
 
 The packaged probe runs in the smoke test on the `ubuntu-22.04`, `macos-latest`
-and `windows-latest` desktop jobs. Linux WebKitGTK (local packaged debug build,
-820 × 820 CSS px viewport, DPR 1) reports `createImageBitmap` and
-`OffscreenCanvas` and uses the tiled path at all three zooms:
+and `windows-latest` desktop jobs. When the platform supports the tile cache the
+probe forces the tiled path for every capture, so a level is real tile
+verification instead of the run-dependent outcome of the live first-tile cost
+rule. The live app keeps that rule; a forced level records `forced: true`.
+Linux WebKitGTK (local packaged debug build, 820 × 820 CSS px viewport, DPR 1)
+reports `createImageBitmap` and `OffscreenCanvas` and captured through the
+forced tiled path at all three zooms:
 
-| Zoom | `tilesUsed` | Differing pixels | Max delta | Verdict |
-| --- | --- | --- | --- | --- |
-| 1 | yes | 1 130 / 672 256 (0.168 %) | 6 | match |
-| 3 | yes | 6 770 / 672 256 (1.007 %) | 156 | mismatch |
-| 6 | yes | 0 | 0 | match |
+| Zoom | Path | `tilesUsed` | Differing pixels | Max delta | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| 1 | forced | yes | 1 130 / 672 256 (0.168 %) | 6 | match |
+| 3 | forced | yes | 6 760 / 672 256 (1.006 %) | 156 | mismatch |
+| 6 | forced | yes | 0 | 0 | match |
 
-The `ubuntu-22.04` CI job used the tile path at all three zooms on head SHA
-`4e29a75` (run 46021784653), so the report's `tilePathExercised` is true and the
-levels match the packaged local result:
+The `ubuntu-22.04` CI smoke on head `5a5f368` (run 46025400494) is what exposed
+the variability: under the live first-tile rule zoom 1 and zoom 3 were
+`not-used` and only zoom 6 used tiles. The forced local run above is the Linux
+verification record; the next CI run forces each level there too.
 
-| Zoom | `tilesUsed` | Differing pixels | Max delta | Verdict |
-| --- | --- | --- | --- | --- |
-| 1 | yes | 1 130 / 672 256 (0.168 %) | 6 | match |
-| 3 | yes | 6 770 / 672 256 (1.007 %) | 156 | mismatch |
-| 6 | yes | 0 | 0 | match |
+macOS WKWebView (packaged CI smoke test, 234 016 px viewport) used the live
+tiled path at all three zooms on head `5a5f368`:
 
-macOS WKWebView (packaged CI smoke test, 234 016 px viewport) used tiles at all
-three zooms on the same head:
+| Zoom | Path | `tilesUsed` | Differing pixels | Max delta | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| 1 | live tiled | yes | 9 380 / 234 016 (4.008 %) | 161 | mismatch |
+| 3 | live tiled | yes | 2 760 / 234 016 (1.179 %) | 119 | mismatch |
+| 6 | live tiled | yes | 257 / 234 016 (0.110 %) | 1 | match |
 
-| Zoom | `tilesUsed` | Differing pixels | Max delta | Verdict |
-| --- | --- | --- | --- | --- |
-| 1 | yes | 9 380 / 234 016 (4.008 %) | 161 | mismatch |
-| 3 | yes | 2 760 / 234 016 (1.179 %) | 119 | mismatch |
-| 6 | yes | 257 / 234 016 (0.110 %) | 1 | match |
+Windows WebView2 (packaged CI smoke test, 266 800 px viewport) used the live
+tiled path at all three zooms on the same head:
 
-Windows WebView2 (packaged CI smoke test, 266 800 px viewport) used tiles at
-all three zooms:
-
-| Zoom | `tilesUsed` | Differing pixels | Max delta | Verdict |
-| --- | --- | --- | --- | --- |
-| 1 | yes | 12 474 / 266 800 (4.675 %) | 132 | mismatch |
-| 3 | yes | 6 658 / 266 800 (2.496 %) | 145 | mismatch |
-| 6 | yes | 6 216 / 266 800 (2.330 %) | 156 | mismatch |
+| Zoom | Path | `tilesUsed` | Differing pixels | Max delta | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| 1 | live tiled | yes | 12 474 / 266 800 (4.675 %) | 132 | mismatch |
+| 3 | live tiled | yes | 6 658 / 266 800 (2.496 %) | 145 | mismatch |
+| 6 | live tiled | yes | 6 216 / 266 800 (2.330 %) | 156 | mismatch |
 
 At zoom 3 on both WebKit runtimes the difference is page-wide (Linux bounding
 box 5,0 – 819,805; macOS 3,16 – 409,567) and no coarse grid block is blank. The
 best 1-pixel shift only moves the macOS ratio from 1.179 % to 1.118 % and does
 not materially explain either difference. Their maximum channel delta (156 and
 119) does exceed the 64 allowance, so the tightened verdict is `mismatch`, not
-antialias. A `not-used` level never passes: the first-tile rule can leave the
-tile path off, and the report records that instead of comparing the full-page
-path with itself.
+antialias. A `not-used` level now means the platform lacks the bitmap APIs or
+the forced capture failed; it never passes.
 
-The macOS zoom-1 level measured 9 380 / 234 016 (4.008 %, max delta 161) on this
-run, page-wide, with no blank grid block and no material integer shift. That
-zoom-1 difference, together with the stable Windows WebView2 differences and the
+The macOS zoom-1 level measured 9 380 / 234 016 (4.008 %, max delta 161) on head
+`5a5f368`, page-wide, with no blank grid block and no material integer shift.
+That zoom-1 difference, together with the Windows WebView2 differences and the
 max-delta failures above, is tracked as F-150
 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)). It is larger than
 the ≤ 0.17 % recorded for the phase 4 Chromium probe at 1440 × 900 DPR 1; it is
 not a blank or integer-offset tile, and no platform fallback is added here. The
-probe records `tilesUsed` and `tilePathExercised` so a fallback result is not
-mistaken for tile verification.
+probe records `forced`, `tilesUsed` and `tilePathExercised` so a fallback result
+is not mistaken for tile verification.
 
 ### What this says
 

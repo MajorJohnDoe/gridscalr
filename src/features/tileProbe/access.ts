@@ -2,7 +2,7 @@ import type { RasterPixels } from "./model";
 
 /** The raster surface the capture bridge reads; a structural subset of the controller. */
 export interface TileProbeRaster {
-  setProbePath(tiled: boolean, levels: boolean): void;
+  setProbePath(tiled: boolean, levels: boolean, force?: boolean): void;
   readonly tilePathActive: boolean;
   readonly rendering: boolean;
   readonly current: unknown | null;
@@ -14,7 +14,8 @@ export interface TileProbeRaster {
 export interface TileProbeAccess {
   tileSupported(): boolean;
   tilePathActive(): boolean;
-  setPath(tiled: boolean, levels: boolean): void;
+  /** `force` keeps the tiled path for a capture even when the live cost rule would fall back. */
+  setPath(tiled: boolean, levels: boolean, force?: boolean): void;
   rasterIdle(): boolean;
   capture(): RasterPixels | null;
 }
@@ -31,7 +32,7 @@ export function createTileProbeAccess(
   return {
     tileSupported: () => raster.tileStats()?.supported === true,
     tilePathActive: () => raster.tilePathActive,
-    setPath: (tiled, levels) => raster.setProbePath(tiled, levels),
+    setPath: (tiled, levels, force) => raster.setProbePath(tiled, levels, force),
     rasterIdle: () => !raster.rendering && raster.currentAccurate() && raster.current !== null,
     capture: () => {
       const canvas = base();

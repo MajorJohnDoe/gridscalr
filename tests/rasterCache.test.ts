@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   backdropFor,
-  cadenceWaitMs,
-  gestureCadenceMs,
   rasterCovers,
   rasterMatchesView,
   visiblePageRect,
   type RenderedView,
 } from "../src/canvas/raster";
+import { cadenceWaitMs, firstTileTooSlow, gestureCadenceMs } from "../src/canvas/rasterCadence";
 import type { RenderResult } from "../src/pdf/pdfRenderer";
 
 function raster(pageNumber: number): RenderResult {
@@ -115,6 +114,38 @@ describe("rasterMatchesView", () => {
 
   it("is false when the view reaches past the raster", () => {
     expect(rasterMatchesView(viewRaster, rendered, 1, 2, 1, { ...view, width: 500 })).toBe(false);
+  });
+});
+
+describe("firstTileTooSlow", () => {
+  it("abandons tiles when the first tile costs more than 30 ms", () => {
+    expect(
+      firstTileTooSlow({ completed: 1, firstTileMs: 31, forced: false, tilesDisabled: false }),
+    ).toBe(true);
+    expect(
+      firstTileTooSlow({ completed: 1, firstTileMs: 30, forced: false, tilesDisabled: false }),
+    ).toBe(false);
+  });
+
+  it("keeps the live cost rule for a slow first tile only", () => {
+    expect(
+      firstTileTooSlow({ completed: 0, firstTileMs: 99, forced: false, tilesDisabled: false }),
+    ).toBe(false);
+    expect(
+      firstTileTooSlow({ completed: 2, firstTileMs: 99, forced: false, tilesDisabled: false }),
+    ).toBe(false);
+    expect(
+      firstTileTooSlow({ completed: 1, firstTileMs: 99, forced: false, tilesDisabled: true }),
+    ).toBe(false);
+  });
+
+  it("never abandons tiles while the debug probe forces the tiled path", () => {
+    expect(
+      firstTileTooSlow({ completed: 1, firstTileMs: 5000, forced: true, tilesDisabled: false }),
+    ).toBe(false);
+    expect(
+      firstTileTooSlow({ completed: 1, firstTileMs: 5000, forced: true, tilesDisabled: true }),
+    ).toBe(false);
   });
 });
 
