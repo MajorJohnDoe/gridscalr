@@ -284,6 +284,45 @@ describe("summary panel", () => {
     expect(foot?.textContent).toContain("Value (Sum): 1");
   });
 
+  it("keeps a total on the first visible column in the dock foot line", () => {
+    const project = makeProject();
+    lengthItem(project, { label: "Wall A" });
+    schedule(project, {
+      columns: [
+        { id: "c1", field: "value", visible: true, format: "unit" },
+        { id: "c2", field: "label", visible: true },
+      ],
+      totals: [{ field: "value", op: "sum" }],
+    });
+    store.setProject(project, null);
+    const { container } = mountPanel();
+    setValue(labelled<HTMLSelectElement>("Takeoff table")!, "sched_ui");
+
+    const foot = container.querySelector(".schedules-foot-row");
+    expect(foot?.textContent).toContain("Value (Sum): 1");
+    expect(container.querySelector(".schedules-total-row")?.textContent).not.toContain(
+      "Value (Sum)",
+    );
+  });
+
+  it("keeps a second total on the same field in the dock foot line", () => {
+    const project = makeProject();
+    lengthItem(project, { label: "Wall A" });
+    schedule(project, {
+      totals: [
+        { field: "value", op: "sum" },
+        { field: "value", op: "avg" },
+      ],
+    });
+    store.setProject(project, null);
+    const { container } = mountPanel();
+    setValue(labelled<HTMLSelectElement>("Takeoff table")!, "sched_ui");
+
+    expect(container.querySelector(".schedules-total-row")?.textContent).toContain("1");
+    const foot = container.querySelector(".schedules-foot-row");
+    expect(foot?.textContent).toContain("Value (Average): 1");
+  });
+
   it("shows the empty state when nothing matches", () => {
     const project = makeProject();
     store.setProject(project, null);

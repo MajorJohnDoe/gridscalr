@@ -292,6 +292,44 @@ describe("canvas and PDF share one table layout", () => {
     expect(canvas.foot[0].text).toBe(pdf.foot[0].text);
   });
 
+  it("keeps a total on the first visible column on the canvas and PDF foot line", () => {
+    const project = makeProject();
+    const schedule = groupedSchedule(project);
+    schedule.columns = [
+      { id: "c1", field: "value", visible: true, width: 14, format: "unit" },
+      { id: "c2", field: "label", visible: true, width: 22 },
+    ];
+    const result = computeSchedule(project, schedule);
+    const item = placementItem();
+    const canvas = canvasScheduleLayout(result, item, measure);
+    const pdf = pdfScheduleLayout(result, item, measure);
+    expect(canvas.foot).toEqual(pdf.foot);
+    expect(canvas.foot[0].text).toContain("Value (Sum)");
+    expect(pdf.foot[0].text).toContain("Value (Sum)");
+    const totalCells = canvas.cells.filter((cell) => cell.role === "total");
+    expect(totalCells[0].text).toBe("Total");
+    expect(totalCells[1].text).toBe("");
+  });
+
+  it("keeps a second total on the same field in the canvas and PDF foot line", () => {
+    const project = makeProject();
+    const schedule = groupedSchedule(project);
+    schedule.totals = [
+      { field: "value", op: "sum" },
+      { field: "value", op: "avg" },
+    ];
+    const result = computeSchedule(project, schedule);
+    const item = placementItem();
+    const canvas = canvasScheduleLayout(result, item, measure);
+    const pdf = pdfScheduleLayout(result, item, measure);
+    expect(canvas.foot).toEqual(pdf.foot);
+    expect(canvas.foot[0].text).toContain("Value (Average)");
+    expect(pdf.foot[0].text).toContain("Value (Average)");
+    const totalCells = canvas.cells.filter((cell) => cell.role === "total");
+    expect(totalCells[1].text).toBe(result.totals[0].text);
+    expect(totalCells[1].text).not.toBe(result.totals[1].text);
+  });
+
   it("differs only in measured text when the font metrics differ", () => {
     const project = makeProject();
     const schedule = groupedSchedule(project);

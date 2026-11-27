@@ -321,7 +321,7 @@ function openMenu(id: string, focusFirst: boolean, byHover = false): void {
 function createPanel(items: MenuItem[], level: number): HTMLElement {
   const panel = el("div", "menu-panel");
   panel.setAttribute("role", "menu");
-  panel.dataset.level = String(level);
+  panel.dataset.menuLevel = String(level);
 
   for (const item of items) {
     if (item.kind === "separator") {
@@ -490,8 +490,8 @@ function moveFocus(panel: HTMLElement, step: number): void {
 function escapeMenu(): void {
   const active = document.activeElement;
   const focusedPanel =
-    active instanceof Element ? active.closest<HTMLElement>(".menu-panel") : null;
-  const level = Number(focusedPanel?.dataset.level ?? 0);
+    active instanceof Element ? active.closest<HTMLElement>("[data-menu-level]") : null;
+  const level = Number(focusedPanel?.dataset.menuLevel ?? 0);
   if (level > 0) {
     const anchor = submenuAnchors.get(level);
     closePanelAt(level);

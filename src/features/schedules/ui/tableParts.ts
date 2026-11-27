@@ -1,8 +1,8 @@
 import { t } from "../../../i18n";
 import { el } from "../../../ui/dom";
 import {
+  placeTotals,
   unmatchedTotalText,
-  unmatchedTotals,
   type ScheduleColumnView,
   type ScheduleGroup,
   type ScheduleRow,
@@ -101,8 +101,9 @@ export function scheduleTotalRow(
   const label = el("th", "schedules-total-label", t("schedules.table.total"));
   label.scope = "row";
   row.append(label);
+  const placement = placeTotals(columns, totals);
   for (let index = 1; index < columns.length; index += 1) {
-    const total = totals.find((entry) => entry.field === columns[index].field);
+    const total = placement.placed[index];
     const cell = el("td", columns[index].numeric ? "is-numeric" : "");
     cell.textContent = total?.text ?? "";
     if (total?.mixedUnits) {
@@ -122,7 +123,7 @@ export function scheduleFootRow(
   totals: readonly ScheduleTotalValue[],
   columns: readonly ScheduleColumnView[],
 ): HTMLTableRowElement | null {
-  const unmatched = unmatchedTotals(columns, totals);
+  const unmatched = placeTotals(columns, totals).unmatched;
   if (!unmatched.length) return null;
   const row = el("tr", "schedules-foot-row");
   const cell = el("td", "schedules-foot-cell", unmatchedTotalText(unmatched));

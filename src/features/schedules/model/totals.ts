@@ -95,16 +95,37 @@ export function computeTotals(
 }
 
 /**
- * Totals that have no visible column to render under. The value is already
- * computed; the foot line only displays it, so a hidden column never forces a
- * second calculation and never drops the number (F-126).
+ * Where each computed total belongs in a total row. The first cell of that row
+ * is its label, so a total is placed only on a field column at index 1 or
+ * later, and only the first total for that field gets the cell. Everything
+ * else goes to the foot line: a hidden field, a field in the label column, and
+ * a second total on a field that already has one (F-126). The values are
+ * already computed; this rule only places them.
  */
-export function unmatchedTotals(
+export interface TotalPlacement {
+  /** The total placed in each column, or null; column 0 is always null. */
+  placed: (ScheduleTotalValue | null)[];
+  /** Totals the total row cannot show and the foot line must display. */
+  unmatched: ScheduleTotalValue[];
+}
+
+export function placeTotals(
   columns: readonly Pick<ScheduleColumnView, "field">[],
   totals: readonly ScheduleTotalValue[] | undefined,
-): ScheduleTotalValue[] {
-  const visible = new Set(columns.map((column) => column.field));
-  return (totals ?? []).filter((total) => !visible.has(total.field));
+): TotalPlacement {
+  const placed: (ScheduleTotalValue | null)[] = columns.map(() => null);
+  const unmatched: ScheduleTotalValue[] = [];
+  for (const total of totals ?? []) {
+    const index = columns.findIndex(
+      (column, columnIndex) => columnIndex >= 1 && column.field === total.field,
+    );
+    if (index < 0 || placed[index]) {
+      unmatched.push(total);
+      continue;
+    }
+    placed[index] = total;
+  }
+  return { placed, unmatched };
 }
 
 /** One localized foot-line line per unmatched total. */

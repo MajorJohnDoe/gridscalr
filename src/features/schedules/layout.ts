@@ -3,7 +3,7 @@ import type { ScheduleResult } from "./model/types";
 import { cellsFor, columnBoxes, gridLines, type BodyRow, type RowSeparator } from "./layoutCells";
 import { estimateTextWidth, ellipsizeText, type MeasureText } from "./layoutText";
 import { bandRoleFor, type ScheduleBand } from "./layoutStyle";
-import { unmatchedTotalText, unmatchedTotals } from "./model/totals";
+import { placeTotals, unmatchedTotalText } from "./model/totals";
 
 export { ellipsizeText, estimateTextWidth };
 export type { MeasureText };
@@ -173,7 +173,7 @@ export function layoutScheduleTable(input: ScheduleLayoutInput): ScheduleTableLa
   const totalRows = input.result.rows.length;
   const showHeader = input.showHeader !== false;
   const totals = input.showTotals === true ? input.result.totals : [];
-  const footTotals = totals.length ? unmatchedTotals(input.result.columns, totals) : [];
+  const footTotals = totals.length ? placeTotals(input.result.columns, totals).unmatched : [];
   const footText = footTotals.length ? unmatchedTotalText(footTotals) : "";
 
   const body = totalRows === 0 ? [] : buildBodyRows(input.result, start, end);

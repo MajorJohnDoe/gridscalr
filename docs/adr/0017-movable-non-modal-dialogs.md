@@ -76,10 +76,13 @@ name every call site uses (re-exported from `src/ui/dialogs.ts`) and now means
 - Transient surfaces register through
   [`src/features/transientOverlay/`](../../src/features/transientOverlay/): a
   flyout, top-menu or popover root takes the next value of one monotonic counter
-  above the dialog band, applies it as its own `z-index`, and one document
-  handler closes only the topmost registered surface. The dialog controller asks
-  that registry before it closes a window, so no surface is discovered by a CSS
-  class name and two transient surfaces are ordered against each other.
+  above the dialog band, applies it as its own `z-index`, and the registry's
+  document Escape handler closes only the topmost registered surface. The dialog
+  host also attaches its own document Escape handler and asks that registry
+  first; each handler calls `stopImmediatePropagation` after it closes a
+  transient surface, so whichever listener runs first cannot let a dialog close
+  underneath it. No surface is discovered by a CSS class name, and two transient
+  surfaces are ordered against each other.
 - Stacking is deterministic. Every open or raised dialog takes the next value of
   a monotonically increasing counter and the window applies it as its own inline
   `z-index` from the `DIALOG_Z_BASE` (2000) band, on mount, on every raise and

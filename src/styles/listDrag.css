@@ -21,9 +21,11 @@
     0 0 0 2px color-mix(in srgb, var(--jade) 45%, transparent),
     0 1px 6px rgba(0, 0, 0, 0.45);
   pointer-events: none;
-  /* Above the docks, the canvas, dialog windows (2000) and popovers (2500);
-     only the help lightbox (3000) sits higher. A list can live inside a dialog,
-     as the takeoff builder does. */
+  /* Above the docks, the canvas and dialog windows (2000), and below the
+     transient-surface band (3101+) that carries tool flyouts, menus and
+     popovers. The help lightbox shares this 2600 level and the toast stack
+     (3000) is higher. A list can live inside a dialog, as the takeoff builder
+     does. */
   z-index: 2600;
 }
 
