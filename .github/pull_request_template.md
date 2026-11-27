@@ -11,7 +11,7 @@
 - [ ] Documentation only
 - [ ] New feature logic lives in a feature module; `App.ts`/`CanvasView.ts` only wire it
 - [ ] File budgets are respected; `npm run check:file-budgets` and `npm run check:modules` pass
-- [ ] Foundation findings log reviewed; new out-of-scope risks are in `docs/plan/foundation-findings.md`
+- [ ] Foundation findings register reviewed; new out-of-scope risks are in `docs/plan/foundation-findings.md`
 
 Budget impact: <!-- none, or the files and line deltas this PR changes -->
 
@@ -40,5 +40,7 @@ Budget impact: <!-- none, or the files and line deltas this PR changes -->
 - [ ] `npm run tauri build -- --no-bundle` (desktop shell changes)
 
 ## Notes for reviewers
+
+- [ ] Independent review recorded for the current head SHA (link the verdict)
 
 <!-- Edge cases, manual checks, screenshots, follow-up work. -->

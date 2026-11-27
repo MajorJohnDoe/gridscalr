@@ -75,9 +75,11 @@ How to run one phase:
 5. Wait for the structured result. Do not read the full diff or full test log
    into your own context.
 6. Verify the PR independently with the defensive review checklist.
-7. Merge with squash and delete the branch only when the phase is sound.
-8. Update the handover on `main` and the epic checklist.
-9. Start the next phase once the handover commit is pushed, rather than waiting
+7. Run the independent review (see below) on the PR head. Do not merge until it
+   returns a verdict and the verdict is recorded.
+8. Merge with squash and delete the branch only when the phase is sound.
+9. Update the handover on `main` and the epic checklist.
+10. Start the next phase once the handover commit is pushed, rather than waiting
    for its CI run to finish. The next branch is cut from that pushed commit, so
    the base is fixed and reviewable; if the handover run later fails, stop and
    re-verify every branch cut from it before merging anything. A phase never
@@ -95,7 +97,23 @@ Defensive review:
 - If the head SHA changed after verification, verify again.
 - The findings register holds open rows only, each names a live issue, and the
   file is within one screen.
+- An independent two-axis review is recorded for the current head SHA, and every
+  P1/P2 finding is either fixed or explicitly deferred with an issue.
 - Merge only after this pass.
+
+Independent review:
+- One fresh `general` subagent — not the worker and not the conductor — reviews
+  the phase before merge.
+- Give it `git merge-base origin/main <head>` as the fixed point, the head SHA
+  and the phase issue, and tell it to load the `code-review` skill. It reports
+  only: no edits, no commits, no pushes, no merge.
+- It returns `pass`, `pass-with-findings` or `fail`, with findings by severity
+  and `file:line`. Treat every finding as a claim: verify it against the code,
+  fix P1 and P2 findings that are in scope on the phase branch, re-run the
+  affected checks, and re-review if the head SHA changed.
+- Post the verdict as a PR comment (`Reviewed-commit`, `Verdict`, `Reviewer`,
+  `Findings`) and record it in the handover.
+- A phase never merges with `fail`, or with an unverified `pass-with-findings`.
 
 Context policy:
 - Keep only phase status, PR links, short summaries and the handover file.
@@ -252,6 +270,12 @@ repeat the review.
 ### Decisions
 - ...
 
+### Review
+- Reviewer: <code-review skill | human>
+- Reviewed commit: <sha>
+- Verdict: pass | pass-with-findings | fail
+- Findings: <none, or F-xxx / issue links>
+
 ### Findings
 - F-xxx ...
 
@@ -298,6 +322,7 @@ instead of reporting what is wrong.
 - unsafe or untested schema migration;
 - missing product decision;
 - P0 finding;
+- an independent review returns fail and the findings are not resolved;
 - duplicate branch or PR for the same phase.
 
 Never start a phase with uncommitted changes or failing CI.
