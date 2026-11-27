@@ -3,6 +3,7 @@ import type { ScheduleResult } from "./model/types";
 import { cellsFor, columnBoxes, gridLines, type BodyRow, type RowSeparator } from "./layoutCells";
 import { estimateTextWidth, ellipsizeText, type MeasureText } from "./layoutText";
 import { bandRoleFor, type ScheduleBand } from "./layoutStyle";
+import { placeTotals, unmatchedTotalText } from "./model/totals";
 
 export { ellipsizeText, estimateTextWidth };
 export type { MeasureText };
@@ -86,6 +87,8 @@ export interface ScheduleTableLayout {
   columns: ScheduleColumnBox[];
   header: ScheduleTableText[];
   cells: ScheduleTableText[];
+  /** Foot-line text for totals with no visible column; drawn after the total row. */
+  foot: ScheduleTableText[];
   lines: ScheduleTableLine[];
   /** Background bands, one per drawn row, in paint order. */
   bands: ScheduleBand[];
@@ -170,6 +173,8 @@ export function layoutScheduleTable(input: ScheduleLayoutInput): ScheduleTableLa
   const totalRows = input.result.rows.length;
   const showHeader = input.showHeader !== false;
   const totals = input.showTotals === true ? input.result.totals : [];
+  const footTotals = totals.length ? placeTotals(input.result.columns, totals).unmatched : [];
+  const footText = footTotals.length ? unmatchedTotalText(footTotals) : "";
 
   const body = totalRows === 0 ? [] : buildBodyRows(input.result, start, end);
 
@@ -178,7 +183,7 @@ export function layoutScheduleTable(input: ScheduleLayoutInput): ScheduleTableLa
     Math.min(TABLE_MAX_FONT_SIZE, input.fontSize ?? TABLE_FONT_SIZE),
   );
   const rowHeightAt = (size: number) => size * ROW_HEIGHT_RATIO;
-  const fixedRowsAt = () => (showHeader ? 1 : 0) + (totals.length ? 1 : 0);
+  const fixedRowsAt = () => (showHeader ? 1 : 0) + (totals.length ? 1 : 0) + (footText ? 1 : 0);
   const fits = (size: number) => (body.length + fixedRowsAt()) * rowHeightAt(size) <= height;
 
   let fontSize = requested;
@@ -198,6 +203,7 @@ export function layoutScheduleTable(input: ScheduleLayoutInput): ScheduleTableLa
   const columns = columnBoxes(input.result, width, padding);
   const headerHeight = showHeader && height >= rowHeight ? rowHeight : 0;
   const totalRowHeight = totals.length ? rowHeight : 0;
+  const footRowHeight = footText ? rowHeight : 0;
   let cursor = headerHeight;
   const header: ScheduleTableText[] = [];
   if (showHeader && headerHeight > 0) {
@@ -255,7 +261,9 @@ export function layoutScheduleTable(input: ScheduleLayoutInput): ScheduleTableLa
     cursor += rowHeight;
   }
 
+  let totalDrawn = false;
   if (totals.length && cursor + totalRowHeight <= height) {
+    totalDrawn = true;
     const totalTop = cursor;
     bands.push({ role: "total", x: 0, y: totalTop, width, height: totalRowHeight });
     if (totalTop > 0) separators.push({ y: totalTop, role: "total" });
@@ -276,8 +284,27 @@ export function layoutScheduleTable(input: ScheduleLayoutInput): ScheduleTableLa
         totalRowHeight,
       ),
     );
+    cursor += totalRowHeight;
   } else if (totals.length) {
     boxOverflow = true;
+  }
+
+  const foot: ScheduleTableText[] = [];
+  if (footText && totalDrawn) {
+    if (cursor + footRowHeight <= height) {
+      foot.push({
+        text: ellipsizeText(footText, width - padding * 2, fontSize, false, measure),
+        x: padding,
+        y: cursor,
+        width: Math.max(1, width - padding * 2),
+        height: footRowHeight,
+        align: "left",
+        bold: false,
+        role: "row",
+      });
+    } else {
+      boxOverflow = true;
+    }
   }
 
   const drawn = new Set<number>();
@@ -306,6 +333,7 @@ export function layoutScheduleTable(input: ScheduleLayoutInput): ScheduleTableLa
     columns,
     header,
     cells,
+    foot,
     lines: gridLines(columns, width, height, separators),
     bands,
     overflow,

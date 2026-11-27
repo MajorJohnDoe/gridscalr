@@ -71,8 +71,18 @@ name every call site uses (re-exported from `src/ui/dialogs.ts`) and now means
 ### 3. Escape and stacking
 
 - `Escape` closes the dialog that owns focus, or the topmost dialog when focus is
-  outside every dialog. A transient flyout or menu owns `Escape` while it is
-  open, so a dialog does not close underneath it.
+  outside every dialog. A transient flyout, menu or popover owns `Escape` while
+  it is open, so a dialog does not close underneath it.
+- Transient surfaces register through
+  [`src/features/transientOverlay/`](../../src/features/transientOverlay/): a
+  flyout, top-menu or popover root takes the next value of one monotonic counter
+  above the dialog band, applies it as its own `z-index`, and the registry's
+  document Escape handler closes only the topmost registered surface. The dialog
+  host also attaches its own document Escape handler and asks that registry
+  first; each handler calls `stopImmediatePropagation` after it closes a
+  transient surface, so whichever listener runs first cannot let a dialog close
+  underneath it. No surface is discovered by a CSS class name, and two transient
+  surfaces are ordered against each other.
 - Stacking is deterministic. Every open or raised dialog takes the next value of
   a monotonically increasing counter and the window applies it as its own inline
   `z-index` from the `DIALOG_Z_BASE` (2000) band, on mount, on every raise and

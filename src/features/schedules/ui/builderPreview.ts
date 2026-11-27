@@ -6,6 +6,7 @@ import type { ScheduleDraft } from "../model";
 import {
   scheduleCaption,
   scheduleEmptyRow,
+  scheduleFootRow,
   scheduleGroupRowElement,
   scheduleHead,
   scheduleRowElement,
@@ -83,6 +84,8 @@ export function createPreview(getProject: () => Project): BuilderPreview {
     if (result.totals.length) {
       const tfoot = el("tfoot");
       tfoot.append(scheduleTotalRow(result.totals, result.columns));
+      const foot = scheduleFootRow(result.totals, result.columns);
+      if (foot) tfoot.append(foot);
       table.append(tfoot);
     }
     body.append(table);

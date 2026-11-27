@@ -135,6 +135,26 @@ function groupedLayout(width = 420, height = 400): ScheduleTableLayout {
   });
 }
 
+function hiddenTotalLayout(): { layout: ScheduleTableLayout; totalText: string } {
+  const project = makeProject();
+  const schedule = groupedSchedule(project);
+  schedule.columns = [
+    { id: "c1", field: "label", visible: true, width: 22 },
+    { id: "c3", field: "unit", visible: true, width: 8 },
+  ];
+  const result = computeSchedule(project, schedule);
+  return {
+    layout: layoutScheduleTable({
+      result,
+      width: 420,
+      height: 400,
+      measure,
+      showTotals: true,
+    }),
+    totalText: result.totals[0].text,
+  };
+}
+
 describe("placed takeoff table bands", () => {
   it("puts a header band, a group band, alternating rows, subtotals and a total", () => {
     const layout = groupedLayout();
@@ -214,6 +234,14 @@ describe("placed takeoff table bands", () => {
     expect(layout.lines.some((line) => line.role === "grid" && line.x1 !== width)).toBe(true);
   });
 
+  it("draws a total with no visible column in the foot line", () => {
+    const { layout, totalText } = hiddenTotalLayout();
+    expect(layout.foot).toHaveLength(1);
+    expect(layout.foot[0].text).toContain("Value (Sum)");
+    expect(layout.foot[0].text).toContain(totalText);
+    expect(layout.foot[0].y).toBeGreaterThan(layout.cells.find((cell) => cell.role === "total")!.y);
+  });
+
   it("gives a grouped row mode the group band instead of a subtotal band", () => {
     const project = makeProject();
     const schedule = groupedSchedule(project, "grouped");
@@ -246,6 +274,60 @@ describe("canvas and PDF share one table layout", () => {
     expect(canvas.bands.some((band) => band.role === "total")).toBe(true);
     expect(canvas.cells.some((cell) => cell.role === "subtotal")).toBe(true);
     expect(canvas.cells.some((cell) => cell.role === "total")).toBe(true);
+  });
+
+  it("draws the same foot line for an unmatched total on canvas and in PDF", () => {
+    const project = makeProject();
+    const schedule = groupedSchedule(project);
+    schedule.columns = [
+      { id: "c1", field: "label", visible: true, width: 22 },
+      { id: "c3", field: "unit", visible: true, width: 8 },
+    ];
+    const result = computeSchedule(project, schedule);
+    const item = placementItem();
+    const canvas = canvasScheduleLayout(result, item, measure);
+    const pdf = pdfScheduleLayout(result, item, measure);
+    expect(canvas.foot).toEqual(pdf.foot);
+    expect(canvas.foot).toHaveLength(1);
+    expect(canvas.foot[0].text).toBe(pdf.foot[0].text);
+  });
+
+  it("keeps a total on the first visible column on the canvas and PDF foot line", () => {
+    const project = makeProject();
+    const schedule = groupedSchedule(project);
+    schedule.columns = [
+      { id: "c1", field: "value", visible: true, width: 14, format: "unit" },
+      { id: "c2", field: "label", visible: true, width: 22 },
+    ];
+    const result = computeSchedule(project, schedule);
+    const item = placementItem();
+    const canvas = canvasScheduleLayout(result, item, measure);
+    const pdf = pdfScheduleLayout(result, item, measure);
+    expect(canvas.foot).toEqual(pdf.foot);
+    expect(canvas.foot[0].text).toContain("Value (Sum)");
+    expect(pdf.foot[0].text).toContain("Value (Sum)");
+    const totalCells = canvas.cells.filter((cell) => cell.role === "total");
+    expect(totalCells[0].text).toBe("Total");
+    expect(totalCells[1].text).toBe("");
+  });
+
+  it("keeps a second total on the same field in the canvas and PDF foot line", () => {
+    const project = makeProject();
+    const schedule = groupedSchedule(project);
+    schedule.totals = [
+      { field: "value", op: "sum" },
+      { field: "value", op: "avg" },
+    ];
+    const result = computeSchedule(project, schedule);
+    const item = placementItem();
+    const canvas = canvasScheduleLayout(result, item, measure);
+    const pdf = pdfScheduleLayout(result, item, measure);
+    expect(canvas.foot).toEqual(pdf.foot);
+    expect(canvas.foot[0].text).toContain("Value (Average)");
+    expect(pdf.foot[0].text).toContain("Value (Average)");
+    const totalCells = canvas.cells.filter((cell) => cell.role === "total");
+    expect(totalCells[1].text).toBe(result.totals[0].text);
+    expect(totalCells[1].text).not.toBe(result.totals[1].text);
   });
 
   it("differs only in measured text when the font metrics differ", () => {

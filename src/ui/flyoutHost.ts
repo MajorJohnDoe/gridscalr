@@ -1,3 +1,7 @@
+import {
+  registerTransientOverlay,
+  type TransientOverlayHandle,
+} from "../features/transientOverlay";
 import { el } from "./dom";
 
 const LONG_PRESS_MS = 320;
@@ -5,6 +9,7 @@ const LONG_PRESS_MS = 320;
 let flyoutRoot: HTMLElement | null = null;
 let flyoutAnchor: HTMLElement | null = null;
 let flyoutCleanup: (() => void) | null = null;
+let flyoutRegistration: TransientOverlayHandle | null = null;
 let longPressTimer: number | null = null;
 
 /**
@@ -126,13 +131,6 @@ export function mountFlyout(
   rerender(true);
 
   const onKey = (event: KeyboardEvent) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      closeFlyout();
-      if (options.returnFocus) anchor.focus({ preventScroll: true });
-      return;
-    }
     if ((options.role ?? "menu") !== "menu") return;
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
     const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
@@ -153,11 +151,17 @@ export function mountFlyout(
   document.addEventListener("mousedown", outsideHandler, true);
   window.addEventListener("resize", closeFlyout);
   window.addEventListener("blur", closeFlyout);
+  flyoutRegistration = registerTransientOverlay(root, () => {
+    closeFlyout();
+    if (options.returnFocus) anchor.focus({ preventScroll: true });
+  });
   flyoutCleanup = () => {
     document.removeEventListener("keydown", onKey);
     document.removeEventListener("mousedown", outsideHandler, true);
     window.removeEventListener("resize", closeFlyout);
     window.removeEventListener("blur", closeFlyout);
+    flyoutRegistration?.unregister();
+    flyoutRegistration = null;
   };
 }
 

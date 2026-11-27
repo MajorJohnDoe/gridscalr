@@ -1,6 +1,13 @@
 import { t } from "../../../i18n";
 import { el } from "../../../ui/dom";
-import type { ScheduleColumnView, ScheduleGroup, ScheduleRow, ScheduleTotalValue } from "../model";
+import {
+  placeTotals,
+  unmatchedTotalText,
+  type ScheduleColumnView,
+  type ScheduleGroup,
+  type ScheduleRow,
+  type ScheduleTotalValue,
+} from "../model";
 
 /**
  * Table pieces shared by the live panel and the builder preview, so the two
@@ -94,8 +101,9 @@ export function scheduleTotalRow(
   const label = el("th", "schedules-total-label", t("schedules.table.total"));
   label.scope = "row";
   row.append(label);
+  const placement = placeTotals(columns, totals);
   for (let index = 1; index < columns.length; index += 1) {
-    const total = totals.find((entry) => entry.field === columns[index].field);
+    const total = placement.placed[index];
     const cell = el("td", columns[index].numeric ? "is-numeric" : "");
     cell.textContent = total?.text ?? "";
     if (total?.mixedUnits) {
@@ -104,6 +112,23 @@ export function scheduleTotalRow(
     }
     row.append(cell);
   }
+  return row;
+}
+
+/**
+ * Foot line for totals that have no visible column. The computed total text is
+ * displayed as-is; the row is absent when every total has a column (F-126).
+ */
+export function scheduleFootRow(
+  totals: readonly ScheduleTotalValue[],
+  columns: readonly ScheduleColumnView[],
+): HTMLTableRowElement | null {
+  const unmatched = placeTotals(columns, totals).unmatched;
+  if (!unmatched.length) return null;
+  const row = el("tr", "schedules-foot-row");
+  const cell = el("td", "schedules-foot-cell", unmatchedTotalText(unmatched));
+  cell.colSpan = Math.max(1, columns.length);
+  row.append(cell);
   return row;
 }
 

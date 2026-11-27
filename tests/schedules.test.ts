@@ -10,8 +10,8 @@ import {
   duplicateSchedule,
   emptyScheduleDraft,
   scheduleDraftProblems,
+  placeTotals,
   setCategorySummaryRole,
-  totalHasVisibleColumn,
   setCountTypeSummaryRole,
   updateSchedule,
   createKeyCache,
@@ -601,14 +601,61 @@ describe("definition rules", () => {
     expect(problems.map((problem) => problem.code)).toContain("missingName");
   });
 
-  it("detects a total that has no visible column", () => {
-    expect(
-      totalHasVisibleColumn({ columns: [column("c1", "label"), column("c2", "value")] }, "value"),
-    ).toBe(true);
-    expect(
-      totalHasVisibleColumn({ columns: [column("c2", "value", { visible: false })] }, "value"),
-    ).toBe(false);
-    expect(totalHasVisibleColumn({ columns: [column("c1", "label")] }, "value")).toBe(false);
+  it("places a total only on a value column and sends a hidden field to the foot", () => {
+    const project = makeProject();
+    const hidden = computeSchedule(
+      project,
+      definition({
+        columns: [column("c1", "label"), column("c2", "unit")],
+        totals: [{ field: "value", op: "sum" }],
+      }),
+    );
+    expect(hidden.totals).toHaveLength(1);
+    expect(placeTotals(hidden.columns, hidden.totals).unmatched).toEqual(hidden.totals);
+
+    const visible = computeSchedule(
+      project,
+      definition({
+        columns: [column("c1", "label"), column("c2", "value")],
+        totals: [{ field: "value", op: "sum" }],
+      }),
+    );
+    const placement = placeTotals(visible.columns, visible.totals);
+    expect(placement.placed[0]).toBeNull();
+    expect(placement.placed[1]).toEqual(visible.totals[0]);
+    expect(placement.unmatched).toEqual([]);
+  });
+
+  it("keeps a total on the first visible column on the foot line", () => {
+    const project = makeProject();
+    const result = computeSchedule(
+      project,
+      definition({
+        columns: [column("c1", "value"), column("c2", "label")],
+        totals: [{ field: "value", op: "sum" }],
+      }),
+    );
+    const placement = placeTotals(result.columns, result.totals);
+    expect(placement.placed[0]).toBeNull();
+    expect(placement.unmatched).toEqual(result.totals);
+  });
+
+  it("places one of two totals on the same field and sends the second to the foot", () => {
+    const project = makeProject();
+    const result = computeSchedule(
+      project,
+      definition({
+        columns: [column("c1", "label"), column("c2", "value")],
+        totals: [
+          { field: "value", op: "sum" },
+          { field: "value", op: "avg" },
+        ],
+      }),
+    );
+    const placement = placeTotals(result.columns, result.totals);
+    expect(placement.placed[1]?.op).toBe("sum");
+    expect(placement.unmatched).toEqual([result.totals[1]]);
+    expect(placement.unmatched[0].op).toBe("avg");
   });
 
   it("flags filters that do not apply to the space source", () => {

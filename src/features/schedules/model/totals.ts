@@ -1,7 +1,7 @@
 import { formatNumber } from "../../../i18n/format";
 import { t, type MessageKey } from "../../../i18n";
 import type { ScheduleFieldRef, ScheduleTotal, ScheduleTotalOp } from "../../../model/types";
-import type { ScheduleRow, ScheduleTotalValue } from "./types";
+import type { ScheduleColumnView, ScheduleRow, ScheduleTotalValue } from "./types";
 
 /**
  * Totals and subtotals computed from the filtered rows. A total is never
@@ -92,4 +92,45 @@ export function computeTotals(
   return (totals ?? []).map((total) =>
     computeTotal(rows, total, labelOf(total.field), invalidFields.has(total.field)),
   );
+}
+
+/**
+ * Where each computed total belongs in a total row. The first cell of that row
+ * is its label, so a total is placed only on a field column at index 1 or
+ * later, and only the first total for that field gets the cell. Everything
+ * else goes to the foot line: a hidden field, a field in the label column, and
+ * a second total on a field that already has one (F-126). The values are
+ * already computed; this rule only places them.
+ */
+export interface TotalPlacement {
+  /** The total placed in each column, or null; column 0 is always null. */
+  placed: (ScheduleTotalValue | null)[];
+  /** Totals the total row cannot show and the foot line must display. */
+  unmatched: ScheduleTotalValue[];
+}
+
+export function placeTotals(
+  columns: readonly Pick<ScheduleColumnView, "field">[],
+  totals: readonly ScheduleTotalValue[] | undefined,
+): TotalPlacement {
+  const placed: (ScheduleTotalValue | null)[] = columns.map(() => null);
+  const unmatched: ScheduleTotalValue[] = [];
+  for (const total of totals ?? []) {
+    const index = columns.findIndex(
+      (column, columnIndex) => columnIndex >= 1 && column.field === total.field,
+    );
+    if (index < 0 || placed[index]) {
+      unmatched.push(total);
+      continue;
+    }
+    placed[index] = total;
+  }
+  return { placed, unmatched };
+}
+
+/** One localized foot-line line per unmatched total. */
+export function unmatchedTotalText(totals: readonly ScheduleTotalValue[]): string {
+  return totals
+    .map((total) => t("schedules.table.footTotal", { label: total.label, value: total.text }))
+    .join(t("schedules.table.footSeparator"));
 }

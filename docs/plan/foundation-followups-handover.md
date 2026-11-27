@@ -88,3 +88,81 @@ on each pull request.
 ### Next
 
 - Phase 2, [#383](https://github.com/MajorJohnDoe/gridscalr/issues/383).
+
+## Phase 2 — transient overlay registry and takeoff table follow-ups (F-126/F-137/F-140)
+
+- Issue: [#383](https://github.com/MajorJohnDoe/gridscalr/issues/383)
+- PR: [#387](https://github.com/MajorJohnDoe/gridscalr/pull/387)
+- Commit: `0a1b634` (implementation); this handover is updated in the same PR
+- Schema: unchanged (28)
+
+### Completed
+
+- **F-137** — Added `src/features/transientOverlay/` with a pure monotonic
+  stack (`model.ts`), one DOM registry and Escape route (`controller.ts`) and an
+  `index.ts` surface. `flyoutHost.ts`, `popover.ts` and `topMenu.ts` register
+  their roots; the dialog controller calls `closeTopTransient()` instead of
+  looking up `.tool-flyout, .menu-panel`. Transient levels paint above the dialog
+  band, and two transient surfaces are ordered against each other.
+- **F-140** — `src/pdf/reportPdf.ts` now reads ink, muted ink, rules and the
+  header band from `DOCUMENT_SCHEDULE_STYLE` through the new
+  `src/pdf/reportStyle.ts`; the order-quantity accent and clamped warning remain
+  report-only semantic colours. The right-dock table deliberately keeps the
+  chrome tokens; the accepted difference is recorded in `docs/limitations.md`.
+- **F-126** — `unmatchedTotals()` / `unmatchedTotalText()` display the already
+  computed total text in a foot line (`Value (Sum): 12.5`) in the shared table
+  layout, the builder preview and the dock table. The canvas and drawing-PDF
+  renderers draw `layout.foot`. The builder warning, its problem code and its
+  catalog key are removed.
+- Removed F-126, F-137 and F-140 from the open findings register.
+
+### Modules
+
+- `src/features/transientOverlay/{index,model,controller}.ts` (new).
+- `src/features/schedules/model/totals.ts`, `layout.ts`,
+  `ui/{tableParts,panelTable,builderPreview,builder,messages}.ts`.
+- `src/pdf/reportStyle.ts` (new), `src/pdf/reportPdf.ts`.
+- `src/ui/{flyoutHost,popover,topMenu}.ts`,
+  `src/features/dialogHost/controller.ts`.
+- `tests/transientOverlay.test.ts` (new), `tests/scheduleTableStyle.test.ts`,
+  `tests/schedulesUi.test.ts`, `tests/schedules.test.ts`,
+  `tests/reportPdf.test.ts`.
+
+### Decisions
+
+- The transient registry lives beside the dialog host as its own foundation
+  feature rather than inside `dialogHost`, so the dialog stack is unchanged and
+  the registry has one responsibility.
+- The dock table is a live chrome surface, not a printed sheet: it keeps the
+  shell tokens. The report and the placed table share the printed document
+  palette.
+- The report keeps its order-quantity accent and clamped warning as semantic
+  colours; they are not band roles and have no place in `DOCUMENT_SCHEDULE_STYLE`.
+
+### Findings
+
+- No new findings. F-126, F-137 and F-140 fixed and removed from the open
+  register.
+
+### Open questions
+
+- None.
+
+### Checks
+
+- Local gate: `check:versions`, `check:file-budgets`, `check:write-sites`,
+  `check:modules`, `check:cycles`, `check:security`, `check:actions`,
+  `check:dependencies`, `check:docs`, `format:check`, `lint`, `check:i18n`,
+  `check:themes`, `npx tsc --noEmit` — pass.
+- Full `npm test -- --run` — 209 files, 2224 tests pass.
+- `npm run test:ui` and `npm run test:visual` — pass (four stable screens, 0
+  differing pixels).
+- Left to CI: the desktop matrix and the remaining browser suites.
+
+### Review
+
+- Pending independent review on the PR head.
+
+### Next
+
+- Phase 3, [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385).

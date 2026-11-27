@@ -8,6 +8,7 @@ import type {
   ScheduleTableText,
 } from "./layout";
 import { ellipsizeText, type MeasureText } from "./layoutText";
+import { placeTotals } from "./model/totals";
 
 /**
  * Cell, column and grid construction for the shared schedule layout. Kept
@@ -70,6 +71,9 @@ export function cellsFor(
   top: number,
   height: number,
 ): ScheduleTableText[] {
+  // The total row uses the shared placement rule; a total on the label column,
+  // a hidden field or a second total for the same field stays on the foot line.
+  const placement = row.kind === "total" && row.values ? placeTotals(columns, row.values) : null;
   return columns.map((column, index) => {
     let text = "";
     let align = column.align;
@@ -81,6 +85,9 @@ export function cellsFor(
       text = index === 0 ? (row.text ?? "") : "";
       align = "left";
       bold = true;
+    } else if (placement) {
+      text = placement.placed[index]?.text ?? "";
+      if (index === 0) text = row.text ?? "";
     } else if (row.values) {
       text = totalText(row.values, column.field);
       if (index === 0 && !text) text = row.text ?? "";

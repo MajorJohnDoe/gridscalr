@@ -6,7 +6,10 @@ import { createCalibration } from "../src/model/calibration";
 import { addItem, createProject, defaultDocument, layersForKind } from "../src/model/layers";
 import type { MarkupItem, Project } from "../src/model/types";
 import { buildQuantityReport } from "../src/report/reportModel";
+import { DOCUMENT_SCHEDULE_STYLE } from "../src/features/schedules";
+import { pdfColor } from "../src/pdf/export/geometry";
 import { exportQuantityReportPdf } from "../src/pdf/reportPdf";
+import { REPORT_COLORS } from "../src/pdf/reportStyle";
 import { setLanguagePreference } from "../src/i18n";
 
 const NOW = "2026-01-01T00:00:00.000Z";
@@ -82,6 +85,20 @@ async function textByPage(bytes: Uint8Array): Promise<string[]> {
   await task.destroy();
   return pages;
 }
+
+describe("quantity report palette", () => {
+  it("uses the printed table palette for ink, rules and the header band", () => {
+    expect(REPORT_COLORS.ink).toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.ink));
+    expect(REPORT_COLORS.muted).toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.inkMuted));
+    expect(REPORT_COLORS.sectionRule).toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.ruleStrong));
+    expect(REPORT_COLORS.headerBackground).toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.bandHeader));
+    expect(REPORT_COLORS.headerInk).toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.inkStrong));
+    // The order accent and the clamped warning are semantic report colours, not
+    // band roles, so they stay distinguishable from every table band.
+    expect(REPORT_COLORS.orderAccent).not.toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.bandTotal));
+    expect(REPORT_COLORS.warning).not.toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.ink));
+  });
+});
 
 describe("quantity report PDF", () => {
   it("renders an A4 report with rows, totals, notices, and page numbers", async () => {

@@ -100,7 +100,6 @@ export type ScheduleProblemCode =
   | "invalidFilter"
   | "inapplicableFilter"
   | "invalidCustomValue"
-  | "totalWithoutColumn"
   | "inUse"
   | "unknownSchedule";
 

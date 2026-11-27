@@ -1,3 +1,4 @@
+import { closeTopTransient } from "../transientOverlay";
 import { clampDialogPosition, DialogStack, type Point, type Size } from "./model";
 
 /**
@@ -82,15 +83,20 @@ function unbindEscape(): void {
 }
 
 /**
- * Escape closes the dialog that owns focus, or the topmost one when focus is
- * outside every dialog. A transient flyout or menu owns Escape while it is
- * open, so the dialog window does not close underneath it.
+ * Escape closes a transient flyout, menu or popover first, then the dialog that
+ * owns focus, or the topmost dialog when focus is outside every dialog. The
+ * transient registry owns the surface order, so no surface is identified by a
+ * CSS class name and a dialog never closes underneath one.
  */
 function onDocumentKeyDown(event: KeyboardEvent): void {
   if (event.key !== "Escape" || event.defaultPrevented) return;
+  if (closeTopTransient()) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return;
+  }
   const top = stack.top();
   if (!top) return;
-  if (document.querySelector(".tool-flyout, .menu-panel")) return;
   const focused = focusedDialogId();
   const target = focused && records.has(focused) ? focused : top;
   records.get(target)?.close();

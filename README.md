@@ -460,6 +460,9 @@ one shared layout for canvas and PDF. `src/features/dialogHost/` owns the movabl
 non-modal dialog window: stacking, header drag, viewport clamping, focus return,
 Escape routing and destructive-target revalidation
 ([ADR 0017](docs/adr/0017-movable-non-modal-dialogs.md)).
+`src/features/transientOverlay/` owns the monotonic registry that stacks tool
+flyouts, top menus and popovers above the dialog band and routes Escape to the
+topmost surface, so no host is identified by a CSS class name.
 `src/features/takeoffSettings/` owns the
 Takeoff settings hub: one window with the Objects, Fields, Tables and Cards tabs,
 the unified measured/counted object list, the card visibility switches and the

@@ -153,7 +153,7 @@ export function drawScheduleItem(
     });
   }
 
-  for (const cell of [...layout.header, ...layout.cells]) {
+  for (const cell of [...layout.header, ...layout.cells, ...layout.foot]) {
     if (!cell.text) continue;
     const font = cell.bold ? fonts.bold : fonts.regular;
     const size = layout.fontSize;

@@ -23,7 +23,13 @@ export {
 } from "./model/filters";
 export type { ScheduleFilterContext } from "./model/filters";
 export { sortScheduleRows } from "./model/sort";
-export { computeTotal, computeTotals } from "./model/totals";
+export {
+  computeTotal,
+  computeTotals,
+  placeTotals,
+  unmatchedTotalText,
+  type TotalPlacement,
+} from "./model/totals";
 export { computeSchedule, scheduleDisplayEntries } from "./model/compute";
 export type { ComputeScheduleOptions } from "./model/compute";
 export {
@@ -36,9 +42,7 @@ export {
   projectSchedules,
   scheduleDraftFor,
   scheduleDraftProblems,
-  scheduleDraftWarnings,
   standardScheduleDraft,
-  totalHasVisibleColumn,
   uniqueScheduleName,
   updateSchedule,
 } from "./model/definition";
