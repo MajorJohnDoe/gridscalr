@@ -3634,7 +3634,7 @@ this table was written and are corrected here.
 
 ### F-144 — The frontend file budget does not enforce the documented 400 lines for a new foundation feature
 
-- **Status:** triaged [#384](https://github.com/MajorJohnDoe/gridscalr/issues/384) — tooling decision
+- **Status:** fixed — [#384](https://github.com/MajorJohnDoe/gridscalr/issues/384)
 - **Problem:** ADR 0013 and `AGENTS.md` say a new file targets 300 lines and must
   not exceed 400. `file-budgets.json` enforces 400 only for directories listed in
   `directoryMax`; every other frontend file falls under `defaultMax: 700`. A new
@@ -3648,12 +3648,19 @@ this table was written and are corrected here.
   `directoryMax` and the panel was split into `panel.ts`, `sparkline.ts` and
   `table.ts` (360 lines) in the same change, so the file is inside the documented
   limit and the gate now enforces it for this directory.
-- **Next step:** decide whether `defaultMax` should be 400 for
-  `src/features/**` (with the reviewed `files` exceptions covering the existing
-  legacy layouts), or whether `check:file-budgets` should require a
-  `directoryMax` entry for every foundation feature. The first option is the
-  smaller change; it needs a pass over the existing feature directories to
-  confirm none of them relies on 700.
+- **Resolution:** One `src/features: 400` entry in `directoryMax` now applies
+  the 400-line hard limit to every feature directory, including one added later
+  without a registration step; `defaultMax` stays 700 for the rest of `src`.
+  The new budget exposed `src/features/projectPackage/model.ts` (619 lines),
+  `src/features/projectImport/model.ts` (439) and
+  `src/features/projectPackage/controller.ts` (495), which were split into
+  `model/` modules and a separate `sources.ts` rather than excepted.
+  `check:file-budgets --update` still refuses to record a new oversized file,
+  because a directory-budget violation has no exact reviewed exception. The
+  existing `src/features/schematics/model/sheetTemplate.ts` per-file exception
+  predates the rule and is unchanged. `tests/fileBudgetRules.test.ts` proves a
+  file over 400 lines in a fresh `src/features/<area>/` directory fails and
+  that `--update` refuses it.
 - **Related:** #345, ADR [0013](../../adr/0013-module-first-foundation.md),
   `scripts/file-budget-rules.mjs`, `file-budgets.json`.
 

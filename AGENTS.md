@@ -101,8 +101,12 @@ the short term and much more expensive later.
   `index.ts` public surface. Other modules import only that surface.
 - Separate pure model, controller, UI and IO responsibilities. Do not create a
   `utils.ts` or `helpers.ts` grab bag; name files by domain.
-- New files target 300 lines and must not exceed 400. A new foundation feature
-  directory must not exceed 400 lines per file.
+- New files target 300 lines and must not exceed 400. A single `src/features`
+  directory budget gives every file under `src/features/**` a 400-line hard
+  limit, so a feature directory added later is covered without being
+  registered, unless `file-budgets.json` carries a reviewed exception that
+  predates the rule (`src/features/schematics/model/sheetTemplate.ts` is the
+  only one).
 - New files must not be added to `LEGACY_LARGE_FILES` or to a per-file
   `file-budgets.json` exception. `npm run check:file-budgets -- --update` may
   adjust an existing legacy budget; it refuses a new oversized file.

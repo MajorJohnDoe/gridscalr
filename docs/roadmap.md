@@ -147,8 +147,10 @@ long tasks, named spans, PDF rasterisation and heap, plus the same block in
 **Copy diagnostics**. No schema field changed and schema 28 stays the current
 development schema. Issue
 [#345](https://github.com/MajorJohnDoe/gridscalr/issues/345); the file-budget
-gap it exposed is recorded as F-144 in
-[`plan/foundation-findings.md`](plan/foundation-findings.md).
+gap it exposed (F-144) was fixed by
+[#384](https://github.com/MajorJohnDoe/gridscalr/issues/384), so one
+`src/features: 400` directory budget now covers every feature directory,
+including one added later.
 
 **Performance 1** shipped as **0.33.0** on 2026-11-24
 ([`release-notes/0.33.0.md`](release-notes/0.33.0.md)): a repeatable probe
