@@ -34,7 +34,7 @@ issue numbers.
 
 ## One phase = one issue
 
-1. Spawn one **fresh** `general` subagent per issue. Never reuse a child session
+1. Spawn one **fresh** `worker` subagent per issue. Never reuse a child session
    for another issue and never let a worker start a second phase.
 2. The worker reads `AGENTS.md`, the plan and ADRs, the phase issue and the
    relevant docs; cuts a branch from current `main`; implements with tests and
@@ -43,7 +43,8 @@ issue numbers.
 3. Verify the PR defensively: the head SHA equals the reported commit, every
    required check passes on that exact SHA, the file list matches the scope, and
    the acceptance criteria are present.
-4. Run the **independent review**: a fresh subagent loads the `code-review` skill
+4. Run the **independent review**: a fresh `reviewer` subagent loads the
+   `code-review` skill
    with the fixed point `git merge-base origin/main <head>`, the head SHA and the
    issue as the spec. It reports only — no edits, no commits, no merges. Treat
    every finding as a claim: verify it against the code, fix P1/P2 findings that

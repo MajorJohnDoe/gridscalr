@@ -336,7 +336,7 @@ The reusable prompts live in
   acceptance criteria. Foundation work records its module map in the issue
   before production code is written.
 - **The conductor does not implement.** It coordinates, verifies and merges.
-  One fresh `general` subagent handles one phase. Never reuse a child session
+  One fresh `worker` subagent handles one phase. Never reuse a child session
   for a different issue. A split phase is explicit, for example 10a/10b.
 - **One PR per phase.** The worker reads `AGENTS.md`, the plan and ADRs, the
   phase issue and the relevant docs; creates a branch; implements; adds tests
@@ -908,11 +908,14 @@ prompt that forbids implementing, and `edit` denied except under `docs/`,
 `README.md` and `AGENTS.md`. `.opencode/opencode.json` sets it as `default_agent`,
 so a new session starts as the conductor instead of `build`.
 
-The conductor spawns one fresh `general` worker per issue and one fresh reviewer
-per phase. The `code-review` skill runs in that reviewer child, against
-`git merge-base origin/main <head>` with the issue as the spec. It reports only;
-the conductor verifies every finding before merge and posts the verdict as a PR
-comment. A phase with `fail`, or with unverified findings, never merges.
+The conductor spawns one fresh `worker` per issue and one fresh `reviewer` per
+phase. Permission rules, not instructions, keep them in their lane: a worker
+cannot spawn a subagent, ask the user, merge a PR or push `main`, and a reviewer
+cannot edit, push, merge or write to GitHub. The `code-review` skill runs in that
+reviewer child against `git merge-base origin/main <head>` with the issue as the
+spec. It reports only; the conductor verifies every finding before merge and
+posts the verdict as a PR comment. A phase with `fail`, or with unverified
+findings, never merges.
 
 `default_agent` applies to new sessions; an open session keeps the agent it
 started with. When a session deliberately wants to edit directly, it switches

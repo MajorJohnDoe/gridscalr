@@ -69,7 +69,7 @@ If a phase is already complete, verify it and continue.
 How to run one phase:
 1. Check `gh issue view <N>`. If closed, skip it.
 2. Confirm the working tree is clean and `main` is green.
-3. Spawn one fresh `general` subagent for the phase. Never reuse a child session
+3. Spawn one fresh `worker` subagent for the phase. Never reuse a child session
    for a different issue.
 4. Give the child the worker prompt below with {PHASE}, {ISSUE} and {BRANCH}.
 5. Wait for the structured result. Do not read the full diff or full test log
@@ -102,7 +102,7 @@ Defensive review:
 - Merge only after this pass.
 
 Independent review:
-- One fresh `general` subagent — not the worker and not the conductor — reviews
+- One fresh `reviewer` subagent — not the worker and not the conductor — reviews
   the phase before merge.
 - Give it `git merge-base origin/main <head>` as the fixed point, the head SHA
   and the phase issue, and tell it to load the `code-review` skill. It reports
