@@ -27,7 +27,7 @@ and `docs/limitations.md`.
 
 | Finding | Severity | Problem | Issue |
 | --- | --- | --- | --- |
-| F-150 | P3 | The Windows WebView2 tiled raster differs from the whole-page path by 2.3–4.7 % at rest, with no blank or offset found. | [#389](https://github.com/MajorJohnDoe/gridscalr/issues/389) |
+| F-150 | P3 | The high-DPR macOS WKWebView (zoom 1) and Windows WebView2 tiled rasters differ from the whole-page path by up to 4.7 % at rest, with no blank or integer offset found. | [#389](https://github.com/MajorJohnDoe/gridscalr/issues/389) |
 
 ## History
 

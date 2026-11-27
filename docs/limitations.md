@@ -227,12 +227,13 @@ real platform runtimes. On Linux WebKitGTK the tiled path was used at zoom 1, 3
 and 6: zoom 1 and 6 matched, and zoom 3 differed only on 1.0 % of pixels with a
 page-wide bounding box and no improving 1-pixel shift, so it is per-tile
 antialiasing rather than a blank or offset tile. On macOS WKWebView the probe
-used tiles at zoom 3 and 6: zoom 6 matched (0.11 % differing, max delta 1) and
-zoom 3 was antialiasing (1.18 %, max delta 119, no improving 1-pixel shift).
-Tiles stay enabled on both. On the Windows WebView2 CI runner the tiled raster
-differed by 2.3–4.7 % at rest with a page-wide bounding box, no blank block and
-no 1-pixel shift that explains it; that larger difference is tracked as F-150
-([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)) and is not yet a
+used tiles at all three zooms on the final CI run: zoom 6 matched (0.11 %
+differing, max delta 1), zoom 3 was antialiasing (1.18 %, max delta 119, no
+improving 1-pixel shift), and zoom 1 differed on 4.0 % of pixels with a
+page-wide bounding box and no blank block or improving integer shift. Tiles stay
+enabled on both. The high-DPR macOS zoom-1 and Windows WebView2 differences
+(2.3–4.7 % at rest, no blank block, no integer offset) are tracked as F-150
+([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)) and are not yet a
 recorded platform fallback.
 
 Tiles are abandoned for the rest of the session once the first tile costs more

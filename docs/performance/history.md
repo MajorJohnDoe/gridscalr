@@ -946,12 +946,13 @@ and `windows-latest` desktop jobs. Linux WebKitGTK (local packaged debug build,
 | 3 | yes | 6 760 / 672 256 (1.006 %) | 156 | antialias |
 | 6 | yes | 0 | 0 | match |
 
-macOS WKWebView (packaged CI smoke test, 234 016 px viewport) used tiles at
-zoom 3 and 6; zoom 1 abandoned them under the first-tile cost rule:
+macOS WKWebView (packaged CI smoke test, 234 016 px viewport) used tiles at all
+three zooms on the final run; an earlier run abandoned them at zoom 1 under the
+first-tile cost rule:
 
 | Zoom | `tilesUsed` | Differing pixels | Max delta | Verdict |
 | --- | --- | --- | --- | --- |
-| 1 | no | 0 | 0 | match (full-page fallback) |
+| 1 | yes | 9 380 / 234 016 (4.008 %) | 161 | mismatch (page-wide, no integer shift, no blank block) |
 | 3 | yes | 2 760 / 234 016 (1.179 %) | 119 | antialias |
 | 6 | yes | 257 / 234 016 (0.110 %) | 1 | match |
 
@@ -961,25 +962,29 @@ the best 1-pixel shift only moves the Linux ratio from 1.006 % to 0.987 % and
 the macOS ratio from 1.179 % to 1.118 %, so it is per-tile antialiasing, not a
 misplaced or blank tile. Tiles stay enabled on WebKitGTK and WKWebView; no
 platform fallback is added. The first-tile cost rule can still abandon tiles on
-a slow page (the CI Linux runner did, comparing the fallback with itself); the
-probe records `tilesUsed` so that result is not mistaken for tile verification.
+a slow page (the CI Linux runner did at every zoom, comparing the fallback with
+itself); the probe records `tilesUsed` so that result is not mistaken for tile
+verification.
 
-The Windows WebView2 CI job used tiles at all three zooms and measured 4.68 %,
-2.50 % and 2.33 % page-wide differences (max delta 132–156), with no blank
-block and no 1-pixel shift that materially explains them. That is larger than
-the ≤ 0.17 % recorded for the phase 4 Chromium probe at 1440 × 900 DPR 1 and is
-tracked as F-150 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)),
-not as a WebKit verification failure. No Windows fallback is added here.
+The macOS zoom-1 and Windows WebView2 results are larger. Both high-DPR
+runtimes used tiles and measured page-wide differences (macOS 4.01 % at zoom 1;
+Windows 4.68 %, 2.50 % and 2.33 % at zoom 1–6) with no blank grid block and no
+1-pixel shift that materially explains them. That is larger than the ≤ 0.17 %
+recorded for the phase 4 Chromium probe at 1440 × 900 DPR 1 and is tracked as
+F-150 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)), not as a
+WebKit blank/offset failure. No platform fallback is added here; the probe
+records the result so the decision is evidence-based.
 
 ### What this says
 
 - A split-view pan now costs the reference pane one blit per frame instead of a
   full item draw, with the same settled image and no frame regression.
 - The tiled path is verified on real WebKitGTK and WKWebView runtimes, not only
-  Chromium. There is no blank tile, no offset and no seam; the only difference
-  is per-tile antialiasing at zoom 3, within the 2 % allowance that the shift
-  and blank-block checks justify.
-- The Windows WebView2 difference is larger (2.3–4.7 %) and remains open as
-  F-150; the probe records it instead of claiming a clean result.
+  Chromium. There is no blank tile, no integer-pixel offset and no seam; the
+  WebKit zoom-3 difference is per-tile antialiasing, within the 2 % allowance
+  that the shift and blank-block checks justify.
+- The high-DPR macOS zoom-1 and Windows WebView2 differences are larger
+  (2.3–4.7 %) and remain open as F-150; the probe records them instead of
+  claiming a clean result or adding an assumed fallback.
 - The safe full-page path remains the fallback when either bitmap API is
   missing or a tile render fails.

@@ -193,9 +193,12 @@ on each pull request.
 - **F-149** — `src/features/tileProbe/` compares the tiled and whole-page base
   raster at zoom 1, 3 and 6. The packaged smoke test runs it on Linux, macOS and
   Windows and records a report-only `tile path probe` step with the verdict,
-  difference, best 1-px shift and blank-block count. Linux WebKitGTK and macOS
-  WKWebView use tiles and pass with per-tile antialiasing only; no fallback was
-  needed. The larger Windows WebView2 difference is the new open finding F-150
+  difference, best 1-px shift and blank-block count. Linux WebKitGTK uses tiles
+  cleanly at all three zooms. macOS WKWebView used tiles on the final CI run:
+  zoom 6 matched, zoom 3 was per-tile antialiasing, and zoom 1 differed on 4.0 %
+  of pixels with no blank block and no improving integer shift. No blank or
+  integer-offset tile was found, so tiles stay enabled. The larger high-DPR
+  macOS zoom-1 and Windows WebView2 differences are the open finding F-150
   ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)).
 - `scripts/perf-probe.mjs` gains a split-view pan phase; `test:canvas` asserts
   both panes paint from a gesture raster during the pan.
@@ -222,22 +225,23 @@ on each pull request.
   compares raster to raster; otherwise an exact level can serve both paths and
   mask a tile difference.
 - The 2 % antialias allowance is justified by the 1-px shift and blank-block
-  checks: a misplaced or blank tile fails both. The Windows result is kept as a
-  finding instead of widening the allowance.
+  checks: a misplaced or blank tile fails both. The high-DPR macOS and Windows
+  results are kept as a finding instead of widening the allowance.
 - Existing legacy budgets for `App.ts` (+4) and `CanvasView.ts` (+46) were
   updated with `check:file-budgets -- --update`; no new file exception.
-- No platform fallback was added: Linux and macOS passed their own probes, and
-  Windows has its own open finding rather than an assumed fallback.
+- No platform fallback was added. No blank or integer-offset tile was found;
+  the high-DPR difference is F-150 rather than an assumed fallback.
 
 ### Findings
 
 - F-147 and F-149 fixed and removed from the open register.
 - New F-150 (P3, [#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)):
-  Windows WebView2 tiled raster differs by 2.3–4.7 % at rest, no blank/offset.
+  high-DPR macOS WKWebView (zoom 1) and Windows WebView2 tiled rasters differ
+  by up to 4.7 % at rest, with no blank or integer offset.
 
 ### Open questions
 
-- None for this phase. F-150 owns the Windows decision.
+- None for this phase. F-150 owns the high-DPR tile-quality decision.
 
 ### Checks
 
@@ -249,8 +253,9 @@ on each pull request.
   `referenceSession`, `tileProbe` — 90 tests pass.
 - `test:canvas`, `test:visual` (4 screens, 0 differing pixels),
   `check:performance` — pass.
-- Packaged Linux WebKitGTK smoke probe — pass; desktop CI matrix — pass
-  (macOS tiles verified, Windows recorded as F-150).
+- Packaged Linux WebKitGTK smoke probe — pass; desktop CI matrix — green, with
+  the report-only probe recording the macOS high-DPR zoom-1 and Windows
+  differences as F-150.
 - Left to CI: the remaining browser suites and the desktop matrix on the final
   handover commit.
 
