@@ -342,6 +342,11 @@ The reusable prompts live in
 - **The conductor does not implement.** It coordinates, verifies and merges.
   One fresh `worker` subagent handles one phase. Never reuse a child session
   for a different issue. A split phase is explicit, for example 10a/10b.
+- **One phase in flight, and the chat stays open.** The conductor launches the
+  worker in the background, posts a status line, and returns to the
+  conversation; only one phase may be running. A running worker cannot be
+  cancelled, so a scope change applies after the phase or by restarting it
+  deliberately.
 - **One PR per phase.** The worker reads `AGENTS.md`, the plan and ADRs, the
   phase issue and the relevant docs; creates a branch; implements; adds tests
   and documentation; runs the full check list; pushes; opens a PR linked to the

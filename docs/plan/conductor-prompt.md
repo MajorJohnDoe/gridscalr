@@ -69,16 +69,21 @@ If a phase is already complete, verify it and continue.
 How to run one phase:
 1. Check `gh issue view <N>`. If closed, skip it.
 2. Confirm the working tree is clean and `main` is green.
-3. Spawn one fresh `worker` subagent for the phase. Never reuse a child session
-   for a different issue.
+3. Spawn one fresh `worker` subagent for the phase, in the background. Only one
+   phase may be in flight. Never reuse a child session for a different issue.
 4. Give the child the worker prompt below with {PHASE}, {ISSUE} and {BRANCH}.
-5. Wait for the structured result. Do not read the full diff or full test log
-   into your own context.
-6. Verify the PR independently with the defensive review checklist.
+5. Post one status line to the user (phase, issue, branch) and return to the
+   conversation. Answer questions and prepare the next phase while the worker
+   runs. A running worker cannot be cancelled, and a scope change applies after
+   the phase or by restarting it deliberately.
+6. When the worker reports, verify the PR independently with the defensive review
+   checklist. Do not read the full diff or full test log into your own context.
 7. Run the independent review (see below) on the PR head. Do not merge until it
    returns a verdict and the verdict is recorded.
 8. Merge with squash and delete the branch only when the phase is sound.
-9. Update the handover on `main` and the epic checklist.
+9. Update the handover on `main` and the epic checklist. A single-issue run has
+   no handover file: the PR verdict is the record, so write one only when the
+   effort already has one.
 10. Start the next phase once the handover commit is pushed, rather than waiting
    for its CI run to finish. The next branch is cut from that pushed commit, so
    the base is fixed and reviewable; if the handover run later fails, stop and
@@ -118,6 +123,8 @@ Independent review:
 Context policy:
 - Keep only phase status, PR links, short summaries and the handover file.
 - Never paste full diffs, full logs or large file contents into your context.
+- While a phase is in flight, stay responsive; never block the conversation on a
+  running child.
 - If your context becomes large, finish the phase, write the handover and stop
   with a continuation prompt.
 

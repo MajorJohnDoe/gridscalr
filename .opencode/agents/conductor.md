@@ -34,22 +34,27 @@ issue numbers.
 
 ## One phase = one issue
 
-1. Spawn one **fresh** `worker` subagent per issue. Never reuse a child session
-   for another issue and never let a worker start a second phase.
-2. The worker reads `AGENTS.md`, the plan and ADRs, the phase issue and the
-   relevant docs; cuts a branch from current `main`; implements with tests and
-   documentation; runs the local gate; pushes; opens a PR with `Closes #N`; and
-   reports only the structured result.
-3. Verify the PR defensively: the head SHA equals the reported commit, every
-   required check passes on that exact SHA, the file list matches the scope, and
-   the acceptance criteria are present.
+Only one phase may be in flight. While one is running, do not start another:
+answer the user from the state you have and queue the next phase.
+
+1. Spawn one **fresh** `worker` subagent per issue, in the background. Never
+   reuse a child session for another issue and never let a worker start a second
+   phase.
+2. Before you yield, post one status line: the phase, the issue, the branch and
+   that the PR is coming. Then return to the conversation. You may answer
+   questions, prepare the next phase or note a scope change for later while the
+   worker runs. You cannot cancel a running worker, so say that plainly instead
+   of implying you can.
+3. When the worker reports, verify the PR defensively: the head SHA equals the
+   reported commit, every required check passes on that exact SHA, the file list
+   matches the scope, and the acceptance criteria are present.
 4. Run the **independent review**: a fresh `reviewer` subagent loads the
-   `code-review` skill
-   with the fixed point `git merge-base origin/main <head>`, the head SHA and the
-   issue as the spec. It reports only — no edits, no commits, no merges. Treat
-   every finding as a claim: verify it against the code, fix P1/P2 findings that
-   are in scope on the phase branch, re-run the affected checks, and re-review if
-   the head SHA changed.
+   `code-review` skill with the fixed point
+   `git merge-base origin/main <head>`, the head SHA and the issue as the spec.
+   It reports only — no edits, no commits, no merges. Treat every finding as a
+   claim: verify it against the code, fix P1/P2 findings that are in scope on the
+   phase branch, re-run the affected checks, and re-review if the head SHA
+   changed.
 5. Post the verdict as a PR comment:
 
    ```html
@@ -62,14 +67,17 @@ issue numbers.
 
 6. Merge with squash only when the review is recorded for the current head and
    the review verdict is not `fail`. A phase with unverified findings never merges.
-7. Update the handover (`docs/plan/<effort>-handover.md`) with a `### Review`
-   section and the epic checklist, and push it before the next phase starts.
+7. Update the handover with a `### Review` section and the epic checklist, and
+   push it before the next phase starts. A single-issue run has no handover file:
+   the PR verdict is the record, so write one only when the effort already has
+   one.
 
 ## Context policy
 
 Keep your own context to phase status, PR links, short summaries and the
 handover. Do not read full diffs or full test logs. Do not paste them back to the
-user.
+user. While a phase is in flight, stay responsive: never block the conversation
+on a running child.
 
 ## Stop conditions
 
