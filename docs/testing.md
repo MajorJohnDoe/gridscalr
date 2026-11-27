@@ -115,7 +115,9 @@ the website shows changes, then `npm run site:build` and `npm run site:check`.
 `file-budgets.json` and fails on any file above its budget:
 
 - the frontend: every `.ts` and `.css` file under `src`, default 700 lines, with
-  a 400-line directory budget for every file under `src/features/**`, tighter
+  a 400-line directory budget for every file under `src/features/**` unless
+  `file-budgets.json` carries a reviewed exception that predates the rule
+  (`src/features/schematics/model/sheetTemplate.ts` is the only one), tighter
   limits for other directories and per-file caps for legacy modules;
 - the Rust shell: every `.rs` file under `src-tauri/src`, default 400 lines,
   target 300. `*_tests.rs` modules count because they belong to the same module

@@ -35,13 +35,14 @@ const PLACEHOLDER = /\{\s*([A-Za-z_][\w]*)\s*(?:[,}])/g;
 const UI_ALLOWLIST = new Set(["GridScalr", "pt"]);
 /**
  * Technical detail that is deliberately English: diagnostics reports, package
- * manifest validation, the Markdown renderer, XLSX XML and developer-only
- * geometry errors.
+ * manifest validation and failure descriptions, the Markdown renderer, XLSX
+ * XML and developer-only geometry errors.
  */
 const TEMPLATE_EXCLUDE_FILES = new Set([
   "src/features/diagnostics/model.ts",
   "src/features/perfMonitor/model.ts",
-  "src/features/projectPackage/model.ts",
+  "src/features/projectPackage/model/manifest.ts",
+  "src/features/projectPackage/model/failure.ts",
   "src/help/markdown.ts",
   "src/model/symbolPaths.ts",
   "src/model/symbols/signCatalog.ts",

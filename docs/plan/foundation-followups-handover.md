@@ -22,7 +22,7 @@ on each pull request.
   - `src/features/projectImport/model.ts` (439 → a surface over
     `model/types.ts`, `model/inspect.ts`, `model/prepare.ts` and
     `model/commit.ts`).
-  - `src/features/projectPackage/controller.ts` (495 → 300 + a separate
+  - `src/features/projectPackage/controller.ts` (495 → 345 + a separate
     `sources.ts` for source paths, missing-source checks and request
     preparation).
 - Removed F-144 from the open findings register; the archive entry stays as

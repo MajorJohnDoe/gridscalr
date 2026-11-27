@@ -80,7 +80,9 @@ model / io / state
 
 - Target: **300 lines** per new file.
 - Hard limit: **400 lines** per new file.
-- Hard limit: **400 lines** for every file under `src/features/**`. One
+- Hard limit: **400 lines** for every file under `src/features/**`, unless
+  `file-budgets.json` carries a reviewed exception that predates the rule
+  (`src/features/schematics/model/sheetTemplate.ts` is the only one). One
   `src/features` directory budget in `file-budgets.json` covers a feature
   directory added later without a registration step; a file here needs a split,
   not a new exception.
@@ -103,8 +105,10 @@ The original directory budgets for the foundation phases are:
 | `src/features/projectIntegrity` | 400 |
 
 The single `src/features` entry now applies that same 400-line limit to every
-feature directory. The per-directory entries remain as the reviewed set the
-foundation phases started with; they are not required for a new directory.
+feature directory, unless `file-budgets.json` carries a reviewed exception that
+predates the rule (`src/features/schematics/model/sheetTemplate.ts` is the only
+one). The per-directory entries remain as the reviewed set the foundation
+phases started with; they are not required for a new directory.
 
 ### Module maps for the foundation phases
 
@@ -191,7 +195,9 @@ before the first production file is added.
 ### Enforcement
 
 - `file-budgets.json` carries a `src/features` directory limit of 400, so every
-  file in a feature directory, including one added later, is capped at 400.
+  file in a feature directory, including one added later, is capped at 400,
+  unless a reviewed per-file exception predates the rule
+  (`src/features/schematics/model/sheetTemplate.ts` is the only one).
 - `scripts/check-file-budgets.mjs` refuses to record new files with `--update`.
   `tests/fileBudgetRules.test.ts` proves that a file over 400 lines in a fresh
   `src/features/<area>/` directory fails and that `--update` refuses it.
