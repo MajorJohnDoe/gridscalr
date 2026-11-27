@@ -37,6 +37,7 @@ const FOUNDATION_FEATURES = [
   "src/features/schedules",
   "src/features/takeoffSettings",
   "src/features/dialogHost",
+  "src/features/transientOverlay",
   "src/features/perfMonitor",
   "src/features/gestureRender",
   "src/features/tileCache",

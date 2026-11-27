@@ -11,8 +11,8 @@ import {
   emptyScheduleDraft,
   scheduleDraftProblems,
   setCategorySummaryRole,
-  totalHasVisibleColumn,
   setCountTypeSummaryRole,
+  unmatchedTotals,
   updateSchedule,
   createKeyCache,
   SCHEDULE_ROW_HEIGHT,
@@ -601,14 +601,18 @@ describe("definition rules", () => {
     expect(problems.map((problem) => problem.code)).toContain("missingName");
   });
 
-  it("detects a total that has no visible column", () => {
-    expect(
-      totalHasVisibleColumn({ columns: [column("c1", "label"), column("c2", "value")] }, "value"),
-    ).toBe(true);
-    expect(
-      totalHasVisibleColumn({ columns: [column("c2", "value", { visible: false })] }, "value"),
-    ).toBe(false);
-    expect(totalHasVisibleColumn({ columns: [column("c1", "label")] }, "value")).toBe(false);
+  it("detects a total that has no visible column and keeps its computed value", () => {
+    const project = makeProject();
+    const result = computeSchedule(
+      project,
+      definition({
+        columns: [column("c1", "label"), column("c2", "unit")],
+        totals: [{ field: "value", op: "sum" }],
+      }),
+    );
+    expect(result.totals).toHaveLength(1);
+    expect(unmatchedTotals(result.columns, result.totals)).toEqual(result.totals);
+    expect(unmatchedTotals([...result.columns, column("c3", "value")], result.totals)).toEqual([]);
   });
 
   it("flags filters that do not apply to the space source", () => {

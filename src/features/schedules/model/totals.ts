@@ -1,7 +1,7 @@
 import { formatNumber } from "../../../i18n/format";
 import { t, type MessageKey } from "../../../i18n";
 import type { ScheduleFieldRef, ScheduleTotal, ScheduleTotalOp } from "../../../model/types";
-import type { ScheduleRow, ScheduleTotalValue } from "./types";
+import type { ScheduleColumnView, ScheduleRow, ScheduleTotalValue } from "./types";
 
 /**
  * Totals and subtotals computed from the filtered rows. A total is never
@@ -92,4 +92,24 @@ export function computeTotals(
   return (totals ?? []).map((total) =>
     computeTotal(rows, total, labelOf(total.field), invalidFields.has(total.field)),
   );
+}
+
+/**
+ * Totals that have no visible column to render under. The value is already
+ * computed; the foot line only displays it, so a hidden column never forces a
+ * second calculation and never drops the number (F-126).
+ */
+export function unmatchedTotals(
+  columns: readonly Pick<ScheduleColumnView, "field">[],
+  totals: readonly ScheduleTotalValue[] | undefined,
+): ScheduleTotalValue[] {
+  const visible = new Set(columns.map((column) => column.field));
+  return (totals ?? []).filter((total) => !visible.has(total.field));
+}
+
+/** One localized foot-line line per unmatched total. */
+export function unmatchedTotalText(totals: readonly ScheduleTotalValue[]): string {
+  return totals
+    .map((total) => t("schedules.table.footTotal", { label: total.label, value: total.text }))
+    .join(t("schedules.table.footSeparator"));
 }

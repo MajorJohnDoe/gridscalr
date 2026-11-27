@@ -9,6 +9,7 @@ import type {
 import {
   scheduleCaption,
   scheduleEmptyRow,
+  scheduleFootRow,
   scheduleGroupRowElement,
   scheduleHead,
   scheduleRowElement,
@@ -86,6 +87,8 @@ export function panelTable(options: PanelTableOptions): HTMLElement {
   if (totals.length) {
     const tfoot = el("tfoot");
     tfoot.append(scheduleTotalRow(totals, columns));
+    const foot = scheduleFootRow(totals, columns);
+    if (foot) tfoot.append(foot);
     table.append(tfoot);
   }
   wrap.append(table);

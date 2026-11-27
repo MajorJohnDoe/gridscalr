@@ -16,6 +16,10 @@ import { openSettingsDialog } from "./settingsDialog";
 import { isMarkupsOpen } from "./markupsPanel";
 import { isSummaryOpen } from "../features/schedules";
 import { isPerfPanelOpen, togglePerformancePanel } from "../features/perfMonitor";
+import {
+  registerTransientOverlay,
+  type TransientOverlayHandle,
+} from "../features/transientOverlay";
 import { openTakeoffSettingsDialog } from "../features/takeoffSettings";
 import { APP_SHORTCUTS } from "./shortcuts";
 import { t } from "../i18n";
@@ -203,6 +207,7 @@ let menuActions: PanelActions | null = null;
 const menuButtons = new Map<string, HTMLButtonElement>();
 let menuBarRoot: HTMLElement | null = null;
 let menuRoot: HTMLElement | null = null;
+let menuRegistration: TransientOverlayHandle | null = null;
 let openMenuId: string | null = null;
 let openedByHover = false;
 let panels: HTMLElement[] = [];
@@ -302,6 +307,7 @@ function openMenu(id: string, focusFirst: boolean, byHover = false): void {
   root.append(panel);
   document.body.append(root);
   menuRoot = root;
+  menuRegistration = registerTransientOverlay(root, escapeMenu);
   panels = [panel];
   submenuAnchors.clear();
 
@@ -373,20 +379,6 @@ function createPanel(items: MenuItem[], level: number): HTMLElement {
   }
 
   panel.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      if (level > 0) {
-        const anchor = submenuAnchors.get(level);
-        closePanelAt(level);
-        anchor?.focus();
-      } else {
-        const trigger = openMenuId ? menuButtons.get(openMenuId) : undefined;
-        closeMenus();
-        trigger?.focus();
-      }
-      return;
-    }
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       moveFocus(panel, event.key === "ArrowDown" ? 1 : -1);
@@ -490,12 +482,35 @@ function moveFocus(panel: HTMLElement, step: number): void {
   items[next].focus();
 }
 
+/**
+ * Escape from a submenu returns to its parent menu; from the top level it
+ * closes the menu and returns focus to the menu-bar trigger. The transient
+ * registry routes Escape here instead of a document-level class-name check.
+ */
+function escapeMenu(): void {
+  const active = document.activeElement;
+  const focusedPanel =
+    active instanceof Element ? active.closest<HTMLElement>(".menu-panel") : null;
+  const level = Number(focusedPanel?.dataset.level ?? 0);
+  if (level > 0) {
+    const anchor = submenuAnchors.get(level);
+    closePanelAt(level);
+    anchor?.focus();
+    return;
+  }
+  const trigger = openMenuId ? menuButtons.get(openMenuId) : undefined;
+  closeMenus();
+  trigger?.focus();
+}
+
 export function closeMenus(): void {
   if (openMenuId) {
     const button = menuButtons.get(openMenuId);
     button?.classList.remove("is-open");
     button?.setAttribute("aria-expanded", "false");
   }
+  menuRegistration?.unregister();
+  menuRegistration = null;
   menuRoot?.remove();
   menuRoot = null;
   openMenuId = null;
@@ -518,14 +533,6 @@ document.addEventListener("mousedown", (event) => {
   if (menuRoot.contains(target)) return;
   if (target instanceof Element && target.closest(".menubar")) return;
   closeMenus();
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && menuRoot) {
-    event.preventDefault();
-    event.stopPropagation();
-    closeMenus();
-  }
 });
 
 window.addEventListener("resize", () => closeMenus());

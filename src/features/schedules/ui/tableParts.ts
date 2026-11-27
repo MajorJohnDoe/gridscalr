@@ -1,6 +1,13 @@
 import { t } from "../../../i18n";
 import { el } from "../../../ui/dom";
-import type { ScheduleColumnView, ScheduleGroup, ScheduleRow, ScheduleTotalValue } from "../model";
+import {
+  unmatchedTotalText,
+  unmatchedTotals,
+  type ScheduleColumnView,
+  type ScheduleGroup,
+  type ScheduleRow,
+  type ScheduleTotalValue,
+} from "../model";
 
 /**
  * Table pieces shared by the live panel and the builder preview, so the two
@@ -104,6 +111,23 @@ export function scheduleTotalRow(
     }
     row.append(cell);
   }
+  return row;
+}
+
+/**
+ * Foot line for totals that have no visible column. The computed total text is
+ * displayed as-is; the row is absent when every total has a column (F-126).
+ */
+export function scheduleFootRow(
+  totals: readonly ScheduleTotalValue[],
+  columns: readonly ScheduleColumnView[],
+): HTMLTableRowElement | null {
+  const unmatched = unmatchedTotals(columns, totals);
+  if (!unmatched.length) return null;
+  const row = el("tr", "schedules-foot-row");
+  const cell = el("td", "schedules-foot-cell", unmatchedTotalText(unmatched));
+  cell.colSpan = Math.max(1, columns.length);
+  row.append(cell);
   return row;
 }
 

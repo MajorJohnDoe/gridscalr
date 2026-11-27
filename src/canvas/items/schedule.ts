@@ -130,7 +130,7 @@ export function drawScheduleItem(
   }
 
   ctx.textBaseline = "middle";
-  for (const cell of [...layout.header, ...layout.cells]) {
+  for (const cell of [...layout.header, ...layout.cells, ...layout.foot]) {
     if (!cell.text) continue;
     const size = Math.max(0.5, layout.fontSize * zoom);
     ctx.font = `${cell.bold ? 700 : 500} ${size}px ${FONT_STACK}`;

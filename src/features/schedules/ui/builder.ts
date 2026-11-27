@@ -7,7 +7,6 @@ import {
   findSchedule,
   scheduleDraftFor,
   scheduleDraftProblems,
-  scheduleDraftWarnings,
 } from "../model";
 import type { ScheduleDraft, ScheduleProblem } from "../model";
 import type { Project, ScheduleRowMode, ScheduleSource } from "../../../model/types";
@@ -111,7 +110,7 @@ export function openScheduleBuilder(scheduleId?: string): Promise<void> {
   const preview = createPreview(liveProject);
 
   function updateProblems(extra: readonly ScheduleProblem[] = []): void {
-    const list = [...scheduleDraftProblems(liveProject(), draft), ...scheduleDraftWarnings(draft)];
+    const list = scheduleDraftProblems(liveProject(), draft);
     // A refused write reports its own problem, for example a table that an undo
     // removed while the window stayed open. The draft check already names the
     // control-level problems, so a repeated code is shown once.

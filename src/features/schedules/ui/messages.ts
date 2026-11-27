@@ -29,8 +29,6 @@ export function scheduleProblemText(
       return t("schedules.problem.invalidCustomValue", {
         field: labels.field ?? problem.fieldId ?? "",
       });
-    case "totalWithoutColumn":
-      return t("schedules.builder.totalHidden");
     case "inUse":
       return t("schedules.problem.inUse");
     case "unknownSchedule":

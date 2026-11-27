@@ -266,6 +266,24 @@ describe("summary panel", () => {
     expect(container.querySelectorAll(".schedules-row-link")).toHaveLength(2);
   });
 
+  it("shows a total with no visible column in the dock table foot line", () => {
+    const project = makeProject();
+    lengthItem(project, { label: "Wall A" });
+    schedule(project, {
+      columns: [
+        { id: "c1", field: "label", visible: true },
+        { id: "c3", field: "unit", visible: true },
+      ],
+      totals: [{ field: "value", op: "sum" }],
+    });
+    store.setProject(project, null);
+    const { container } = mountPanel();
+    setValue(labelled<HTMLSelectElement>("Takeoff table")!, "sched_ui");
+
+    const foot = container.querySelector(".schedules-foot-row");
+    expect(foot?.textContent).toContain("Value (Sum): 1");
+  });
+
   it("shows the empty state when nothing matches", () => {
     const project = makeProject();
     store.setProject(project, null);
@@ -472,7 +490,7 @@ describe("schedule builder", () => {
     await deleteDone;
   });
 
-  it("warns when a total has no visible column without blocking the save", async () => {
+  it("shows a total with no visible column in the foot line without blocking the save", async () => {
     const project = makeProject();
     lengthItem(project, { label: "Wall A" });
     store.setProject(project, null);
@@ -485,9 +503,13 @@ describe("schedule builder", () => {
     visible.checked = false;
     visible.dispatchEvent(new Event("change", { bubbles: true }));
 
-    expect(document.querySelector(".form-warning")?.textContent).toContain("no visible column");
+    expect(document.querySelector(".form-warning")?.textContent ?? "").not.toContain(
+      "no visible column",
+    );
+    const foot = document.querySelector(".schedules-foot-row");
+    expect(foot?.textContent).toContain(`${fieldLabel} (`);
 
-    // The warning is non-blocking: the total is still a valid definition.
+    // The total is still a valid definition and the computed number is shown.
     button("Save")!.click();
     expect(project.schedules).toHaveLength(1);
     button("Close", document.querySelector(".modal")!)!.click();

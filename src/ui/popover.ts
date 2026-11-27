@@ -1,5 +1,9 @@
+import { registerTransientOverlay } from "../features/transientOverlay";
 import { el } from "./dom";
 import { icon } from "./icons";
+
+/** The one open popover; a new menu closes the previous one through its host. */
+let activeClose: (() => void) | null = null;
 
 export interface PopoverItem {
   label?: string;
@@ -148,7 +152,7 @@ function handleMenuKeys(popover: HTMLElement, event: KeyboardEvent): void {
 }
 
 function mountPopover(popover: HTMLElement, left: number, top: number): void {
-  document.querySelectorAll(".popover").forEach((node) => node.remove());
+  activeClose?.();
   const previousFocus =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
   document.body.append(popover);
@@ -165,31 +169,29 @@ function mountPopover(popover: HTMLElement, left: number, top: number): void {
     if (popover.contains(event.target as Node)) return;
     close();
   };
-  const onKey = (event: KeyboardEvent) => {
-    if (event.key !== "Escape") return;
-    event.preventDefault();
-    event.stopPropagation();
-    close();
-  };
   const restoreFocus = () => {
     if (!previousFocus?.isConnected) return;
     // An action may have opened a dialog that has already taken focus.
     if (document.activeElement && document.activeElement !== document.body) return;
     previousFocus.focus({ preventScroll: true });
   };
+  let registration: ReturnType<typeof registerTransientOverlay> | null = null;
   const close = () => {
     if (closed) return;
     closed = true;
     if (armTimer) window.clearTimeout(armTimer);
     document.removeEventListener("mousedown", onMouseDown);
-    document.removeEventListener("keydown", onKey);
+    registration?.unregister();
+    registration = null;
+    if (activeClose === close) activeClose = null;
     popover.remove();
     // Let a chosen action mount its dialog before deciding where focus belongs.
     window.setTimeout(restoreFocus, 0);
   };
-  // Escape is safe to handle immediately. A mouse click is armed on the next
-  // turn so the click that opened the popover does not close it again.
-  document.addEventListener("keydown", onKey);
+  // A mouse click is armed on the next turn so the click that opened the
+  // popover does not close it again; Escape goes through the registry.
+  registration = registerTransientOverlay(popover, close);
+  activeClose = close;
   popover.addEventListener("click", close);
   popover.addEventListener("keydown", (event) => handleMenuKeys(popover, event));
   // The menu is keyboard operable as soon as it opens; the first item owns focus

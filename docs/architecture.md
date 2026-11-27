@@ -253,7 +253,7 @@ src/
   ui/shortcuts.json      single source for tool and application shortcuts
   ui/shortcuts.ts        typed shortcut maps and platform formatting
   ui/toolDefs.ts         tool metadata, shared rail families and last-used family member
-  ui/flyoutHost.ts       shared flyout mount, positioning, focus, keyboard and long-press gesture
+  ui/flyoutHost.ts       shared flyout mount, positioning, focus, keyboard, long-press gesture and registry entry
   ui/toolFlyouts.ts      click/long-press/right-click variant, family and measurement panels
   ui/variantRow.ts       shared icon + label row for the tool flyouts and the measurement shape options
   ui/statusBar.ts        page scale menu, cursor position and layer status
@@ -351,6 +351,9 @@ src/
   features/dialogHost/model.ts pure stacking order, viewport clamping and destructive-target revalidation
   features/dialogHost/controller.ts dialog stack, header drag, focus return and Escape routing
   features/dialogHost/ui.ts dialog shell construction and the shared confirm, message, text, depth, password and unsaved prompts
+  features/transientOverlay/index.ts public surface of the flyout, menu and popover registry
+  features/transientOverlay/model.ts pure monotonic transient order above the dialog band
+  features/transientOverlay/controller.ts one Escape route and z-index assignment for every transient surface
   app/summaryFlow.ts     Ctrl+Alt+S and the View → Takeoff action
   app/altShortcuts.ts    Ctrl+Alt+Q and Ctrl+Alt+R window shortcuts
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point

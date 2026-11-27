@@ -1,7 +1,6 @@
 import * as fontkit from "@pdf-lib/fontkit";
 import {
   PDFDocument,
-  rgb,
   StandardFonts,
   type PDFFont,
   type PDFImage,
@@ -16,6 +15,7 @@ import { formatNumber } from "../model/units";
 import type { QuantityReport } from "../report/reportModel";
 import type { ImageAsset, ProjectMetadata } from "../model/types";
 import { t, type MessageKey } from "../i18n";
+import { REPORT_COLORS } from "./reportStyle";
 
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
@@ -24,12 +24,15 @@ const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 const TABLE_ROW_HEIGHT = 15;
 const TABLE_HEADER_HEIGHT = 17;
 
-const INK = rgb(0.1, 0.12, 0.14);
-const MUTED = rgb(0.42, 0.45, 0.48);
-const LINE = rgb(0.78, 0.81, 0.84);
-const JADE = rgb(0.02, 0.46, 0.38);
-const WARNING = rgb(0.66, 0.34, 0.04);
-const HEADER_BG = rgb(0.94, 0.95, 0.96);
+const {
+  ink: INK,
+  muted: MUTED,
+  sectionRule: SECTION_RULE,
+  headerBackground: HEADER_BG,
+  headerInk: HEADER_INK,
+  orderAccent: ORDER_ACCENT,
+  warning: WARNING,
+} = REPORT_COLORS;
 
 interface Fonts {
   regular: PDFFont;
@@ -208,7 +211,7 @@ class ReportLayout {
       start: { x: MARGIN, y: this.cursor },
       end: { x: PAGE_WIDTH - MARGIN, y: this.cursor },
       thickness: 0.8,
-      color: LINE,
+      color: SECTION_RULE,
     });
     this.cursor -= 16;
   }
@@ -247,7 +250,7 @@ class ReportLayout {
     });
     const baseline = this.cursor - 9;
     COLUMNS.forEach((column, index) => {
-      this.drawCell(t(column.labelKey), index, baseline, this.fonts.bold, 8, MUTED);
+      this.drawCell(t(column.labelKey), index, baseline, this.fonts.bold, 8, HEADER_INK);
     });
     this.cursor -= TABLE_HEADER_HEIGHT;
   }
@@ -304,7 +307,7 @@ class ReportLayout {
       8.5,
       color,
     );
-    this.drawCell(measured(order, type), 7, baseline, font, 8.5, JADE);
+    this.drawCell(measured(order, type), 7, baseline, font, 8.5, ORDER_ACCENT);
     this.cursor -= TABLE_ROW_HEIGHT;
   }
 

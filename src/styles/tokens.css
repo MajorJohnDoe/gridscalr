@@ -51,8 +51,8 @@
    * required by `npm run check:themes`) and every ink/band pair is pinned at
    * WCAG AA, so the table stays readable in all five themes and can never fall
    * back to black text on a black band. The canvas reads them from the active
-   * theme; the PDF export reads the same roles from the document palette in
-   * `src/features/schedules/layoutStyle.ts`.
+   * theme; the drawing PDF and the quantity report read the same roles from
+   * the document palette in `src/features/schedules/layoutStyle.ts`.
    */
   --table-paper: #ffffff;
   --table-band-head: #e8edf2;

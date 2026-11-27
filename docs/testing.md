@@ -381,7 +381,10 @@ initial focus inside, `Tab` that is not intercepted, focus returning to the
 opener, `Escape` closing only the topmost of two dialogs, focus-to-front
 stacking, two independently movable windows, the viewport clamp, no drag from the
 body or the close control, the reusable header-action surface, and target
-revalidation (gone, changed and unchanged). `tests/dialogFocus.test.ts` keeps the
+revalidation (gone, changed and unchanged). `tests/transientOverlay.test.ts`
+puts two registered transient surfaces over a dialog and proves Escape closes the
+topmost transient first, including a surface with no known class name, then the
+first one, and only then the dialog. `tests/dialogFocus.test.ts` keeps the
 safe-initial-focus contract. `tests/takeoffSettingsUi.test.ts` proves a nested
 field editor stacks on the hub and repaints it on return. The accessibility,
 touch-target and UI-scale gates then run against the real non-modal dialogs, and
