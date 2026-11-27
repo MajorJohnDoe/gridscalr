@@ -312,9 +312,8 @@ on each pull request.
 ## Phase 4 — trash 5.4.0 removes the compiled chrono path (#306)
 
 - Issue: [#306](https://github.com/MajorJohnDoe/gridscalr/issues/306)
-- PR: opened against `main` from `chore/trash-5-4`; the head SHA is recorded on
-  the pull request
-- Commit: the PR head that carries this entry
+- PR: [#391](https://github.com/MajorJohnDoe/gridscalr/pull/391)
+- Commit: `0f68a55` (implementation); the PR head carries this handover update
 - Schema: unchanged (28)
 
 ### Completed
