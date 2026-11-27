@@ -292,18 +292,18 @@ on each pull request.
 
 ### Review
 
-- Independent review returned pass-with-findings. The P2 evidence-integrity,
-  P3 verdict-honesty and P4 findings were fixed in `4e29a75`.
-- Delta review on `4e29a75` found one P2 documentation error in the tile-probe
-  artifacts and four P4s: the stale handover claim, two gesture content-key
-  holes, the invalidate-without-settle state and the Linux/macOS-only platform
-  comments. All are fixed in this commit; re-review is pending.
-- Delta review on `5a5f368` found that `tilesUsed` still depended on the live
-  first-tile cost rule, so CI Ubuntu reported `not-used` on some levels on one
-  run and tiles on another. The probe now forces the tiled path for each capture
-  when the platform supports the cache and records `forced`; the Linux forced
-  run is recorded in `docs/testing.md` and the platform prose no longer pins the
-  variable live-run tile activity.
+- Reviewer: `code-review` skill (independent, fixed point `82b8669`).
+- Reviewed commit: `4672633ea64a6a36de2de195c8b868d4c1c979fa`.
+- Verdict: pass-with-findings across four review rounds. Round 1 fixed the
+  probe's `not-used`-as-pass and low-contrast blank bugs plus verdict honesty.
+  Round 2 fixed documentation that cited the previous head's artifacts, two
+  gesture content-key holes and the invalidate-without-settle state. Round 3
+  made the probe force the tiled path so `tilesUsed` no longer depended on the
+  live first-tile rule. Round 4 left three documentation nits (stale "next CI
+  run" wording, the local 1.006 % versus CI 1.007 % ratio, `unready` versus
+  `not-used`), fixed on `main` after the merge.
+- Findings: none open; F-150 is owned by #389, whose body now carries the forced
+  numbers from CI run 46028378383.
 
 ### Next
 

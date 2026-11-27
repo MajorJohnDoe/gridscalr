@@ -983,7 +983,8 @@ best 1-pixel shift only moves the macOS ratio from 1.179 % to 1.118 % and does
 not materially explain either difference. Their maximum channel delta (156 and
 119) does exceed the 64 allowance, so the tightened verdict is `mismatch`, not
 antialias. A `not-used` level now means the platform lacks the bitmap APIs or
-the forced capture failed; it never passes.
+the forced capture failed; a capture that never becomes ready is `unready`.
+Neither is a pass.
 
 The macOS zoom-1 level measured 9 380 / 234 016 (4.008 %, max delta 161) on head
 `5a5f368`, page-wide, with no blank grid block and no material integer shift.

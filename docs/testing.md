@@ -69,7 +69,8 @@ verifies real tile output instead of recording the run-dependent decision of
 that rule. The live app keeps the rule; the report marks a forced capture with
 `forced: true` so it is never read as the live path. If the runtime lacks
 `createImageBitmap`/`OffscreenCanvas`, or the forced capture fails, the level
-keeps `tilesUsed: false` and is `not-used`. Each level gets a verdict: `match`
+keeps `tilesUsed: false` and is `not-used`; a capture that never becomes ready is
+`unready` instead. Each level gets a verdict: `match`
 (≤ 1 % differing pixels and a maximum channel delta of 64), `antialias` (a
 difference up to 2 % whose differing-pixel bounds cover at least a quarter of
 the page, with a maximum channel delta of 64 and no 1-pixel shift or blank grid
@@ -103,13 +104,12 @@ run's first-tile rule fired:
 
 Every Linux level above recorded `forced: true` and `tilesUsed: true`, so
 `tilePathExercised` is true and each level is tile verification rather than a
-fallback. The macOS and Windows rows used the live tile path at all three zooms
-on that run; the probe now forces them as well, so their next CI report records
-`forced: true`. On the same `ubuntu-22.04` CI head the live first-tile rule left
-zoom 1 and zoom 3 `not-used` while zoom 6 used tiles, which is why the probe
-forces the path instead of pinning one run. A `not-used` level now means the
+fallback. The macOS and Windows rows were captured with the forced tiled path as well;
+all three platforms' CI reports record `forced: true`. Before forcing, one
+`ubuntu-22.04` CI run left zoom 1 and zoom 3 `not-used` while zoom 6 used tiles;
+that variability is why the probe forces the path instead of pinning one run. A `not-used` level now means the
 runtime lacks `createImageBitmap`/`OffscreenCanvas` or the forced capture
-failed; it is never a pass. The WebKit zoom-3 differences are page-wide and
+failed; a capture that never becomes ready is `unready`. Neither is a pass. The WebKit zoom-3 differences are page-wide and
 have no blank block or material 1-pixel shift, but their maximum channel delta
 (156 on Linux, 119 on macOS) exceeds the 64 allowance, so the tightened verdict
 records them as `mismatch`. The Windows WebView2 differences and the macOS

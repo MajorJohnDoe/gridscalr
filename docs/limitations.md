@@ -237,8 +237,8 @@ and zoom 1 are `mismatch`. The WebKit zoom-3 differences have a page-wide
 bounding box and no blank or integer-offset tile; the best 1-pixel shift does
 not materially explain them (the macOS ratio moves only from 1.179 % to
 1.118 %). Tiles stay enabled. A level the probe reports as `not-used` now means
-the platform lacks the bitmap APIs or the forced capture failed; it is never a
-pass. The Windows WebView2 differences (2.330–4.675 % at rest, no blank block,
+the platform lacks the bitmap APIs or the forced capture failed; a capture that
+never becomes ready is `unready`. Neither is a pass. The Windows WebView2 differences (2.330–4.675 % at rest, no blank block,
 no material integer offset), the macOS zoom-1 difference and the max-delta
 failures above are tracked as F-150
 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)) and are not yet a
