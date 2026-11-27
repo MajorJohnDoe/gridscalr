@@ -200,7 +200,9 @@ grow a static TODO list in the roadmap.
 ## Git workflow
 
 - `main` is the integration branch and should always pass CI.
-- Small fixes, documentation, and workflow changes may be committed directly to `main`.
+- Documentation and workflow changes may be committed directly to `main`. A change
+  under `src/`, `src-tauri/`, `scripts/`, `tests/` or a configuration file goes
+  through the conductor and a pull request.
 - Larger features should use a branch such as `feat/markups-panel` or `fix/pdf-export`, followed by a pull request.
 - Never force-push `main`.
 - Keep commits focused. Do not mix unrelated refactors with a feature or bug fix.
@@ -314,9 +316,15 @@ gh run view <run-id> --repo MajorJohnDoe/gridscalr --log-failed
 
 ## Multi-issue conductor workflow
 
-Use this workflow when a request spans more than two issues, includes a schema
-change, or is expected to take more than about one day. It keeps the conductor
-context small and makes every phase independently reviewable.
+Use this workflow for every code change. A request that spans several issues is a
+sequence of phases; a single issue is a phase of one. Documentation-only changes
+may be edited and committed directly. It keeps the conductor context small and
+makes every phase independently reviewable.
+
+The conductor is the default agent: `.opencode/agents/conductor.md` plus
+`.opencode/opencode.json`. Its `edit` permission is denied outside `docs/`,
+`README.md` and `AGENTS.md`, so a code change can only happen through a worker
+subagent. The independent review below is part of the loop, not an optional step.
 
 The reusable prompts live in
 [`docs/plan/conductor-prompt.md`](plan/conductor-prompt.md).
@@ -892,6 +900,23 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 
 Update the status in `docs/roadmap.md` when a milestone is completed. The current
 focus is the foundation workstreams in `docs/roadmap.md`, not a 1.0 date.
+
+## Agents and the default conductor
+
+`.opencode/agents/conductor.md` defines the conductor: `mode: primary`, a system
+prompt that forbids implementing, and `edit` denied except under `docs/`,
+`README.md` and `AGENTS.md`. `.opencode/opencode.json` sets it as `default_agent`,
+so a new session starts as the conductor instead of `build`.
+
+The conductor spawns one fresh `general` worker per issue and one fresh reviewer
+per phase. The `code-review` skill runs in that reviewer child, against
+`git merge-base origin/main <head>` with the issue as the spec. It reports only;
+the conductor verifies every finding before merge and posts the verdict as a PR
+comment. A phase with `fail`, or with unverified findings, never merges.
+
+`default_agent` applies to new sessions; an open session keeps the agent it
+started with. When a session deliberately wants to edit directly, it switches
+agent. That is an explicit exception, not the default.
 
 ## Agent skills
 
