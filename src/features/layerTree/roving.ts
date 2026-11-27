@@ -7,6 +7,12 @@
 
 const TREEITEM = '[role="treeitem"]';
 
+/** The row or item that currently owns focus inside one tree section. */
+export interface LayerRovingFocus {
+  layerId: string | null;
+  itemId: string | null;
+}
+
 function treeItems(root: HTMLElement): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>(TREEITEM)].filter((item) => !item.hidden);
 }
@@ -35,12 +41,34 @@ export function ensureTreeTabStop(root: HTMLElement, preferredId?: string | null
  * Binds the roving tab stop for a tree section. Listeners live on the section,
  * so a render replaces the section and its listeners together.
  */
-export function bindRovingTree(root: HTMLElement, preferredId?: string | null): void {
+export function bindRovingTree(
+  root: HTMLElement,
+  preferredId?: string | null,
+  onFocusTarget?: (target: LayerRovingFocus | null) => void,
+): void {
   ensureTreeTabStop(root, preferredId);
   root.addEventListener("focusin", (event) => {
     const target = event.target as HTMLElement | null;
     const item = target?.closest<HTMLElement>(TREEITEM);
-    if (item && root.contains(item)) setTabStop(root, item);
+    if (!item || !root.contains(item)) return;
+    setTabStop(root, item);
+    onFocusTarget?.({
+      layerId: item.dataset.layerId ?? null,
+      itemId: item.dataset.itemId ?? null,
+    });
+  });
+  root.addEventListener("focusout", (event) => {
+    const next = (event as FocusEvent).relatedTarget as Node | null;
+    if (next && root.contains(next)) return;
+    // A panel render removes the focused row before the next tree is built.
+    // Keep the record when this root left the document; clear it only when
+    // focus really moved elsewhere in a tree that is still on screen.
+    queueMicrotask(() => {
+      if (!root.isConnected) return;
+      const active = root.ownerDocument.activeElement;
+      if (active && root.contains(active)) return;
+      onFocusTarget?.(null);
+    });
   });
   root.addEventListener("keydown", (event) => {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;

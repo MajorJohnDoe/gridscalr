@@ -49,6 +49,9 @@ const pageNavigator = new RowNavigator(".page-card");
 /** One window control keeps focus across the panel render it triggers. */
 let pendingWindowFocus: PageWindowAction | null = null;
 
+/** Page card that last held focus; restored when a render replaces the list. */
+let focusedPageId: string | null = null;
+
 /** Stops observing page cards when the Pages tab is no longer mounted. */
 export function disconnectPageThumbnails(): void {
   thumbnailObserver?.disconnect();
@@ -141,6 +144,7 @@ export function updatePageSizeLabel(refs: ShellRefs, page: number, size: PageSiz
 function renderEmptyPages(refs: ShellRefs, actions: PanelActions): void {
   pageReorder.detach();
   pageWindowState.reset();
+  focusedPageId = null;
   const empty = el("div", "page-list page-list-empty");
   empty.append(el("p", "empty-note", t("page.emptyProject")));
   const add = el("button", "btn btn-small", t("page.addPages"));
@@ -185,7 +189,10 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   bindTabMenu(refs, actions);
   disconnectPageThumbnails();
   pageNavigator.detach();
+  // A status refresh can rebuild the panel while the range bar is mounted, so
+  // remove both the old list and its window bar before appending a new one.
   refs.dockBody.querySelector(".page-list")?.remove();
+  refs.dockBody.querySelector(".page-window-bar")?.remove();
   const project = store.project!;
   if (!project.pages.length) {
     renderEmptyPages(refs, actions);
@@ -216,27 +223,44 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     return;
   }
   const visibleIds = visible.map((row) => row.pageId);
-  const selectedAnchor = pageReorder.selectionIds().find((id) => visibleIds.includes(id));
   const currentAnchor = currentPageId(project, store.ui.page);
-  const anchorId =
-    selectedAnchor ??
-    (currentAnchor && visibleIds.includes(currentAnchor) ? currentAnchor : null) ??
-    visibleIds[0] ??
-    null;
-  const window = pageWindowState.window(visibleIds, anchorId);
+  const window = pageWindowState.window(visibleIds, currentAnchor);
   const list = el("div", "page-list");
+  list.addEventListener("focusin", (event) => {
+    const id = (event.target as HTMLElement | null)?.closest<HTMLElement>(".page-card")?.dataset
+      .pageId;
+    if (id) focusedPageId = id;
+  });
+  list.addEventListener("focusout", (event) => {
+    const next = (event as FocusEvent).relatedTarget as Node | null;
+    if (next && list.contains(next)) return;
+    // A panel render removes the list before the next one is built. Keep the
+    // record when this list left the document; clear it only when focus really
+    // moved elsewhere in a list that is still on screen.
+    queueMicrotask(() => {
+      if (!list.isConnected) return;
+      const active = document.activeElement;
+      if (active && list.contains(active)) return;
+      focusedPageId = null;
+    });
+  });
   // Reordering maps a drop position in the rendered list, so it stays off while
   // a filter hides pages. Viewing, renaming and page actions still work.
   const reorderEnabled = !store.readOnly && filter === "all";
   pageReorder.setWindowOffset(window.start);
   if (visible.length > window.end - window.start) {
-    const anchorRow = visible.find((row) => row.pageId === anchorId);
+    const currentRow = currentAnchor
+      ? visible.findIndex((row) => row.pageId === currentAnchor)
+      : -1;
     refs.dockBody.append(
       pageWindowControls({
         start: window.start,
         end: window.end,
         total: visible.length,
-        current: anchorRow?.page,
+        // The window slices positions in the filtered order, so the current
+        // value is that position; without a filter it equals the page number.
+        current: currentRow >= 0 ? currentRow + 1 : undefined,
+        filtered: filter !== "all",
         onNavigate: (action, page) => {
           pendingWindowFocus = action;
           if (action === "jump" && page !== undefined) {
@@ -247,7 +271,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
             else actions.refresh();
           } else {
             const step = window.end - window.start;
-            pageWindowState.shift(visible.length, action === "next" ? step : -step);
+            pageWindowState.shift(visible.length, action === "next" ? step : -step, currentAnchor);
             actions.refresh();
           }
         },
@@ -255,6 +279,9 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     );
   }
   const shown = visible.slice(window.start, window.end);
+  // Range selection is clamped to the mounted window, so a Shift-click after a
+  // jump cannot select pages the user never saw.
+  pageReorder.setVisibleIds(shown.map((row) => row.pageId));
   const prefs = loadPanelPreferences();
   const runs = new Map<number, { documentId: string | null; count: number }>();
   if (prefs.pagesGrouped && project.documents.length > 1) {
@@ -402,6 +429,17 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     refs.dockBody
       .querySelector<HTMLElement>(`[data-page-window-action="${focusWindow}"]`)
       ?.focus({ preventScroll: true });
+  }
+  if (!focusWindow) {
+    const requested = pageWindowState.takeFocusRequest();
+    const restoreId = requested ?? focusedPageId;
+    if (restoreId) {
+      const target =
+        refs.dockBody.querySelector<HTMLElement>(
+          `.page-card[data-page-id="${CSS.escape(restoreId)}"]`,
+        ) ?? refs.dockBody.querySelector<HTMLElement>(".page-card.is-active");
+      target?.focus({ preventScroll: true });
+    }
   }
   observeThumbnails(refs, actions, pendingThumbnails);
 }

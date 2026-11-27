@@ -52,13 +52,18 @@ function mount(layers: Layer[]): {
   list.getBoundingClientRect = () => rect(0, 0, 100, layers.length * 20);
   scroll.getBoundingClientRect = () => rect(0, 0, 100, layers.length * 20);
   const rows = layers.map((layer, index) => {
+    // The panel renders each treeitem as a wrapper that owns the visual row.
+    const node = document.createElement("div");
+    node.className = "layer-node";
+    node.dataset.layerId = layer.id;
+    node.dataset.layerKind = layer.kind;
+    node.getBoundingClientRect = () => rect(index * 20, 0, 100, 20);
     const row = document.createElement("div");
     row.className = "layer-row";
     row.dataset.layerId = layer.id;
-    row.dataset.layerKind = layer.kind;
-    row.getBoundingClientRect = () => rect(index * 20, 0, 100, 20);
-    list.append(row);
-    return row;
+    node.append(row);
+    list.append(node);
+    return node;
   });
   scroll.append(list);
   document.body.append(scroll);

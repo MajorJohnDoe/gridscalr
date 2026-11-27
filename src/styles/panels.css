@@ -334,20 +334,20 @@
   background: var(--panel-hover);
 }
 
-.layer-row.is-selected {
+.layer-node.is-selected > .layer-row {
   background: var(--jade-dim);
   border-color: color-mix(in srgb, var(--jade) 30%, transparent);
 }
 
-.layer-row.is-selected .layer-name {
+.layer-node.is-selected .layer-name {
   color: var(--text-strong);
 }
 
-.layer-row.is-hidden {
+.layer-node.is-hidden > .layer-row {
   opacity: 0.55;
 }
 
-.layer-row:focus-visible {
+.layer-node:focus-visible > .layer-row {
   outline: 2px solid var(--jade-bright);
   outline-offset: 1px;
 }
@@ -528,7 +528,7 @@
 }
 
 .layer-row:hover .layer-menu-btn,
-.layer-row.is-selected .layer-menu-btn {
+.layer-node.is-selected .layer-menu-btn {
   opacity: 1;
 }
 

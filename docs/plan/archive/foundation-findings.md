@@ -1861,7 +1861,17 @@ this table was written and are corrected here.
 - **Phase:** 0.25.0 phase 1 — page drag-and-drop
 - **Severity:** P3
 - **Area:** pages panel
-- **Status:** accepted — next step is a decoupled list, not a larger cap
+- **Status:** fixed — #234
+- **Resolution (2026-11-27, #234):** `src/features/pageWindow/` mounts a window
+  of at most 120 cards around the current page, with **Previous**, **Next** and
+  a jump field. Every page stays reachable without a second page-list widget,
+  the window follows the current page whenever it falls outside the slice, and
+  a keyboard move or drop reveals the moved block. Internal and external drops
+  translate the rendered position back through the window offset, so a drop at
+  a window edge lands next to the mounted card instead of at the project end.
+  A `Shift` range is clamped to the mounted window. The fixed 400-card cap and
+  its note are gone; the window rule is `tests/pageWindow.test.ts`,
+  `tests/pageList.test.ts` and `tests/pageReorder.test.ts`.
 - **Evidence:** `renderPages()` in `src/ui/pageList.ts` computes
   `const max = Math.min(total, 400)` and renders a note "Showing the first
   {shown} of {total} pages" past that limit. Every page card, and therefore every
@@ -1890,7 +1900,13 @@ this table was written and are corrected here.
 - **Phase:** 0.25.0 phase 2 — Pages-panel file drop
 - **Severity:** P2
 - **Area:** pages panel / source storage
-- **Status:** accepted — the ordinary import is still one undo step
+- **Status:** fixed — #234
+- **Resolution (2026-11-27, #234):** the drop flow verifies the managed copy
+  before the import mutation and applies it inside the same `store.mutate`
+  (`src/features/sourceStorage/importCopy.ts`). One Undo removes the imported
+  pages and the managed document reference; the copied file stays on disk for
+  the project doctor's unused-copy cleanup. `tests/importManagedCopy.test.ts`
+  proves the real `importDroppedDrawing()` path, not a hand-wrapped mutate.
 - **Evidence:** `importDroppedDrawing()` commits the pages with one
   `store.mutate`. If the user accepts the managed-copy recommendation for a
   cloud or network drawing, `SourceStorageController.applyImportChoice()` runs
@@ -1971,7 +1987,13 @@ this table was written and are corrected here.
 - **Phase:** 0.25.0 phase 5 — page context menu and keyboard operations
 - **Severity:** P3
 - **Area:** pages panel / keyboard
-- **Status:** accepted — the current page is unambiguous, the multi-selection is not
+- **Status:** fixed — #234
+- **Resolution (2026-11-27, #234):** `pageEditTargets()` reads the Pages-panel
+  selection through `pageReorder.selectionIds()`, filters it to live pages and
+  falls back to the current page. `Alt+Shift+M`, `Alt+Shift+D` and
+  `Alt+Shift+Delete` therefore act on the same block the pointer moves, and
+  Insert uses the first selected page for "before" and the last for "after".
+  `tests/pageMenu.test.ts` covers the selection cases.
 - **Evidence:** `PageMenuController.handleKey()` resolves the command target with
   `currentPageId(project, store.ui.page)`. The Pages-panel multi-selection lives
   in `PageReorderController.selection` and is deliberately session-only UI state;
@@ -1995,7 +2017,15 @@ this table was written and are corrected here.
 - **Phase:** 0.25.0 phase 6 — unify Page, Layer and Markups list interactions
 - **Severity:** P3
 - **Area:** pages panel / structural edits
-- **Status:** accepted — bulk structural page actions are deferred
+- **Status:** fixed — #234
+- **Resolution (2026-11-27, #234):** `duplicatePagesFlow()` duplicates the
+  selection in project order as one undo step; every existing `PageId` and page
+  state is preserved and each copy appends with a fresh ID.
+  `deletePagesFlow()` asks one confirmation that names the count, writes one
+  recovery checkpoint and clears history once, cascading items, layer page
+  state, space links and schedule filters by `PageId`. Delete stays explicit and
+  non-undoable. `tests/pageBulk.test.ts` and `tests/pageMenu.test.ts` cover the
+  ID, history and confirmation rules.
 - **Evidence:** `PageMenuController.handleKey()` now moves the whole Pages-panel
   selection through `moveTargets()`, but `Alt+Shift+D` and `Alt+Shift+Delete`
   still pass the current `PageId` to `actions.duplicatePage` and
@@ -2042,7 +2072,16 @@ this table was written and are corrected here.
 - **Phase:** 0.25.0 phase 6 — unify Page, Layer and Markups list interactions
 - **Severity:** P3
 - **Area:** layers panel / accessibility
-- **Status:** partly resolved in 10b — depth and expansion are exposed, full tree roles are deferred
+- **Status:** fixed — #234
+- **Resolution (2026-11-27, #234):** each Layers section is an ARIA tree. A
+  `.layer-node` wrapper is the `treeitem` and owns both the visual row and the
+  expanded `role="group"`, so the group is a child of its treeitem rather than a
+  sibling. Rows carry `aria-level`, `aria-expanded`, `aria-posinset`,
+  `aria-setsize` and `aria-selected`; a roving tabindex keeps one item per tree
+  in the tab order, while the row controls stay reachable with `Tab`. The
+  `focusin` target is recorded so a re-render restores the focused layer or item
+  row. `tests/layerTreeA11y.test.ts` asserts the ownership and the single tab
+  stop.
 - **Evidence:** `src/ui/layerList.ts` renders `.layer-group` containers with
   visible kind headings, `.layer-row` elements with `tabIndex = 0` and an item
   list below each expanded layer. No `role="tree"`, `role="treeitem"`,

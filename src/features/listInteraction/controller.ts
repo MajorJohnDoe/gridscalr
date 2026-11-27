@@ -18,14 +18,13 @@ import { LiveRegion } from "./ui";
 
 /**
  * Generic drag, multi-selection and keyboard reorder controller for a vertical
- * list. A host supplies the ordered entries, the row selector and one move
+ * list. The host supplies the ordered entries, the row selector and one move
  * callback; the controller owns the transient drag state, the drop line, the
  * selection and the live-region announcement.
  *
- * The drag gesture is pointer-based (see `PointerRowDrag`), so it keeps working
- * while the desktop shell owns the operating system's drag-and-drop channel.
- * The controller never writes the project. Every move is one host action, so a
- * list keeps its own checkpoint and undo semantics.
+ * The gesture is pointer-based (see `PointerRowDrag`), so it survives a shell
+ * that owns the OS drag channel. The controller never writes the project: every
+ * move is one host action, which keeps its own checkpoint and undo semantics.
  */
 
 const KEY_COMMANDS: Record<string, ListMoveCommand> = {
@@ -51,14 +50,13 @@ export interface ListReorderOptions<E extends ListEntry> {
   rowId: (row: HTMLElement) => string | null;
   /** Ordered entries for the list the controller is bound to. */
   entries: () => readonly E[];
+  /** Mounted entries when the panel shows a window or a filtered subset. */
+  visibleEntries?: () => readonly E[];
   /** False in a read-only session or while a filter hides rows. */
   canReorder: () => boolean;
   /** Enables click selection, range selection and `is-selected` styling. */
   selectable?: boolean;
-  /**
-   * Applies one move. `changesOrder` is false for a drop that keeps the order,
-   * so a host can skip writing a history step.
-   */
+  /** Applies one move; `changesOrder` is false for a no-op drop. */
   onMove: (ids: readonly string[], insertionIndex: number, changesOrder: boolean) => void;
   /** Localized announcement for a keyboard move. */
   announce: (ids: readonly string[], outcome: MoveOutcome) => string;
@@ -68,12 +66,7 @@ export interface ListReorderOptions<E extends ListEntry> {
     ids: ReadonlySet<string>,
     insertionIndex: number,
   ) => { changesOrder: boolean; label: string | null; crossDocument: boolean };
-  /**
-   * Project index of the first rendered row when the host mounts a window or a
-   * filtered subset of its entry list. Rendered drop positions are translated
-   * by this offset before `planDrop` and `onMove`; keyboard positions are
-   * already global and are never translated.
-   */
+  /** Project index of the first rendered row for a window or filtered subset. */
   renderedOffset?: () => number;
   dropLineClass?: string;
   dropLabelClass?: string;
@@ -145,7 +138,10 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
       : event.ctrlKey || event.metaKey
         ? "toggle"
         : "replace";
-    const next = selectionAfterClick(this.options.entries(), this.selection, this.anchor, id, mode);
+    // A range is bounded by what is mounted; an off-window anchor is a click.
+    const source = mode === "range" ? this.options.visibleEntries : undefined;
+    const entries = source ? source() : this.options.entries();
+    const next = selectionAfterClick(entries, this.selection, this.anchor, id, mode);
     this.selection = next.ids;
     this.anchor = next.anchor;
     this.applySelection();
@@ -329,6 +325,9 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     }
     this.clearDragState();
     if (!plan || !ids.length) return;
+    // The moved rows are replaced by the next render; keep the grabbed row
+    // focused when it is still mounted.
+    if (plan.changesOrder) this.pendingFocus = ids[0];
     this.options.onMove(ids, plan.insertionIndex, plan.changesOrder);
   }
 

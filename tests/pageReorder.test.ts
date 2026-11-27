@@ -168,9 +168,19 @@ describe("page order math", () => {
     expect(fullListInsertionIndex([2, 5, 9], 0, 10)).toBe(1);
     expect(fullListInsertionIndex([2, 5, 9], 1, 10)).toBe(4);
     expect(fullListInsertionIndex([2, 5, 9], 2, 10)).toBe(8);
-    // Dropping below the last visible card appends to the project.
-    expect(fullListInsertionIndex([2, 5, 9], 3, 10)).toBe(10);
+    // Dropping below the last visible card lands after that page, not at the
+    // project end.
+    expect(fullListInsertionIndex([2, 5, 9], 3, 10)).toBe(9);
     expect(fullListInsertionIndex([], 0, 7)).toBe(7);
+
+    // A mid-list window: the rendered position is translated through the
+    // window offset, so a drop below the last mounted card stays in the window.
+    const windowPages = Array.from({ length: 120 }, (_value, index) => index + 501);
+    expect(fullListInsertionIndex(windowPages, 0, 1000, 500)).toBe(500);
+    expect(fullListInsertionIndex(windowPages, 60, 1000, 500)).toBe(560);
+    expect(fullListInsertionIndex(windowPages, 120, 1000, 500)).toBe(620);
+    // A non-contiguous filtered list never uses the offset.
+    expect(fullListInsertionIndex([501, 503], 2, 1000, 500)).toBe(503);
   });
 });
 
@@ -387,6 +397,70 @@ describe("pages panel controller", () => {
     // The two mounted cards are project rows 3 and 4; dropping below them lands
     // at project insertion index 4, not at the rendered index 2.
     expect(calls).toEqual([{ pageIds: ["page_3"], insertionIndex: 4 }]);
+    pageReorder.setWindowOffset(0);
+    pageReorder.reset();
+  });
+
+  it("maps an external drawing drop below the last mounted card to the window edge", () => {
+    store.setProject(withTestPageIds(createProject(defaultDocument("Plan.pdf", 300))), PATH, false);
+    document.body.innerHTML = "";
+    const scroll = document.createElement("div");
+    const list = document.createElement("div");
+    list.className = "page-list";
+    list.getBoundingClientRect = () => rect(0, 0, 100, 1300);
+    scroll.getBoundingClientRect = () => rect(0, 0, 100, 1300);
+    scroll.append(list);
+    document.body.append(scroll);
+    for (let index = 0; index < 120; index += 1) {
+      const card = document.createElement("button");
+      card.className = "page-card";
+      card.dataset.pageId = `page_${61 + index}`;
+      card.dataset.page = String(61 + index);
+      card.getBoundingClientRect = () => rect(index * 10, 0, 100, 10);
+      list.append(card);
+    }
+    pageReorder.reset();
+    pageReorder.setWindowOffset(60);
+    pageReorder.bindList(list, scroll);
+    // Below the last mounted card (pages 61–180) inserts at project index 180,
+    // not at the end of a longer project.
+    expect(pageReorder.showExternalDrop(2000)).toBe(180);
+    pageReorder.setWindowOffset(0);
+    pageReorder.reset();
+  });
+
+  it("maps an internal drop at a mid-list window edge to the window edge", () => {
+    store.setProject(withTestPageIds(createProject(defaultDocument("Plan.pdf", 300))), PATH, false);
+    document.body.innerHTML = "";
+    const scroll = document.createElement("div");
+    const list = document.createElement("div");
+    list.className = "page-list";
+    list.getBoundingClientRect = () => rect(0, 0, 100, 1300);
+    scroll.getBoundingClientRect = () => rect(0, 0, 100, 1300);
+    scroll.append(list);
+    document.body.append(scroll);
+    const cards: HTMLElement[] = [];
+    for (let index = 0; index < 120; index += 1) {
+      const card = document.createElement("button");
+      card.className = "page-card";
+      card.dataset.pageId = `page_${61 + index}`;
+      card.dataset.page = String(61 + index);
+      card.getBoundingClientRect = () => rect(index * 10, 0, 100, 10);
+      list.append(card);
+      cards.push(card);
+    }
+    const calls: ReorderCall[] = [];
+    pageReorder.reset();
+    pageReorder.setActions({
+      reorder: (pageIds, insertionIndex) => calls.push({ pageIds: [...pageIds], insertionIndex }),
+      goToPage: () => undefined,
+    });
+    pageReorder.setWindowOffset(60);
+    pageReorder.bindList(list, scroll);
+    for (const card of cards) pageReorder.decorateCard(card, card.dataset.pageId ?? "");
+    const held = pressAndMove({ target: cards[0], x: 10, y: 5 }, { x: 10, y: 1250 });
+    held.release({ x: 10, y: 1250 });
+    expect(calls).toEqual([{ pageIds: ["page_61"], insertionIndex: 180 }]);
     pageReorder.setWindowOffset(0);
     pageReorder.reset();
   });

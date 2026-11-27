@@ -9,6 +9,12 @@ export interface PageWindowControlsOptions {
   total: number;
   /** Display number of the page the window was anchored on, when inside it. */
   current?: number;
+  /**
+   * True when a status filter narrows the list. The range and the jump field
+   * then count matching pages, not display page numbers, so the label and the
+   * target never disagree.
+   */
+  filtered?: boolean;
   onNavigate: (action: PageWindowAction, page?: number) => void;
 }
 
@@ -31,7 +37,7 @@ export function pageWindowControls(options: PageWindowControlsOptions): HTMLElem
   const range = el(
     "span",
     "page-window-range",
-    t("page.windowRange", {
+    t(options.filtered ? "page.windowRangeFiltered" : "page.windowRange", {
       start: options.start + 1,
       end: options.end,
       total: options.total,
@@ -50,7 +56,10 @@ export function pageWindowControls(options: PageWindowControlsOptions): HTMLElem
     options.current <= options.end;
   const initialPage = inWindow ? options.current! : options.start + 1;
   input.value = String(initialPage);
-  input.setAttribute("aria-label", t("page.windowJumpAria"));
+  input.setAttribute(
+    "aria-label",
+    t(options.filtered ? "page.windowJumpFilteredAria" : "page.windowJumpAria"),
+  );
   input.dataset.pageWindowAction = "jump";
   const go = () => {
     const page = Math.round(Number(input.value));

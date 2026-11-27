@@ -4,6 +4,7 @@ import { findItem } from "../model/layers";
 import type { MarkupItem, PageId, PageSize } from "../model/types";
 import { store } from "../state/store";
 import { recordStructuralCheckpoint } from "../features/sessionRecovery";
+import { pageWindowState } from "../features/pageWindow";
 import { openDocument } from "./documentImport";
 import { sheetBytes } from "./sheetFlows";
 import { confirmDialog, targetIdentity } from "../ui/dialogs";
@@ -113,6 +114,13 @@ export async function duplicatePageFlow(host: PageFlowHost, pageId: PageId): Pro
     (documentId, proxy, pageMap) => host.addDocumentToRenderer(documentId, proxy, pageMap),
     knownDocuments,
   );
+  // The copy is appended, so it can be outside the mounted Pages window. Ask
+  // the panel to focus the new card when that tab is the one on screen; the
+  // extra view notification repaints the panel so the request is consumed.
+  if (store.ui.leftTab === "pages") {
+    pageWindowState.requestFocus(result.pageId);
+    store.emit("project");
+  }
   await host.enqueuePageSize(result.pageNumber);
   host.fitPage();
   host.invalidate();
@@ -224,6 +232,13 @@ export async function duplicatePagesFlow(
     (documentId, proxy, pageMap) => host.addDocumentToRenderer(documentId, proxy, pageMap),
     knownDocuments,
   );
+  // The current page is the last copy; the window follows it and the panel
+  // focuses that card so the copied block is visible and reachable.
+  const lastCopy = result.pageIds[result.pageIds.length - 1];
+  if (lastCopy && store.ui.leftTab === "pages") {
+    pageWindowState.requestFocus(lastCopy);
+    store.emit("project");
+  }
   await host.enqueuePageSize(result.lastPageNumber);
   host.fitPage();
   host.invalidate();

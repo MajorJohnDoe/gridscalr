@@ -45,7 +45,9 @@ export const layerTreeController = new LayerTreeController({
     focusLayer(layerId);
   },
   requestRender: () => requestRender?.(),
-  rowSelector: ".layer-row",
+  // The treeitem wrapper, not the visual row: it owns the expanded item group,
+  // so the pointer gesture and the drop spans cover the whole subtree.
+  rowSelector: ".layer-node",
 });
 
 export function bindLayerTree(list: HTMLElement, scroll: HTMLElement, refresh: () => void): void {

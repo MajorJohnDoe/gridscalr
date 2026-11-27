@@ -2,6 +2,7 @@ import { t } from "../../i18n";
 import type { PageId } from "../../model/types";
 import { store } from "../../state/store";
 import { ListReorderController, type MoveOutcome } from "../listInteraction";
+import { pageWindowState } from "../pageWindow";
 import { fullListInsertionIndex, planDrop, type PageReorderEntry } from "./model";
 
 /**
@@ -46,13 +47,26 @@ export class PageReorderController {
   private actions: PageReorderActions | null = null;
   /** Project index of the first mounted card while the panel shows a window. */
   private windowOffset = 0;
+  /** Pages the panel currently mounts; null means the full project list. */
+  private mountedIds: ReadonlySet<PageId> | null = null;
   private readonly drag = new ListReorderController<PageReorderEntry>({
     rowSelector: ".page-card",
     rowId: (row) => row.dataset.pageId ?? null,
     entries: projectEntries,
+    // Shift-click ranges stay inside the mounted window, so a confirmation
+    // never acts on pages that were not on screen.
+    visibleEntries: () =>
+      this.mountedIds
+        ? projectEntries().filter((entry) => this.mountedIds!.has(entry.id))
+        : projectEntries(),
     canReorder: () => !store.readOnly,
     selectable: true,
-    onMove: (ids, insertionIndex) => this.actions?.reorder(ids as PageId[], insertionIndex),
+    onMove: (ids, insertionIndex, changesOrder) => {
+      // A moved block outside the window asks the next render to reveal it, so
+      // a keyboard move or drop at the window edge stays visible and focused.
+      if (changesOrder && ids[0]) pageWindowState.reveal(ids[0]);
+      this.actions?.reorder(ids as PageId[], insertionIndex);
+    },
     announce: (_ids, outcome) => announceMove(outcome),
     planDrop: (entries, selected, insertionIndex) => {
       const plan = planDrop(entries, selected, insertionIndex);
@@ -87,6 +101,11 @@ export class PageReorderController {
     this.windowOffset = Math.max(0, Math.round(offset));
   }
 
+  /** Sets the pages the panel currently mounts; used to clamp range selection. */
+  setVisibleIds(pageIds: readonly PageId[]): void {
+    this.mountedIds = new Set(pageIds);
+  }
+
   /** Applies selection styling and the keyboard hint to one card. */
   decorateCard(card: HTMLElement, pageId: PageId): void {
     this.drag.decorate(card, pageId);
@@ -119,6 +138,8 @@ export class PageReorderController {
   /** Clears selection and drag state; used when the panel starts over. */
   reset(): void {
     this.drag.reset();
+    this.mountedIds = null;
+    this.windowOffset = 0;
   }
 
   /**
@@ -128,12 +149,18 @@ export class PageReorderController {
    */
   showExternalDrop(clientY: number): number {
     const index = this.drag.previewExternalDrop(clientY, (renderedIndex, rows) => {
-      // A status filter renders a subset of the pages, so the rendered index is
-      // translated back to a project insertion index before anything is added.
+      // The rendered cards are a window of the page list or a filtered subset.
+      // The window offset maps the rendered position back to the project list;
+      // the page numbers pick up a non-contiguous filtered list.
       const visiblePages = rows
         .map((row) => Number(row.dataset.page ?? 0))
         .filter((page) => Number.isFinite(page) && page > 0);
-      return fullListInsertionIndex(visiblePages, renderedIndex, store.project?.pages.length ?? 0);
+      return fullListInsertionIndex(
+        visiblePages,
+        renderedIndex,
+        store.project?.pages.length ?? 0,
+        this.windowOffset,
+      );
     });
     return index ?? 0;
   }

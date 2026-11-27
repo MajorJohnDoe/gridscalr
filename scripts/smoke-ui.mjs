@@ -657,7 +657,7 @@ try {
   // A second layer in the same kind group makes the keyboard move observable.
   await page.getByRole("button", { name: "New measurement layer" }).click();
   await page.waitForTimeout(200);
-  const measureRows = page.locator('.layer-row[data-layer-kind="measure"]');
+  const measureRows = page.locator('.layer-node[data-layer-kind="measure"]');
   assert.equal(await measureRows.count(), 2, "the demo should now have two measurement layers");
   const measureIdsBefore = await measureRows.evaluateAll((nodes) =>
     nodes.map((node) => node.dataset.layerId),
@@ -696,7 +696,7 @@ try {
   await page.mouse.move(firstRowBox.x + firstRowBox.width / 2, dropTargetY, { steps: 10 });
   // The feedback is asserted during the gesture, not only by the result: a
   // visible line at the drop boundary plus a held source row.
-  const layerFeedback = await readDropFeedback(page, ".layer-row");
+  const layerFeedback = await readDropFeedback(page, ".layer-node");
   assert.equal(layerFeedback.present, true, "a layer drag should create the insertion line");
   assert.equal(layerFeedback.hidden, false, "the insertion line should be visible during a drag");
   assert.equal(layerFeedback.inBody, true, "the line should be a viewport overlay");
@@ -717,7 +717,7 @@ try {
   // The line follows the pointer: a frozen line at the grab position was the
   // reported bug.
   await page.mouse.move(firstRowBox.x + firstRowBox.width / 2, firstRowBox.y + 1, { steps: 6 });
-  const movedFeedback = await readDropFeedback(page, ".layer-row");
+  const movedFeedback = await readDropFeedback(page, ".layer-node");
   assert.ok(
     (movedFeedback.top ?? 0) < (layerFeedback.top ?? 0) - 4,
     `the line should follow the pointer (${movedFeedback.top} vs ${layerFeedback.top})`,
@@ -726,7 +726,7 @@ try {
   await page.mouse.move(firstRowBox.x + firstRowBox.width / 2, dropTargetY, { steps: 6 });
   await page.mouse.up();
   await page.waitForTimeout(250);
-  const settledFeedback = await readDropFeedback(page, ".layer-row");
+  const settledFeedback = await readDropFeedback(page, ".layer-node");
   assert.equal(settledFeedback.hidden, true, "the line should clear when the drag ends");
   assert.equal(settledFeedback.held, 0, "no row should stay held after the drop");
   const dragIdsAfter = await measureRows.evaluateAll((nodes) =>

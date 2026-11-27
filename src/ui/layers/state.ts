@@ -17,6 +17,8 @@ export const layerView = {
   focusSearch: false,
   /** Row to focus after a re-render, for a tree disclosure or a move. */
   focusLayerId: null as string | null,
+  /** Item row inside `focusLayerId` to restore after a re-render. */
+  focusItemId: null as string | null,
   /** Last plain click, used for the inline-rename double click. */
   lastClick: null as { id: string; time: number } | null,
 };
@@ -51,12 +53,15 @@ export function focusLayer(layerId: string): void {
 export function takeLayerFocus(): {
   search: boolean;
   layerId: string | null;
+  itemId: string | null;
 } {
   const focus = {
     search: layerView.focusSearch,
     layerId: layerView.focusLayerId,
+    itemId: layerView.focusItemId,
   };
   layerView.focusSearch = false;
   layerView.focusLayerId = null;
+  layerView.focusItemId = null;
   return focus;
 }

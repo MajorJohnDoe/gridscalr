@@ -129,27 +129,34 @@ export function renderLayerRow(
   const items = searching && searchHits.length ? searchHits : pageItems;
   const expanded = layerView.expanded.has(layer.id) || (searching && searchHits.length > 0);
   const expandable = treeRow.hasChildren || items.length > 0;
+  // The treeitem owns the row and its child group, so an expanded layer's
+  // `role="group"` is nested inside its treeitem instead of sitting beside it.
+  const node = el("div", "layer-node");
+  node.dataset.layerId = layer.id;
+  node.dataset.layerKind = layer.kind;
+  node.dataset.layerDepth = String(treeRow.depth);
+  node.style.setProperty("--layer-depth", String(treeRow.depth));
+  node.tabIndex = tabStop ? 0 : -1;
+  node.setAttribute("role", "treeitem");
+  node.setAttribute("aria-level", String(treeRow.depth + 1));
+  node.setAttribute("aria-selected", String(layerTreeController.selectionIds().includes(layer.id)));
+  if (position) {
+    node.setAttribute("aria-posinset", String(position.posInSet));
+    node.setAttribute("aria-setsize", String(position.setSize));
+  }
+  node.classList.toggle("is-active", layer.id === project.activeLayerId);
+  node.classList.toggle("is-hidden", !treeRow.visible);
+  node.classList.toggle("is-inherited-hidden", Boolean(treeRow.inheritedHiddenBy));
+  node.classList.toggle("is-inherited-locked", Boolean(treeRow.inheritedLockedBy));
+  node.classList.toggle("is-group", treeRow.hasChildren);
+  node.setAttribute("aria-keyshortcuts", LAYER_KEYSHORTCUTS);
+  node.setAttribute("aria-describedby", `${LAYER_ORDER_HINT_ID} ${LAYER_MENU_HINT_ID}`);
+  if (expandable) node.setAttribute("aria-expanded", String(expanded));
   const row = el("div", "layer-row");
   row.dataset.layerId = layer.id;
   row.dataset.layerKind = layer.kind;
   row.dataset.layerDepth = String(treeRow.depth);
   row.style.setProperty("--layer-depth", String(treeRow.depth));
-  row.tabIndex = tabStop ? 0 : -1;
-  row.setAttribute("role", "treeitem");
-  row.setAttribute("aria-level", String(treeRow.depth + 1));
-  row.setAttribute("aria-selected", String(layerTreeController.selectionIds().includes(layer.id)));
-  if (position) {
-    row.setAttribute("aria-posinset", String(position.posInSet));
-    row.setAttribute("aria-setsize", String(position.setSize));
-  }
-  row.classList.toggle("is-active", layer.id === project.activeLayerId);
-  row.classList.toggle("is-hidden", !treeRow.visible);
-  row.classList.toggle("is-inherited-hidden", Boolean(treeRow.inheritedHiddenBy));
-  row.classList.toggle("is-inherited-locked", Boolean(treeRow.inheritedLockedBy));
-  row.classList.toggle("is-group", treeRow.hasChildren);
-  row.setAttribute("aria-keyshortcuts", LAYER_KEYSHORTCUTS);
-  row.setAttribute("aria-describedby", `${LAYER_ORDER_HINT_ID} ${LAYER_MENU_HINT_ID}`);
-  if (expandable) row.setAttribute("aria-expanded", String(expanded));
 
   const panelId = `layer-items-${layer.id}`;
   const label = disclosureLabel(treeRow, expanded, items.length);
@@ -278,7 +285,7 @@ export function renderLayerRow(
     row.append(folder);
   }
   row.append(content, count, actionsWrap);
-  layerTreeController.decorate(row, layer.id);
+  layerTreeController.decorate(node, layer.id);
 
   const activate = () => {
     if (store.readOnly) return;
@@ -294,7 +301,7 @@ export function renderLayerRow(
       "warning",
     );
   };
-  row.addEventListener("click", (event) => {
+  node.addEventListener("click", (event) => {
     const target = event.target as HTMLElement | null;
     if (target?.closest("button, input, select, [role='button']")) return;
     const now = Date.now();
@@ -321,13 +328,13 @@ export function renderLayerRow(
       actions.refresh();
     }
   });
-  row.addEventListener("contextmenu", (event) => {
+  node.addEventListener("contextmenu", (event) => {
     event.preventDefault();
     event.stopPropagation();
     showLayerMenuAt(event.clientX, event.clientY, layer.id, actions);
   });
-  row.addEventListener("keydown", (event) => {
-    if (event.target !== row) return;
+  node.addEventListener("keydown", (event) => {
+    if (event.target !== node) return;
     if (event.altKey || event.key === "ArrowLeft" || event.key === "ArrowRight") {
       layerTreeController.handleKeyDown(event, layer.id);
       return;
@@ -349,8 +356,9 @@ export function renderLayerRow(
       activate();
     }
   });
-  group.append(row);
+  node.append(row);
   if (expanded && items.length) {
-    group.append(buildLayerItems(project, layer, actions, items, treeRow.depth + 2));
+    node.append(buildLayerItems(project, layer, actions, items, treeRow.depth + 2));
   }
+  group.append(node);
 }

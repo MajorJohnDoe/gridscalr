@@ -23,6 +23,7 @@ const FOUNDATION_FEATURES = [
   "src/features/statusOverview",
   "src/features/conflictedCopies",
   "src/features/pageReorder",
+  "src/features/pageWindow",
   "src/features/pageFileDrop",
   "src/features/pageStatus",
   "src/features/pageMenu",

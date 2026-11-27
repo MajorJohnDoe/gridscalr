@@ -60,7 +60,7 @@
  * is measured from the row rectangles while the drag is running.
  */
 .page-card.is-dragging,
-.layer-row.is-dragging,
+.layer-node.is-dragging > .layer-row,
 .schedules-builder-column.is-dragging {
   opacity: 0.6;
   border-color: var(--jade-bright);

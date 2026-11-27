@@ -120,6 +120,10 @@ export function buildLayerItems(
     }
 
     row.addEventListener("click", (event) => {
+      // The click may rebuild the tree; keep the item as the focus target so
+      // the replacement row is focused instead of falling back to the body.
+      layerView.focusLayerId = layer.id;
+      layerView.focusItemId = item.id;
       if (event.shiftKey) {
         const entries = renderedItemEntries();
         const current = store.ui.selection.map((entry) => selectionKey(entry));

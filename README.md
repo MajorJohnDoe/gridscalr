@@ -242,8 +242,8 @@ The **Pages**, **Layers** and **Markups** lists share one interaction model:
 | Open or close the focused group | `ArrowRight` / `ArrowLeft` |
 | Insert a page before / after the current page | `Alt+PageUp` / `Alt+PageDown` |
 | Move the current page to another position | `Alt+Shift+M` |
-| Duplicate the current page | `Alt+Shift+D` |
-| Delete the current page | `Alt+Shift+Delete` |
+| Duplicate the selected pages | `Alt+Shift+D` |
+| Delete the selected pages | `Alt+Shift+Delete` |
 
 ## Screenshots
 

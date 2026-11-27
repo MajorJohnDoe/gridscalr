@@ -37,4 +37,5 @@ export type { LayerDropFeedback, LayerDropPreview, LayerRowSpan } from "./dropPr
 export { LayerTreeController } from "./controller";
 export type { LayerTreeControllerOptions } from "./controller";
 export { bindRovingTree, ensureTreeTabStop } from "./roving";
+export type { LayerRovingFocus } from "./roving";
 export type { LayerEffectiveState, LayerHierarchyIssue } from "../../model/layerHierarchy";

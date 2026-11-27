@@ -108,7 +108,7 @@ describe("Layers tree accessibility", () => {
     ).toHaveLength(1);
   });
 
-  it("wraps an expanded layer's items in a group with level and position", () => {
+  it("wraps an expanded layer's items in a group owned by its treeitem", () => {
     const project = projectWithTree();
     store.setProject(project, "/tmp/layer-a11y.gridscalr", false);
     const { refs, actions } = mount();
@@ -121,5 +121,40 @@ describe("Layers tree accessibility", () => {
     expect(itemRow?.getAttribute("aria-posinset")).toBe("1");
     expect(itemRow?.getAttribute("aria-setsize")).toBe("1");
     expect(itemRow?.tabIndex).toBe(-1);
+
+    // The group is a child of the layer's treeitem, not a sibling of it, which
+    // is the ownership an ARIA tree requires.
+    const parent = refs.dockBody.querySelector<HTMLElement>(
+      '[role="treeitem"][data-layer-id="layer_measure"]',
+    )!;
+    expect(parent.getAttribute("aria-expanded")).toBe("true");
+    expect(group?.parentElement).toBe(parent);
+    expect(group?.closest('[role="treeitem"]')).toBe(parent);
+    expect(parent.querySelector(":scope > .layer-row")).not.toBeNull();
+    // The tree's own children are treeitems; the group is not a sibling.
+    const tree = parent.parentElement!;
+    expect(tree.getAttribute("role")).toBe("tree");
+    expect([...tree.children].every((child) => child.getAttribute("role") === "treeitem")).toBe(
+      true,
+    );
+  });
+
+  it("restores focus to the focused item row after a re-render", () => {
+    const project = projectWithTree();
+    store.setProject(project, "/tmp/layer-a11y.gridscalr", false);
+    const { refs, actions } = mount();
+    layerView.expanded = new Set(["layer_measure"]);
+    renderLayers(refs, actions);
+    const itemRow = refs.dockBody.querySelector<HTMLElement>(".layer-item-row")!;
+    itemRow.focus();
+    expect(document.activeElement).toBe(itemRow);
+
+    // The shell rebuilds the panel; the replacement item row takes focus back
+    // instead of leaving it on the body.
+    refs.dockBody.replaceChildren();
+    renderLayers(refs, actions);
+    const restored = refs.dockBody.querySelector<HTMLElement>(".layer-item-row")!;
+    expect(restored).not.toBe(itemRow);
+    expect(document.activeElement).toBe(restored);
   });
 });

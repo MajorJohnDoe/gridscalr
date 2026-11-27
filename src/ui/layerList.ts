@@ -177,7 +177,10 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
     }
     section.append(body, sectionFoot(group.kind, actions));
     tree.append(section);
-    bindRovingTree(body, sectionTabStop);
+    bindRovingTree(body, sectionTabStop, (target) => {
+      layerView.focusLayerId = target?.layerId ?? null;
+      layerView.focusItemId = target?.itemId ?? null;
+    });
   }
   refs.dockBody.append(tree);
   bindLayerTree(tree, refs.dockBody, actions.refresh);
@@ -200,9 +203,15 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       search.setSelectionRange(search.value.length, search.value.length);
     }
   }
-  if (focus.layerId) {
-    refs.dockBody
-      .querySelector<HTMLElement>(`.layer-row[data-layer-id="${CSS.escape(focus.layerId)}"]`)
-      ?.focus({ preventScroll: true });
+  if (!focus.search && focus.layerId) {
+    const layerId = CSS.escape(focus.layerId);
+    const target = focus.itemId
+      ? refs.dockBody.querySelector<HTMLElement>(
+          `.layer-item-row[data-layer-id="${layerId}"][data-item-id="${CSS.escape(focus.itemId)}"]`,
+        )
+      : null;
+    const row =
+      target ?? refs.dockBody.querySelector<HTMLElement>(`.layer-node[data-layer-id="${layerId}"]`);
+    row?.focus({ preventScroll: true });
   }
 }

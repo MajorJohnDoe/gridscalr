@@ -392,11 +392,17 @@ on each pull request.
 
 - **F-075** — `src/features/pageWindow/` adds a pure window rule and a
   session-only controller. The Pages panel mounts at most 120 filtered cards
-  around the current page or the first selected page and shows a range bar with
-  Previous, Next and a page-number jump. `ListReorderController` gained a
-  `renderedOffset` so a drag inside the window is translated to the full project
-  insertion index while the drop line stays on the mounted rows. Filters still
-  narrow first; no second page-list widget and no page identity change.
+  around the current page and shows a range bar with Previous, Next and a
+  page-number jump. The window follows the current page whenever it falls
+  outside the slice; Previous/Next pin the range until the drawing changes, and
+  a moved block is revealed. `ListReorderController` gained a `renderedOffset`
+  so a drag inside the window is translated to the full project insertion index
+  while the drop line stays on the mounted rows, and a `visibleEntries` option
+  clamps a Shift range to the mounted cards. The external drawing drop uses the
+  same window offset, so a drop below the last mounted card lands at the window
+  edge instead of the project end. Filters still narrow first; the range bar and
+  jump field then count matching pages. No second page-list widget and no page
+  identity change.
 - **F-076** — `prepareImportCopy()` writes and verifies a managed copy before the
   drop-import commits, and `applyImportManagedCopy()` applies it inside the same
   `store.mutate` as `commitProjectImport()`. One Undo removes the imported pages
@@ -411,18 +417,21 @@ on each pull request.
   existing page cascade for every selected page, writes one recovery checkpoint
   and clears history once. The page card menu and the keyboard use the bulk
   actions when the selection has more than one page.
-- **F-082** — each Layers section is an ARIA tree. Rows are `treeitem`s with
+- **F-082** — each Layers section is an ARIA tree. A `.layer-node` wrapper is
+  the `treeitem` and owns both the visual row and the expanded `group`, so the
+  group is a child of its treeitem rather than a sibling. Rows carry
   `aria-level`, `aria-expanded`, `aria-posinset`/`aria-setsize` and
-  `aria-selected`; expanded items sit in a `group` and are treeitems one level
-  deeper. One row per tree is in the tab order and ArrowUp/ArrowDown/Home/End
-  move the roving tab stop. Plain Left/Right and the Alt nesting keys are
-  unchanged.
+  `aria-selected`; expanded items sit in that group and are treeitems one level
+  deeper. One treeitem per tree is in the tab order and ArrowUp/ArrowDown/Home/
+  End move the roving tab stop; the row's own controls stay separate `Tab`
+  stops. The `focusin` target is recorded so a render restores the focused layer
+  or item row. Plain Left/Right and the Alt nesting keys are unchanged.
 
 ### Modules
 
 - New: `src/features/pageWindow/{index,model,controller,ui}.ts`,
   `src/features/layerTree/roving.ts`, `src/features/sourceStorage/importCopy.ts`,
-  `tests/{pageWindow,pageBulk,importManagedCopy,layerTreeA11y}.test.ts`.
+  `tests/{pageWindow,pageList,pageBulk,importManagedCopy,droppedDrawingImport,layerTreeA11y}.test.ts`.
 - Changed: `src/features/{pageReorder,pageMenu,listInteraction,layerTree,sourceStorage}`,
   `src/model/pageList.ts`, `src/state/{store,projectPages}.ts`,
   `src/app/{pageFlows,pageDropSetup,droppedDrawingFlows}.ts`,
@@ -453,6 +462,15 @@ on each pull request.
 - F-075, F-076, F-079, F-080 and F-082 fixed; the open register was already
   empty apart from F-150, so no row was removed.
 - No new findings.
+- **Review fixes (2026-11-27):** the window follows the current page instead of
+  a stale selection anchor, reveals a moved block and focuses the copy a
+  duplicate created; Shift ranges are clamped to the mounted cards; the external
+  drawing drop is mapped through the window offset; the layer treeitem owns its
+  group; the roving-claim text matches the real tab stops; focus is restored to
+  the focused layer or item row. Covered by `tests/pageList.test.ts`,
+  `tests/pageWindow.test.ts`, `tests/pageReorder.test.ts`,
+  `tests/listInteraction.test.ts`, `tests/droppedDrawingImport.test.ts` and
+  `tests/layerTreeA11y.test.ts`.
 
 ### Checks
 
@@ -460,7 +478,7 @@ on each pull request.
   `check:modules`, `check:cycles`, `check:security`, `check:actions`,
   `check:dependencies`, `check:docs`, `format:check`, `lint`, `check:i18n`,
   `check:themes`, `npx tsc --noEmit` — pass.
-- Full `npx vitest run` — 216 files, 2295 tests pass.
+- Full `npx vitest run` — 218 files, 2309 tests pass (after the review fixes).
 - `npm run test:robustness` — 5 files, 104 tests pass.
 - `test:ui`, `test:import`, `test:touch`, `test:a11y` (138 checks) and
   `test:visual` — pass.
