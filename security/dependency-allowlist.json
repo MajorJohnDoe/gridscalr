@@ -7,10 +7,10 @@
       "package": "chrono",
       "advisory": "RUSTSEC-2026-0543",
       "kind": "unmaintained",
-      "reason": "Reached only through trash 5.3.0, which moves files to the OS trash and uses chrono for its own timestamp handling; GridScalr does not use chrono for project date handling. RUSTSEC-2026-0543 is an informational unmaintained notice with no known vulnerability and no patched release, and every chrono version is affected, so no upgrade clears it. Acceptance is temporary until the trash dependency path is replaced in #306.",
-      "reviewedAt": "2026-11-17",
-      "reviewBy": "2027-02-15",
-      "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/306"
+      "reason": "No longer compiled: trash 5.4.0 replaced chrono with jiff, so `cargo tree -e features -i chrono` is empty. chrono remains only as an optional lock entry of serde_with 3.24.0, reached through tauri-utils 2.10.2, and Cargo.lock is feature-independent, so cargo audit still reports RUSTSEC-2026-0543. GridScalr does not use chrono for project date handling. RUSTSEC-2026-0543 is an informational unmaintained notice with no known vulnerability and no patched release, and every chrono version is affected, so no upgrade clears it. The entry stays until upstream serde_with/tauri-utils drops the optional chrono in #390.",
+      "reviewedAt": "2026-11-27",
+      "reviewBy": "2027-08-15",
+      "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/390"
     },
     {
       "ecosystem": "cargo",

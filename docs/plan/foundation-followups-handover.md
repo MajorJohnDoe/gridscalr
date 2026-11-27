@@ -308,3 +308,64 @@ on each pull request.
 ### Next
 
 - Phase 4, [#306](https://github.com/MajorJohnDoe/gridscalr/issues/306).
+
+## Phase 4 — trash 5.4.0 removes the compiled chrono path (#306)
+
+- Issue: [#306](https://github.com/MajorJohnDoe/gridscalr/issues/306)
+- PR: opened against `main` from `chore/trash-5-4`; the head SHA is recorded on
+  the pull request
+- Commit: the PR head that carries this entry
+- Schema: unchanged (28)
+
+### Completed
+
+- Bumped `trash` 5.3.0 → 5.4.0 in `src-tauri/Cargo.toml` and committed the
+  resulting `src-tauri/Cargo.lock`. `trash` now uses `jiff` and
+  `cargo tree -e features -i chrono` is empty, so chrono left the build graph.
+- `chrono 0.4.45` remains in `Cargo.lock` only as an optional entry of
+  `serde_with 3.24.0` through `tauri-utils 2.10.2`. The lockfile is
+  feature-independent, so `cargo audit` still reports RUSTSEC-2026-0543 and the
+  allowlist entry cannot be removed yet.
+- Kept the chrono allowlist entry and corrected it: the reason names the
+  `serde_with`/`tauri-utils` optional lock path, states that `trash 5.4.0`
+  removed the compiled path and that the lockfile is feature-independent;
+  `reviewedAt` is 2026-11-27, `reviewBy` is 2027-08-15 and `issue` points at
+  [#390](https://github.com/MajorJohnDoe/gridscalr/issues/390).
+- Updated `docs/security-policy.md` with a chrono bullet and the separate
+  review dates (glib and GTK/zbus 2027-02-15, chrono 2027-08-15).
+- The `trash::delete(path)` call site in `src-tauri/src/source_cleanup.rs` is
+  unchanged; 5.4.0 has no API change for it.
+
+### Modules
+
+- `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`,
+  `security/dependency-allowlist.json`, `docs/security-policy.md`.
+
+### Decisions
+
+- The allowlist entry stays for the optional `serde_with` lock path even though
+  nothing compiles chrono; #390 owns its removal when upstream drops the
+  optional dependency.
+- No change to the dependency gate, no new exception, no `[patch.crates-io]`,
+  and no schema or app-version change.
+
+### Findings
+
+- No new findings. The remaining optional chrono lock entry is tracked by #390,
+  an upstream dependency decision, so it does not get a foundation-findings row.
+
+### Checks
+
+- `cargo fmt --check`, `cargo check` and `cargo test --lib` (144 passed) with
+  `--manifest-path src-tauri/Cargo.toml` — pass.
+- `npm run tauri build -- --no-bundle` — pass; release shell built with
+  `trash 5.4.0` and `jiff 1.0.3`.
+- `npm run check:dependencies` — PASS with six accepted cargo findings; chrono
+  accepted until 2027-08-15.
+- `check:versions`, `check:file-budgets`, `check:modules`, `check:security`,
+  `check:docs`, `format:check` — pass.
+- Left to CI: the desktop matrix and the remaining suites.
+
+### Next
+
+- Phase 5, [#234](https://github.com/MajorJohnDoe/gridscalr/issues/234).

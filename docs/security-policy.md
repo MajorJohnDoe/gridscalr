@@ -256,7 +256,7 @@ not a clean result. Re-run the job, or supply cached reports with
 `--npm-report` and `--cargo-report`; the same threshold and allowlist rules
 apply.
 
-### Current position (2026-11-15)
+### Current position (2026-11-27)
 
 - `minimatch` (GHSA-g3hv-75wg-m249) is fixed by a scoped `overrides` entry in
   `package.json`. It was a development-only glob denial of service through
@@ -278,8 +278,17 @@ apply.
   `zvariant_derive` are accepted with the same review date. They have no known
   vulnerability and arrive through the GTK build and the Linux single-instance
   channel.
-- Every entry is due for review on 2027-02-15. The gate fails after that date
-  until the list is renewed or the advisories are fixed.
+- `chrono` (RUSTSEC-2026-0543) is **accepted, not fixed**, but it is no longer
+  compiled. `trash 5.4.0` replaced chrono with `jiff`, so
+  `cargo tree -e features -i chrono` is empty. chrono remains in `Cargo.lock`
+  only as an optional entry of `serde_with 3.24.0` through `tauri-utils 2.10.2`,
+  and the lockfile is feature-independent, so `cargo audit` still reports the
+  informational unmaintained notice. The entry is due for review on 2027-08-15
+  and is removed by [#390](https://github.com/MajorJohnDoe/gridscalr/issues/390)
+  when upstream drops the optional dependency.
+- The glib and GTK/zbus entries are due for review on 2027-02-15; the chrono
+  entry is due on 2027-08-15. The gate fails after each date until the list is
+  renewed or the advisories are fixed.
 
 ## Pinned GitHub Actions
 
