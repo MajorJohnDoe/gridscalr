@@ -380,3 +380,96 @@ on each pull request.
 ### Next
 
 - Phase 5, [#234](https://github.com/MajorJohnDoe/gridscalr/issues/234).
+
+## Phase 5 — page workspace follow-ups (F-075/F-076/F-079/F-080/F-082)
+
+- Issue: [#234](https://github.com/MajorJohnDoe/gridscalr/issues/234)
+- PR: [#393](https://github.com/MajorJohnDoe/gridscalr/pull/393)
+- Commit: `70c9373` (implementation); this handover is updated in the same PR
+- Schema: unchanged (28)
+
+### Completed
+
+- **F-075** — `src/features/pageWindow/` adds a pure window rule and a
+  session-only controller. The Pages panel mounts at most 120 filtered cards
+  around the current page or the first selected page and shows a range bar with
+  Previous, Next and a page-number jump. `ListReorderController` gained a
+  `renderedOffset` so a drag inside the window is translated to the full project
+  insertion index while the drop line stays on the mounted rows. Filters still
+  narrow first; no second page-list widget and no page identity change.
+- **F-076** — `prepareImportCopy()` writes and verifies a managed copy before the
+  drop-import commits, and `applyImportManagedCopy()` applies it inside the same
+  `store.mutate` as `commitProjectImport()`. One Undo removes the imported pages
+  and the managed document reference. The copied file remains on disk and is
+  listed by the doctor's unused-copy cleanup; documented in `docs/limitations.md`.
+- **F-079** — `pageEditTargets()` reads the Pages-panel selection and falls back
+  to the current page only when nothing is selected. Insert uses the first or
+  last selected page; move, duplicate and delete use the whole selection.
+- **F-080** — `duplicatePages()` appends copies in project order through one
+  `store.duplicatePages()` call, which is one undo step and preserves every
+  existing `PageId`, page state and layer membership. `deletePages()` applies the
+  existing page cascade for every selected page, writes one recovery checkpoint
+  and clears history once. The page card menu and the keyboard use the bulk
+  actions when the selection has more than one page.
+- **F-082** — each Layers section is an ARIA tree. Rows are `treeitem`s with
+  `aria-level`, `aria-expanded`, `aria-posinset`/`aria-setsize` and
+  `aria-selected`; expanded items sit in a `group` and are treeitems one level
+  deeper. One row per tree is in the tab order and ArrowUp/ArrowDown/Home/End
+  move the roving tab stop. Plain Left/Right and the Alt nesting keys are
+  unchanged.
+
+### Modules
+
+- New: `src/features/pageWindow/{index,model,controller,ui}.ts`,
+  `src/features/layerTree/roving.ts`, `src/features/sourceStorage/importCopy.ts`,
+  `tests/{pageWindow,pageBulk,importManagedCopy,layerTreeA11y}.test.ts`.
+- Changed: `src/features/{pageReorder,pageMenu,listInteraction,layerTree,sourceStorage}`,
+  `src/model/pageList.ts`, `src/state/{store,projectPages}.ts`,
+  `src/app/{pageFlows,pageDropSetup,droppedDrawingFlows}.ts`,
+  `src/ui/{pageList,duplicatePageDialog,panels,layerList,layers/*}`,
+  `src/i18n/locales/*.json`, `src/styles/panels.css`,
+  `docs/{user-guide,limitations,architecture,testing}.md`,
+  `docs/adr/0011-page-list-and-source-replacement.md`, `AGENTS.md`.
+
+### Decisions
+
+- The Pages panel uses a bounded window plus explicit range navigation rather
+  than true variable-height virtualisation: the existing drag/drop, thumbnail
+  observer and reorder controller keep their semantics, and every page is still
+  reachable and reorderable. A jump centres the window on the target page.
+- A bulk duplicate is undoable because the caller owns one snapshot for the whole
+  block; single-page duplicate and all deletes keep the explicit checkpointed
+  boundary. AGENTS.md, ADR 0011, architecture and testing docs were narrowed to
+  say "single-page duplicate" where the old rule said "duplicate".
+- The managed copy is prepared before the import mutation so a failed copy never
+  commits pages. Accepting the copy therefore cannot leave an import without its
+  source, and one Undo reverses both project changes.
+- Each Layers kind section is its own tree because the kind headings and the
+  section foot controls are outside the treeitem hierarchy. Item rows are
+  treeitems inside a group, with Enter/Space preserved.
+
+### Findings
+
+- F-075, F-076, F-079, F-080 and F-082 fixed; the open register was already
+  empty apart from F-150, so no row was removed.
+- No new findings.
+
+### Checks
+
+- Local gate: `check:versions`, `check:file-budgets`, `check:write-sites`,
+  `check:modules`, `check:cycles`, `check:security`, `check:actions`,
+  `check:dependencies`, `check:docs`, `format:check`, `lint`, `check:i18n`,
+  `check:themes`, `npx tsc --noEmit` — pass.
+- Full `npx vitest run` — 216 files, 2295 tests pass.
+- `npm run test:robustness` — 5 files, 104 tests pass.
+- `test:ui`, `test:import`, `test:touch`, `test:a11y` (138 checks) and
+  `test:visual` — pass.
+- Existing legacy budgets for `App.ts`, `store.ts` and `panels.css` were raised
+  with `check:file-budgets -- --update`; no new file exception.
+
+### Next
+
+- Remaining backlog decisions: [#235](https://github.com/MajorJohnDoe/gridscalr/issues/235),
+  [#304](https://github.com/MajorJohnDoe/gridscalr/issues/304),
+  [#151](https://github.com/MajorJohnDoe/gridscalr/issues/151) and
+  [#112](https://github.com/MajorJohnDoe/gridscalr/issues/112).
