@@ -45,7 +45,9 @@ import {
 import { RendererStoreSync } from "./rendererSync";
 import {
   deletePageFlow,
+  deletePagesFlow,
   duplicatePageFlow,
+  duplicatePagesFlow,
   goToPage as goToPageFlow,
   navigateToItem as navigateToItemFlow,
   registerCreatedPageDocuments,
@@ -287,10 +289,12 @@ export class App {
       setSelectionStrokeWidth: (width) => setSelectionStrokeWidth(width),
       deletePage: (pageId) => void deletePageFlow(this.pageFlowHost(), pageId),
       duplicatePage: (pageId) => void duplicatePageFlow(this.pageFlowHost(), pageId),
+      deletePages: (pageIds) => void deletePagesFlow(this.pageFlowHost(), pageIds),
+      duplicatePages: (pageIds) => void duplicatePagesFlow(this.pageFlowHost(), pageIds),
       reorderPage: (pageId, targetIndex) =>
         void reorderProjectPage(this.pageActionHost(), pageId, targetIndex),
       reorderPages: (pageIds, insertionIndex) =>
-        void reorderProjectPages(this.pageActionHost(), pageIds, insertionIndex),
+        reorderProjectPages(this.pageActionHost(), pageIds, insertionIndex).then(() => undefined),
       insertPage: (pageId, index) => void insertProjectPage(this.pageActionHost(), pageId, index),
       replaceSource: (documentId) => void replaceSourceFlow(this.replacementFlowHost(), documentId),
       consolidateDrawings: () => void this.sourceStorage.consolidate(),

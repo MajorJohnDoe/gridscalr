@@ -72,6 +72,35 @@ describe("shared list selection", () => {
   });
 });
 
+describe("windowed list selection", () => {
+  it("clamps a Shift range to the mounted window instead of the full list", () => {
+    const all = Array.from({ length: 300 }, (_value, index) => ({ id: `p${index + 1}` }));
+    let visible = all;
+    const controller = new ListReorderController({
+      rowSelector: ".row",
+      rowId: () => null,
+      entries: () => all,
+      visibleEntries: () => visible,
+      canReorder: () => true,
+      selectable: true,
+      onMove: () => undefined,
+      announce: () => "",
+    });
+
+    // Select page 1, then jump the window far away.
+    controller.handleClick(new MouseEvent("click"), "p1");
+    visible = all.slice(200);
+    controller.handleClick(new MouseEvent("click", { shiftKey: true }), "p250");
+    // The anchor is not mounted, so the range falls back to the clicked row.
+    expect(controller.selectionIds()).toEqual(["p250"]);
+
+    // A range inside the mounted window still works.
+    controller.handleClick(new MouseEvent("click"), "p210");
+    controller.handleClick(new MouseEvent("click", { shiftKey: true }), "p215");
+    expect(controller.selectionIds()).toEqual(["p210", "p211", "p212", "p213", "p214", "p215"]);
+  });
+});
+
 describe("shared list movement", () => {
   it("moves a block to an insertion index and preserves its order", () => {
     expect(moveEntries(entries, new Set(["a"]), 2).map((entry) => entry.id)).toEqual([

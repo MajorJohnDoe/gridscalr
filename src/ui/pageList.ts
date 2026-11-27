@@ -1,4 +1,4 @@
-import { pageDisplayName, pageLocationLabel } from "../model/pages";
+import { currentPageId, pageDisplayName, pageLocationLabel } from "../model/pages";
 import type { PageId, PageSize } from "../model/types";
 import { store } from "../state/store";
 import {
@@ -27,6 +27,7 @@ import {
   type PageStatusFilter,
   type PageStatusRow,
 } from "../features/pageStatus";
+import { pageWindowControls, pageWindowState, type PageWindowAction } from "../features/pageWindow";
 import { el } from "./dom";
 import { icon } from "./icons";
 import { loadPanelPreferences } from "./preferences";
@@ -44,6 +45,12 @@ interface PendingThumbnail {
 let thumbnailObserver: IntersectionObserver | null = null;
 
 const pageNavigator = new RowNavigator(".page-card");
+
+/** One window control keeps focus across the panel render it triggers. */
+let pendingWindowFocus: PageWindowAction | null = null;
+
+/** Page card that last held focus; restored when a render replaces the list. */
+let focusedPageId: string | null = null;
 
 /** Stops observing page cards when the Pages tab is no longer mounted. */
 export function disconnectPageThumbnails(): void {
@@ -136,6 +143,9 @@ export function updatePageSizeLabel(refs: ShellRefs, page: number, size: PageSiz
 
 function renderEmptyPages(refs: ShellRefs, actions: PanelActions): void {
   pageReorder.detach();
+  pageWindowState.reset();
+  focusedPageId = null;
+  pendingWindowFocus = null;
   const empty = el("div", "page-list page-list-empty");
   empty.append(el("p", "empty-note", t("page.emptyProject")));
   const add = el("button", "btn btn-small", t("page.addPages"));
@@ -180,7 +190,10 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   bindTabMenu(refs, actions);
   disconnectPageThumbnails();
   pageNavigator.detach();
+  // A status refresh can rebuild the panel while the range bar is mounted, so
+  // remove both the old list and its window bar before appending a new one.
   refs.dockBody.querySelector(".page-list")?.remove();
+  refs.dockBody.querySelector(".page-window-bar")?.remove();
   const project = store.project!;
   if (!project.pages.length) {
     renderEmptyPages(refs, actions);
@@ -206,16 +219,76 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   }
   const visible = pageStatus.visibleFrom(rows);
   if (!visible.length) {
+    // The filter hid every page, so no mounted card can keep a selection.
+    pageReorder.setVisibleIds([]);
     pageReorder.detach();
     refs.dockBody.append(pageStatusEmptyNote());
+    // The range bar that asked for the focus is gone. Hand the request to the
+    // filter that emptied the list instead of letting it leak into the next
+    // render, where it would focus a range control the user did not reach.
+    handOffWindowFocus(refs, filter);
     return;
   }
+  const visibleIds = visible.map((row) => row.pageId);
+  const currentAnchor = currentPageId(project, store.ui.page);
+  const window = pageWindowState.window(visibleIds, currentAnchor);
   const list = el("div", "page-list");
-  const max = Math.min(visible.length, 400);
+  list.addEventListener("focusin", (event) => {
+    const id = (event.target as HTMLElement | null)?.closest<HTMLElement>(".page-card")?.dataset
+      .pageId;
+    if (id) focusedPageId = id;
+  });
+  list.addEventListener("focusout", (event) => {
+    const next = (event as FocusEvent).relatedTarget as Node | null;
+    if (next && list.contains(next)) return;
+    // A panel render removes the list before the next one is built. Keep the
+    // record when this list left the document; clear it only when focus really
+    // moved elsewhere in a list that is still on screen.
+    queueMicrotask(() => {
+      if (!list.isConnected) return;
+      const active = document.activeElement;
+      if (active && list.contains(active)) return;
+      focusedPageId = null;
+    });
+  });
   // Reordering maps a drop position in the rendered list, so it stays off while
   // a filter hides pages. Viewing, renaming and page actions still work.
   const reorderEnabled = !store.readOnly && filter === "all";
-  const shown = visible.slice(0, max);
+  pageReorder.setWindowOffset(window.start);
+  if (visible.length > window.end - window.start) {
+    const currentRow = currentAnchor
+      ? visible.findIndex((row) => row.pageId === currentAnchor)
+      : -1;
+    refs.dockBody.append(
+      pageWindowControls({
+        start: window.start,
+        end: window.end,
+        total: visible.length,
+        // The window slices positions in the filtered order, so the current
+        // value is that position; without a filter it equals the page number.
+        current: currentRow >= 0 ? currentRow + 1 : undefined,
+        filtered: filter !== "all",
+        onNavigate: (action, page) => {
+          pendingWindowFocus = action;
+          if (action === "jump" && page !== undefined) {
+            const target = Math.max(1, Math.min(visible.length, Math.round(page)));
+            pageWindowState.jumpToPage(visible.length, target - 1);
+            const displayPage = visible[target - 1]?.page ?? target;
+            if (displayPage !== store.ui.page) actions.goToPage(displayPage, true);
+            else actions.refresh();
+          } else {
+            const step = window.end - window.start;
+            pageWindowState.shift(visible.length, action === "next" ? step : -step, currentAnchor);
+            actions.refresh();
+          }
+        },
+      }),
+    );
+  }
+  const shown = visible.slice(window.start, window.end);
+  // Range selection is clamped to the mounted window, so a Shift-click after a
+  // jump cannot select pages the user never saw.
+  pageReorder.setVisibleIds(shown.map((row) => row.pageId));
   const prefs = loadPanelPreferences();
   const runs = new Map<number, { documentId: string | null; count: number }>();
   if (prefs.pagesGrouped && project.documents.length > 1) {
@@ -351,21 +424,59 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   pageReorder.setActions({
     reorder: (pageIds, insertionIndex) => actions.reorderPages(pageIds, insertionIndex),
     goToPage: (page) => actions.goToPage(page, true),
+    refresh: () => actions.refresh(),
   });
   list.append(pageReorderHint(), pageSelectHint(), pageMenuHint());
   refs.dockBody.append(list);
   pageReorder.bindList(list, refs.dockBody);
   pageNavigator.bind(list);
   pageReorder.afterRender();
-  if (visible.length > max) {
-    const note = el(
-      "div",
-      "empty-note small",
-      t("page.showingFirst", { shown: max, total: visible.length }),
-    );
-    refs.dockBody.append(note);
+  const focusWindow = pendingWindowFocus;
+  pendingWindowFocus = null;
+  if (focusWindow) {
+    refs.dockBody
+      .querySelector<HTMLElement>(`[data-page-window-action="${focusWindow}"]`)
+      ?.focus({ preventScroll: true });
+  }
+  if (!focusWindow) {
+    const requested = pageWindowState.takeFocusRequest();
+    const restoreId = requested ?? focusedPageId;
+    if (restoreId) {
+      const target =
+        refs.dockBody.querySelector<HTMLElement>(
+          `.page-card[data-page-id="${CSS.escape(restoreId)}"]`,
+        ) ?? refs.dockBody.querySelector<HTMLElement>(".page-card.is-active");
+      target?.focus({ preventScroll: true });
+    }
   }
   observeThumbnails(refs, actions, pendingThumbnails);
+}
+
+/**
+ * Moves a pending range-bar focus request to the status filter chip that is
+ * still mounted when the filtered list is empty, then clears it so it cannot
+ * apply to a later render.
+ */
+function handOffWindowFocus(refs: ShellRefs, filter: PageStatusFilter): void {
+  if (!pendingWindowFocus) return;
+  pendingWindowFocus = null;
+  refs.dockBody
+    .querySelector<HTMLElement>(`.page-status-filter[data-filter="${filter}"]`)
+    ?.focus({ preventScroll: true });
+}
+
+/**
+ * Remembers which range-bar control had focus before a rebuild, so a filtered
+ * status refresh can put focus back on the same control instead of the filter
+ * chip. The panel owns the hand-off through `pendingWindowFocus`.
+ */
+function captureWindowFocus(): void {
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement)) return;
+  const action = active.closest<HTMLElement>("[data-page-window-action]")?.dataset.pageWindowAction;
+  if (action === "previous" || action === "next" || action === "jump") {
+    pendingWindowFocus = action;
+  }
 }
 
 /**
@@ -381,6 +492,7 @@ export function refreshPageStatusBadges(refs: ShellRefs, actions: PanelActions):
   const project = store.project;
   if (!project) return;
   if (pageStatus.activeFilter !== "all") {
+    captureWindowFocus();
     renderPages(refs, actions);
     return;
   }

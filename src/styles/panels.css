@@ -334,20 +334,20 @@
   background: var(--panel-hover);
 }
 
-.layer-row.is-selected {
+.layer-node.is-selected > .layer-row {
   background: var(--jade-dim);
   border-color: color-mix(in srgb, var(--jade) 30%, transparent);
 }
 
-.layer-row.is-selected .layer-name {
+.layer-node.is-selected .layer-name {
   color: var(--text-strong);
 }
 
-.layer-row.is-hidden {
+.layer-node.is-hidden > .layer-row {
   opacity: 0.55;
 }
 
-.layer-row:focus-visible {
+.layer-node:focus-visible > .layer-row {
   outline: 2px solid var(--jade-bright);
   outline-offset: 1px;
 }
@@ -528,7 +528,7 @@
 }
 
 .layer-row:hover .layer-menu-btn,
-.layer-row.is-selected .layer-menu-btn {
+.layer-node.is-selected .layer-menu-btn {
   opacity: 1;
 }
 
@@ -629,6 +629,31 @@
   flex-direction: column;
   gap: 5px;
   flex: 1 0 auto;
+}
+
+.page-window-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 0;
+  flex-wrap: wrap;
+}
+
+.page-window-range {
+  flex: 1 1 auto;
+  min-width: 92px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.page-window-jump {
+  flex: 0 0 auto;
+}
+
+.page-window-input {
+  width: 62px;
+  height: 26px;
+  font-size: 11px;
 }
 
 .page-card {

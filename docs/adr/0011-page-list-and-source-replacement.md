@@ -88,19 +88,25 @@ history rules.
    exactly one undo step per drag or insert. Undo restores the exact record
    order; redo restores the changed order. A drop that changes nothing adds no
    history entry.
-2. **Delete, duplicate, document import and source replacement stay explicit.**
-   They add or remove items, documents or source references. They clear the undo
-   and redo stacks and write a recovery checkpoint first, so an undo can never
-   silently recreate a removed page or restore a previous source path.
+2. **Delete, single-page duplicate, document import and source replacement stay
+   explicit.** They add or remove items, documents or source references. They
+   clear the undo and redo stacks and write a recovery checkpoint first, so an
+   undo can never silently recreate a removed page or restore a previous source
+   path. A bulk duplicate is the deliberate exception: it appends copies of
+   existing pages without adding or replacing a source reference, and its
+   snapshot restores any cloned template document, so the whole selection is one
+   undo step.
 3. **Undoability does not replace the checkpoint.** Undo is session state; a
    checkpoint survives a crash. A reorder or insert writes its checkpoint and
    still adds its one history step.
 4. **The visible page follows its `PageId`.** After undo or redo the canvas stays
    on the same page while that page exists; when it is gone, the display
    position is clamped. Display numbers are never stored references.
-5. **Duplicate stays explicit in 0.25.0.** It copies items, scale and name and
-   can clone a template sheet document, so making it undoable is a separate
-   decision with its own invariant tests.
+5. **Single-page duplicate stays explicit in 0.25.0.** It copies items, scale
+   and name and can clone a template sheet document, so a single duplicate
+   remains a non-undoable structural boundary. A bulk duplicate is undoable
+   because the caller applies the whole block through one snapshot and owns
+   the invariant tests for every copied page.
 
 ### Source replacement
 

@@ -4,10 +4,11 @@ import { findItem } from "../model/layers";
 import type { MarkupItem, PageId, PageSize } from "../model/types";
 import { store } from "../state/store";
 import { recordStructuralCheckpoint } from "../features/sessionRecovery";
+import { pageWindowState } from "../features/pageWindow";
 import { openDocument } from "./documentImport";
 import { sheetBytes } from "./sheetFlows";
-import { confirmDialog } from "../ui/dialogs";
-import { duplicatePageDialog } from "../ui/duplicatePageDialog";
+import { confirmDialog, targetIdentity } from "../ui/dialogs";
+import { bulkDuplicatePageDialog, duplicatePageDialog } from "../ui/duplicatePageDialog";
 import { toast } from "../ui/toast";
 import { t } from "../i18n";
 
@@ -113,6 +114,13 @@ export async function duplicatePageFlow(host: PageFlowHost, pageId: PageId): Pro
     (documentId, proxy, pageMap) => host.addDocumentToRenderer(documentId, proxy, pageMap),
     knownDocuments,
   );
+  // The copy is appended, so it can be outside the mounted Pages window. Ask
+  // the panel to focus the new card when that tab is the one on screen; the
+  // extra view notification repaints the panel so the request is consumed.
+  if (store.ui.leftTab === "pages") {
+    pageWindowState.requestFocus(result.pageId);
+    store.emit("project");
+  }
   await host.enqueuePageSize(result.pageNumber);
   host.fitPage();
   host.invalidate();
@@ -161,6 +169,136 @@ export async function deletePageFlow(host: PageFlowHost, pageId: PageId): Promis
   host.invalidate();
   host.renderAll();
   toast(t("app.pageDeleted", { page: result.pageNumber }), "info");
+  if (result.clearedSpaces > 0) {
+    toast(t("spaces.pageDeleteCleared", { count: result.clearedSpaces }), "info");
+  }
+  if (result.clearedScheduleFilters > 0) {
+    toast(t("schedules.pageDeleteCleared", { count: result.clearedScheduleFilters }), "info");
+  }
+}
+
+/**
+ * Duplicates the Pages-panel selection as one undo step. Every existing page
+ * keeps its ID and state; each copy appends with a fresh ID. A cloned template
+ * document is registered before the renderer derives the new order.
+ */
+export async function duplicatePagesFlow(
+  host: PageFlowHost,
+  pageIds: readonly PageId[],
+): Promise<void> {
+  if (store.readOnly) return;
+  const project = store.project;
+  if (!project) return;
+  const selected = new Set(pageIds);
+  const pages = project.pages.filter((page) => selected.has(page.id));
+  if (!pages.length) return;
+  if (pages.length === 1) {
+    await duplicatePageFlow(host, pages[0].id);
+    return;
+  }
+  const total = project.pages.length;
+  const hasScale = pages.some((page) => Boolean(page.state?.calibration));
+  const options = await bulkDuplicatePageDialog({
+    count: pages.length,
+    firstNewPage: total + 1,
+    lastNewPage: total + pages.length,
+    hasScale,
+  });
+  if (!options) return;
+
+  const names = new Map<PageId, string>();
+  for (const page of pages) {
+    const name = pageDisplayName(project, page.id);
+    names.set(
+      page.id,
+      name
+        ? t("app.pageCopyName", { name })
+        : t("app.pageCopyDefault", { page: pageNumber(project, page.id) }),
+    );
+  }
+  await recordStructuralCheckpoint(
+    t("sessionRecovery.checkpoint.duplicatePages", { count: pages.length }),
+  );
+  const knownDocuments = new Set(project.documents.map((entry) => entry.id));
+  const result = store.duplicatePages(
+    pages.map((page) => page.id),
+    { ...options, names },
+  );
+  if (!result) {
+    toast(t("app.pageDuplicateFailed"), "warning");
+    return;
+  }
+  await registerCreatedPageDocuments(
+    (documentId, proxy, pageMap) => host.addDocumentToRenderer(documentId, proxy, pageMap),
+    knownDocuments,
+  );
+  // The current page is the last copy; the window follows it and the panel
+  // focuses that card so the copied block is visible and reachable.
+  const lastCopy = result.pageIds[result.pageIds.length - 1];
+  if (lastCopy && store.ui.leftTab === "pages") {
+    pageWindowState.requestFocus(lastCopy);
+    store.emit("project");
+  }
+  await host.enqueuePageSize(result.lastPageNumber);
+  host.fitPage();
+  host.invalidate();
+  host.renderAll();
+  toast(t("app.pagesDuplicated", { count: result.pageIds.length }), "success");
+}
+
+/**
+ * Deletes the Pages-panel selection with one confirmation, one recovery
+ * checkpoint and one history clear. It is never undoable.
+ */
+export async function deletePagesFlow(
+  host: PageFlowHost,
+  pageIds: readonly PageId[],
+): Promise<void> {
+  if (store.readOnly) return;
+  const project = store.project;
+  if (!project) return;
+  const selected = new Set(pageIds);
+  const pages = project.pages.filter((page) => selected.has(page.id));
+  if (!pages.length) return;
+  if (pages.length === 1) {
+    await deletePageFlow(host, pages[0].id);
+    return;
+  }
+  const ids = pages.map((page) => page.id);
+  const identity = targetIdentity(ids);
+  const confirmed = await confirmDialog(
+    t("app.deletePagesTitle"),
+    t("app.deletePagesMessage", {
+      count: ids.length,
+    }),
+    t("app.deletePagesConfirm"),
+    {
+      danger: true,
+      target: {
+        kind: "page",
+        id: identity,
+        name: t("app.deletePagesTarget", { count: ids.length }),
+        resolve: () => {
+          const live = store.project?.pages.filter((page) => selected.has(page.id)) ?? [];
+          return live.length === ids.length ? targetIdentity(ids) : null;
+        },
+      },
+    },
+  );
+  if (!confirmed) return;
+  await recordStructuralCheckpoint(
+    t("sessionRecovery.checkpoint.deletePages", { count: ids.length }),
+  );
+  const result = store.deletePages(ids);
+  if (!result) {
+    toast(t("app.pageDeleteFailed"), "warning");
+    return;
+  }
+  await host.enqueuePageSize(store.ui.page);
+  host.fitPage();
+  host.invalidate();
+  host.renderAll();
+  toast(t("app.pagesDeleted", { count: result.pageIds.length }), "info");
   if (result.clearedSpaces > 0) {
     toast(t("spaces.pageDeleteCleared", { count: result.clearedSpaces }), "info");
   }

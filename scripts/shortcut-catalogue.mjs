@@ -83,8 +83,8 @@ export const DOC_ROWS = [
     ["insertBefore", "insertAfter"],
   ],
   ["shortcuts", "Pages panel", "Move the current page to another position", ["movePage"]],
-  ["shortcuts", "Pages panel", "Duplicate the current page with options", ["duplicatePage"]],
-  ["shortcuts", "Pages panel", "Delete the current page", ["deletePage"]],
+  ["shortcuts", "Pages panel", "Duplicate the selected pages with options", ["duplicatePage"]],
+  ["shortcuts", "Pages panel", "Delete the selected pages", ["deletePage"]],
   ["shortcuts", "Pages panel", "Rename a page", []],
 
   // Layers panel.
@@ -172,8 +172,8 @@ export const DOC_ROWS = [
     ["insertBefore", "insertAfter"],
   ],
   ["readme", "README", "Move the current page to another position", ["movePage"]],
-  ["readme", "README", "Duplicate the current page", ["duplicatePage"]],
-  ["readme", "README", "Delete the current page", ["deletePage"]],
+  ["readme", "README", "Duplicate the selected pages", ["duplicatePage"]],
+  ["readme", "README", "Delete the selected pages", ["deletePage"]],
 ];
 
 /**

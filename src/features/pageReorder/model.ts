@@ -113,9 +113,12 @@ export function documentSegments(pages: readonly PageReorderEntry[]): DocumentSe
 
 /**
  * Maps an insertion index in the rendered card order to the project page list.
- * The two are identical without a filter; when a status filter hides cards the
- * rendered index is not a project index, so the visible page numbers decide
- * where a dropped drawing lands. Dropping below the last visible card appends.
+ *
+ * The mounted cards carry their display page numbers, and a page's position is
+ * its 1-based number, so a rendered position translates directly: a drop above
+ * a card lands before that page, and a drop below the last mounted card lands
+ * after that page instead of jumping to the end of the project. This holds for
+ * a contiguous window and for a non-contiguous filtered list alike.
  */
 export function fullListInsertionIndex(
   visiblePages: readonly number[],
@@ -125,7 +128,11 @@ export function fullListInsertionIndex(
   const total = Math.max(0, Math.round(totalPages));
   if (!visiblePages.length) return total;
   const clamped = Math.max(0, Math.min(visiblePages.length, Math.round(insertionIndex)));
-  if (clamped >= visiblePages.length) return total;
+  if (clamped >= visiblePages.length) {
+    // After the last mounted card, not the end of the project.
+    const lastPage = Math.round(visiblePages[visiblePages.length - 1]);
+    return Math.max(0, Math.min(total, lastPage));
+  }
   const page = Math.round(visiblePages[clamped]);
   return Math.max(0, Math.min(total, page - 1));
 }

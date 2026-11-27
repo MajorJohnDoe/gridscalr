@@ -76,11 +76,11 @@
   height: 18px;
 }
 
-.layer-row.is-group .layer-name {
+.layer-node.is-group .layer-name {
   font-weight: 600;
 }
 
-.layer-row.is-drop-target {
+.layer-node.is-drop-target > .layer-row {
   background: color-mix(in srgb, var(--jade) 16%, transparent);
   border-color: var(--jade-bright);
 }
@@ -133,6 +133,6 @@
   border-color: var(--amber);
 }
 
-.layer-row.is-inherited-hidden .layer-name {
+.layer-node.is-inherited-hidden .layer-name {
   font-style: italic;
 }

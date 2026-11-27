@@ -55,6 +55,35 @@ export interface LayerTreeRowsOptions {
   expanded: ReadonlySet<string>;
 }
 
+export interface LayerRowPosition {
+  /** 1-based position among the visible siblings of the same parent. */
+  posInSet: number;
+  /** Number of visible siblings under the same parent. */
+  setSize: number;
+}
+
+/**
+ * ARIA tree position for every visible layer row. Siblings share a parent;
+ * a collapsed parent hides its children, so only the rows the panel renders
+ * take part in the counts.
+ */
+export function layerRowPositions(rows: readonly LayerTreeRow[]): Map<string, LayerRowPosition> {
+  const groups = new Map<string, string[]>();
+  for (const row of rows) {
+    const key = `${row.layer.kind}\u0000${row.parentId ?? "root"}`;
+    const list = groups.get(key) ?? [];
+    list.push(row.id);
+    groups.set(key, list);
+  }
+  const positions = new Map<string, LayerRowPosition>();
+  for (const list of groups.values()) {
+    list.forEach((id, index) => {
+      positions.set(id, { posInSet: index + 1, setSize: list.length });
+    });
+  }
+  return positions;
+}
+
 function keptIds(
   project: Pick<Project, "layers">,
   options: LayerTreeRowsOptions,

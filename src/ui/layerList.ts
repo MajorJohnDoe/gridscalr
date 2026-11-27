@@ -3,7 +3,7 @@ import type { LayerKind } from "../model/types";
 import { store } from "../state/store";
 import { el } from "./dom";
 import { icon } from "./icons";
-import { RowNavigator } from "../features/listInteraction";
+import { bindRovingTree, layerRowPositions } from "../features/layerTree";
 import { layerAction } from "./layerAction";
 import {
   deleteSelectedLayers,
@@ -40,8 +40,6 @@ import { t } from "../i18n";
 export { layerAction };
 
 export { LAYER_MENU_HINT_ID, LAYER_ORDER_HINT_ID };
-
-const navigator = new RowNavigator(".layer-row");
 
 function layerHints(): HTMLElement[] {
   const order = el("p", "layer-reorder-hint", t("layer.reorderHint"));
@@ -133,6 +131,11 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
   ];
 
   const rows = visibleLayerRows(project, pageId);
+  const positions = layerRowPositions(rows);
+  const tabStopId =
+    layerView.focusLayerId && rows.some((row) => row.id === layerView.focusLayerId)
+      ? layerView.focusLayerId
+      : project.activeLayerId;
   const expandable = rows
     .filter((row) => row.hasChildren || scopeItemsFor(row.layer, "page", pageId).length > 0)
     .map((row) => row.id);
@@ -155,9 +158,29 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
     header.append(label, el("span", "count", String(kindRows.length)));
     section.append(header);
     const body = el("div", "layer-section-rows");
-    for (const row of kindRows) renderLayerRow(project, row, pageId, body, actions);
+    body.setAttribute("role", "tree");
+    body.setAttribute("aria-label", group.title);
+    body.setAttribute("aria-multiselectable", "true");
+    const sectionTabStop = kindRows.some((row) => row.id === tabStopId)
+      ? tabStopId
+      : (kindRows[0]?.id ?? null);
+    for (const row of kindRows) {
+      renderLayerRow(
+        project,
+        row,
+        pageId,
+        body,
+        actions,
+        positions.get(row.id),
+        row.id === sectionTabStop,
+      );
+    }
     section.append(body, sectionFoot(group.kind, actions));
     tree.append(section);
+    bindRovingTree(body, sectionTabStop, (target) => {
+      layerView.focusLayerId = target?.layerId ?? null;
+      layerView.focusItemId = target?.itemId ?? null;
+    });
   }
   refs.dockBody.append(tree);
   bindLayerTree(tree, refs.dockBody, actions.refresh);
@@ -171,7 +194,6 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
     refs.dockBody.append(empty);
   }
 
-  navigator.bind(refs.dockBody);
   layerTreeController.afterRender();
   const focus = takeLayerFocus();
   if (focus.search) {
@@ -181,9 +203,15 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       search.setSelectionRange(search.value.length, search.value.length);
     }
   }
-  if (focus.layerId) {
-    refs.dockBody
-      .querySelector<HTMLElement>(`.layer-row[data-layer-id="${CSS.escape(focus.layerId)}"]`)
-      ?.focus({ preventScroll: true });
+  if (!focus.search && focus.layerId) {
+    const layerId = CSS.escape(focus.layerId);
+    const target = focus.itemId
+      ? refs.dockBody.querySelector<HTMLElement>(
+          `.layer-item-row[data-layer-id="${layerId}"][data-item-id="${CSS.escape(focus.itemId)}"]`,
+        )
+      : null;
+    const row =
+      target ?? refs.dockBody.querySelector<HTMLElement>(`.layer-node[data-layer-id="${layerId}"]`);
+    row?.focus({ preventScroll: true });
   }
 }

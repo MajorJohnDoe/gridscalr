@@ -2,8 +2,10 @@ import type { RemoveCategoryResult } from "../model/categories";
 import type { CloudFillPreset } from "../model/cloud";
 import type {
   DeletePageSummary,
+  DeletePagesSummary,
   DuplicatePageOptions,
   DuplicatePageSummary,
+  DuplicatePagesSummary,
 } from "../model/pageList";
 import type {
   AreaMode,
@@ -188,6 +190,11 @@ export class Store {
   deletePage(pageId: PageId): DeletePageSummary | null {
     return this.pages.deletePage(pageId);
   }
+
+  /** Explicit bulk deletion with one checkpoint and one history clear. */
+  deletePages(pageIds: readonly PageId[]): DeletePagesSummary | null {
+    return this.pages.deletePages(pageIds);
+  }
   reorderPage(pageId: PageId, targetIndex: number): boolean {
     return this.pages.reorderPage(pageId, targetIndex);
   }
@@ -319,6 +326,14 @@ export class Store {
   }
   duplicatePage(pageId: PageId, options: DuplicatePageOptions): DuplicatePageSummary | null {
     return this.pages.duplicatePage(pageId, options);
+  }
+
+  /** Bulk duplicate; one call is one undo step and keeps every existing ID. */
+  duplicatePages(
+    pageIds: readonly PageId[],
+    options: DuplicatePageOptions,
+  ): DuplicatePagesSummary | null {
+    return this.pages.duplicatePages(pageIds, options);
   }
 
   addCategory(name: string): Category | null {

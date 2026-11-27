@@ -66,7 +66,7 @@ export class LayerTreeController {
 
   constructor(private readonly options: LayerTreeControllerOptions) {
     this.pointer = new PointerRowDrag({
-      rowSelector: options.rowSelector ?? ".layer-row",
+      rowSelector: options.rowSelector ?? ".layer-node",
       canStart: () => this.options.canMove(),
       onStart: (row) => this.beginDrag(row),
       onMove: (x, y) => this.dragOver(x, y),
@@ -93,12 +93,11 @@ export class LayerTreeController {
     );
   }
 
-  /** Selection styling plus the `aria-pressed` state for a selected row. */
+  /** Selection styling plus the treeitem selected state for a row. */
   decorate(row: HTMLElement, id: string): void {
     const selected = this.selection.includes(id);
     row.classList.toggle("is-selected", selected);
-    if (selected) row.setAttribute("aria-pressed", "true");
-    else row.removeAttribute("aria-pressed");
+    row.setAttribute("aria-selected", String(selected));
   }
 
   applySelection(): void {
@@ -300,7 +299,7 @@ export class LayerTreeController {
 
   private rows(): HTMLElement[] {
     if (!this.list) return [];
-    return [...this.list.querySelectorAll<HTMLElement>(this.options.rowSelector ?? ".layer-row")];
+    return [...this.list.querySelectorAll<HTMLElement>(this.options.rowSelector ?? ".layer-node")];
   }
 
   private isInsideList(clientX: number, clientY: number): boolean {

@@ -45,8 +45,9 @@ If a plan and the code disagree, stop and surface the conflict rather than silen
 - Measurement layers and drawing layers stay separate. Layers are `measure` or `draw`.
 - One bulk action must be one undo step.
 - Page reorder and page insert must each be one undo step, preserving every
-  `PageId` and page state. Page delete, page duplicate, document import and
-  source replacement stay explicit, non-undoable and checkpointed.
+  `PageId` and page state. A bulk page duplicate is one undo step. Page delete,
+  single-page duplicate, document import and source replacement stay explicit,
+  non-undoable and checkpointed.
 - Project files must remain backward compatible. Every schema change needs migration tests for the current and previous version.
 - Pages have stable IDs from schema 24 onward. `Project.pages` is the ordered page list; page numbers are display data. Every new persistent page reference uses `PageId`.
 - Imports append by default. Insert, reorder, duplicate, delete and source replacement are explicit, tested operations that cascade by page ID.
@@ -510,6 +511,7 @@ src/features/projectImport/ui.ts graphical source-page picker with lazy previews
 src/features/pageFileDrop/model.ts Pages-panel drop target classification and pointer rules
 src/features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners and shared insertion line
 src/features/pageStatus/ pure page badges and status filters derived from project and source state
+src/features/pageWindow/ pure Pages-panel window rule, session scroll position and range/jump controls
 src/features/pageMenu/ page card menu, insert and move targets, page keyboard commands
 src/features/listInteraction/ shared list selection, drag controller, drop line and held state, keyboard move, filter and collapse rules
 src/features/importProvenance/ read-only provenance summary, Properties block and conditional Markups column

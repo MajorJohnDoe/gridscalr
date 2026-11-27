@@ -2,6 +2,7 @@ import { t } from "../../i18n";
 import type { PageId } from "../../model/types";
 import { store } from "../../state/store";
 import { ListReorderController, type MoveOutcome } from "../listInteraction";
+import { pageWindowState } from "../pageWindow";
 import { fullListInsertionIndex, planDrop, type PageReorderEntry } from "./model";
 
 /**
@@ -13,8 +14,10 @@ import { fullListInsertionIndex, planDrop, type PageReorderEntry } from "./model
  */
 export interface PageReorderActions {
   /** Applies one checkpoint and moves the pages as one undo step. */
-  reorder: (pageIds: readonly PageId[], insertionIndex: number) => void;
+  reorder: (pageIds: readonly PageId[], insertionIndex: number) => void | Promise<void>;
   goToPage: (page: number) => void;
+  /** Repaints the panel after an asynchronous move resolves. */
+  refresh?: () => void;
 }
 
 function projectEntries(): PageReorderEntry[] {
@@ -44,13 +47,44 @@ function announceMove(outcome: MoveOutcome): string {
 
 export class PageReorderController {
   private actions: PageReorderActions | null = null;
+  /** Project index of the first mounted card while the panel shows a window. */
+  private windowOffset = 0;
+  /** Pages the panel currently mounts; null means the full project list. */
+  private mountedIds: ReadonlySet<PageId> | null = null;
   private readonly drag = new ListReorderController<PageReorderEntry>({
     rowSelector: ".page-card",
     rowId: (row) => row.dataset.pageId ?? null,
     entries: projectEntries,
+    // The whole selection stays inside the mounted window, so a bulk action
+    // never acts on pages that were not on screen.
+    visibleEntries: () =>
+      this.mountedIds
+        ? projectEntries().filter((entry) => this.mountedIds!.has(entry.id))
+        : projectEntries(),
     canReorder: () => !store.readOnly,
     selectable: true,
-    onMove: (ids, insertionIndex) => this.actions?.reorder(ids as PageId[], insertionIndex),
+    onMove: (ids, insertionIndex, changesOrder) => {
+      const revealId = ids[0];
+      const result = this.actions?.reorder(ids as PageId[], insertionIndex);
+      if (!changesOrder || !revealId) return;
+      // A checkpoint sits between the gesture and the store mutation, so a
+      // render can happen before the new order exists. Ask for the reveal only
+      // after the move resolves, then repaint so the moved block stays visible.
+      const reveal = () => {
+        pageWindowState.reveal(revealId);
+        pageWindowState.requestFocus(revealId);
+        this.actions?.refresh?.();
+        // The render after the store emit follows the current page, which can
+        // leave a moved block that does not contain it off-window; the prune
+        // then drops the block from the selection. Restore it now that the
+        // reveal has mounted it, so a follow-up bulk command still targets it.
+        // A block wider than the window keeps only its mounted pages.
+        const mounted = this.mountedIds;
+        this.drag.select(mounted?.has(revealId) ? ids.filter((id) => mounted.has(id)) : ids);
+      };
+      if (isPromise(result)) void result.then(reveal);
+      else reveal();
+    },
     announce: (_ids, outcome) => announceMove(outcome),
     planDrop: (entries, selected, insertionIndex) => {
       const plan = planDrop(entries, selected, insertionIndex);
@@ -61,6 +95,7 @@ export class PageReorderController {
         crossDocument: plan.crossDocument,
       };
     },
+    renderedOffset: () => this.windowOffset,
     dropLineClass: "page-drop-line",
     dropLabelClass: "page-drop-label",
     announcerClass: "page-reorder-announcer",
@@ -73,6 +108,21 @@ export class PageReorderController {
   /** Rebinds the drag surface; card listeners are recreated by the panel render. */
   bindList(list: HTMLElement, scroll: HTMLElement): void {
     this.drag.bindList(list, scroll);
+  }
+
+  /**
+   * Sets the project index of the first mounted card. A windowed panel maps a
+   * rendered drop position back to the full page list with this offset, so a
+   * drop near a window edge never lands at the wrong project position.
+   */
+  setWindowOffset(offset: number): void {
+    this.windowOffset = Math.max(0, Math.round(offset));
+  }
+
+  /** Sets the pages the panel currently mounts; used to clamp the selection. */
+  setVisibleIds(pageIds: readonly PageId[]): void {
+    this.mountedIds = new Set(pageIds);
+    this.drag.prune();
   }
 
   /** Applies selection styling and the keyboard hint to one card. */
@@ -107,6 +157,8 @@ export class PageReorderController {
   /** Clears selection and drag state; used when the panel starts over. */
   reset(): void {
     this.drag.reset();
+    this.mountedIds = null;
+    this.windowOffset = 0;
   }
 
   /**
@@ -116,8 +168,8 @@ export class PageReorderController {
    */
   showExternalDrop(clientY: number): number {
     const index = this.drag.previewExternalDrop(clientY, (renderedIndex, rows) => {
-      // A status filter renders a subset of the pages, so the rendered index is
-      // translated back to a project insertion index before anything is added.
+      // The rendered cards are a window of the page list or a filtered subset.
+      // Their display page numbers place a drop without a separate offset.
       const visiblePages = rows
         .map((row) => Number(row.dataset.page ?? 0))
         .filter((page) => Number.isFinite(page) && page > 0);
@@ -130,4 +182,9 @@ export class PageReorderController {
   hideExternalDrop(): void {
     this.drag.hideExternalDrop();
   }
+}
+
+/** A host action may keep the panel open while its checkpoint resolves. */
+function isPromise(value: unknown): value is Promise<void> {
+  return typeof (value as { then?: unknown } | null | undefined)?.then === "function";
 }

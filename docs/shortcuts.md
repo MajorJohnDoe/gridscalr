@@ -88,19 +88,18 @@ drop line.
 | Move the selected pages with the mouse | Drag a selected card or its grip to the drop line |
 | Insert a page before / after the current page | `Alt+PageUp` / `Alt+PageDown` |
 | Move the current page to another position | `Alt+Shift+M` |
-| Duplicate the current page with options | `Alt+Shift+D` |
-| Delete the current page | `Alt+Shift+Delete` |
+| Duplicate the selected pages with options | `Alt+Shift+D` |
+| Delete the selected pages | `Alt+Shift+Delete` |
 | Rename a page | Double-click the page title |
 
-The page menu and the page shortcuts act on the current page. Inserting and
-moving are one undo step each; duplicating and deleting are confirmed and
-cannot be undone.
-
-Dragging a card that is part of a multi-page selection moves the whole
-selection. A drop that crosses into another source document shows the document
-name on the drop line. Every drop writes one recovery checkpoint. `Alt` +
-`Shift` + `M` moves the whole selection when the current page is part of it;
-duplicate and delete stay per page because both are structural.
+The page menu and the page shortcuts act on the Pages-panel selection when it
+holds live pages, and otherwise on the current page. Inserting and moving are
+one undo step each; a bulk duplicate is one undo step; deleting is confirmed,
+explicit and cannot be undone. Dragging a card that is part of a multi-page
+selection moves the whole selection. A drop that crosses into another source
+document shows the document name on the drop line. Every drop writes one
+recovery checkpoint. `Alt` + `Shift` + `M`, `D` and `Delete` all follow the
+selection. A `Shift` range stays inside the mounted page window.
 
 ## Layers panel
 

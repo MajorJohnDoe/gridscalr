@@ -12,20 +12,19 @@ import {
   type ListSelectMode,
   type MoveOutcome,
 } from "./model";
-import { PointerRowDrag, type PointerDropGuide } from "./pointerDrag";
+import { PointerRowDrag, rowSpans, type PointerDropGuide } from "./pointerDrag";
 import { ListDragFeedback } from "./feedback";
 import { LiveRegion } from "./ui";
 
 /**
  * Generic drag, multi-selection and keyboard reorder controller for a vertical
- * list. A host supplies the ordered entries, the row selector and one move
+ * list. The host supplies the ordered entries, the row selector and one move
  * callback; the controller owns the transient drag state, the drop line, the
  * selection and the live-region announcement.
  *
- * The drag gesture is pointer-based (see `PointerRowDrag`), so it keeps working
- * while the desktop shell owns the operating system's drag-and-drop channel.
- * The controller never writes the project. Every move is one host action, so a
- * list keeps its own checkpoint and undo semantics.
+ * The gesture is pointer-based (see `PointerRowDrag`), so it survives a shell
+ * that owns the OS drag channel. The controller never writes the project: every
+ * move is one host action, which keeps its own checkpoint and undo semantics.
  */
 
 const KEY_COMMANDS: Record<string, ListMoveCommand> = {
@@ -36,7 +35,10 @@ const KEY_COMMANDS: Record<string, ListMoveCommand> = {
 };
 
 export interface ListDropPlan {
+  /** Logical insertion index in the host's full entry list. */
   insertionIndex: number;
+  /** Insertion index among the mounted rows, for the drop line. */
+  renderedIndex: number;
   changesOrder: boolean;
   label: string | null;
   crossDocument: boolean;
@@ -48,14 +50,13 @@ export interface ListReorderOptions<E extends ListEntry> {
   rowId: (row: HTMLElement) => string | null;
   /** Ordered entries for the list the controller is bound to. */
   entries: () => readonly E[];
+  /** Mounted entries when the panel shows a window or a filtered subset. */
+  visibleEntries?: () => readonly E[];
   /** False in a read-only session or while a filter hides rows. */
   canReorder: () => boolean;
   /** Enables click selection, range selection and `is-selected` styling. */
   selectable?: boolean;
-  /**
-   * Applies one move. `changesOrder` is false for a drop that keeps the order,
-   * so a host can skip writing a history step.
-   */
+  /** Applies one move; `changesOrder` is false for a no-op drop. */
   onMove: (ids: readonly string[], insertionIndex: number, changesOrder: boolean) => void;
   /** Localized announcement for a keyboard move. */
   announce: (ids: readonly string[], outcome: MoveOutcome) => string;
@@ -65,6 +66,8 @@ export interface ListReorderOptions<E extends ListEntry> {
     ids: ReadonlySet<string>,
     insertionIndex: number,
   ) => { changesOrder: boolean; label: string | null; crossDocument: boolean };
+  /** Project index of the first rendered row for a window or filtered subset. */
+  renderedOffset?: () => number;
   dropLineClass?: string;
   dropLabelClass?: string;
   announcerClass?: string;
@@ -118,6 +121,15 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     this.prune();
   }
 
+  /** Selects exactly these IDs and repaints the rows after a move reveal. */
+  select(ids: readonly string[]): void {
+    if (!this.options.selectable) return;
+    const live = new Set(this.options.entries().map((entry) => entry.id));
+    this.selection = ids.filter((id) => live.has(id));
+    this.anchor = this.selection[0] ?? null;
+    this.applySelection();
+  }
+
   /** Applies selection styling to one row. */
   decorate(row: HTMLElement, id: string): void {
     if (!this.options.selectable) return;
@@ -135,7 +147,10 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
       : event.ctrlKey || event.metaKey
         ? "toggle"
         : "replace";
-    const next = selectionAfterClick(this.options.entries(), this.selection, this.anchor, id, mode);
+    // A range is bounded by what is mounted; an off-window anchor is a click.
+    const source = mode === "range" ? this.options.visibleEntries : undefined;
+    const entries = source ? source() : this.options.entries();
+    const next = selectionAfterClick(entries, this.selection, this.anchor, id, mode);
     this.selection = next.ids;
     this.anchor = next.anchor;
     this.applySelection();
@@ -224,8 +239,9 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     }
   }
 
-  private prune(): void {
-    const entries = this.options.entries();
+  /** Drops selection entries the mounted (or filtered) list no longer shows. */
+  prune(): void {
+    const entries = this.options.visibleEntries?.() ?? this.options.entries();
     this.selection = pruneSelection(entries, this.selection);
     if (this.anchor && !entries.some((entry) => entry.id === this.anchor)) this.anchor = null;
   }
@@ -234,7 +250,7 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     entries: readonly E[],
     ids: ReadonlySet<string>,
     insertionIndex: number,
-  ): ListDropPlan {
+  ): Omit<ListDropPlan, "renderedIndex"> {
     if (this.options.planDrop) {
       return { insertionIndex, ...this.options.planDrop(entries, ids, insertionIndex) };
     }
@@ -284,7 +300,7 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     const plan = this.refreshPlan(clientX, clientY);
     if (!plan) return null;
     return {
-      insertionIndex: plan.insertionIndex,
+      insertionIndex: plan.renderedIndex,
       label: plan.label,
       crossDocument: plan.crossDocument,
     };
@@ -304,10 +320,11 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     }
     this.pointerX = clientX;
     this.pointerY = clientY;
-    const insertionIndex = insertionIndexAt(rowSpans(this.rows()), clientY);
+    const renderedIndex = insertionIndexAt(rowSpans(this.rows()), clientY);
+    const insertionIndex = renderedIndex + (this.options.renderedOffset?.() ?? 0);
     const plan = this.planFor(this.options.entries(), new Set(this.dragging), insertionIndex);
     this.updateAutoScroll();
-    return plan;
+    return { ...plan, renderedIndex };
   }
 
   private drop(clientX: number, clientY: number): void {
@@ -318,13 +335,16 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     }
     this.clearDragState();
     if (!plan || !ids.length) return;
+    // The moved rows are replaced by the next render; keep the grabbed row
+    // focused when it is still mounted.
+    if (plan.changesOrder) this.pendingFocus = ids[0];
     this.options.onMove(ids, plan.insertionIndex, plan.changesOrder);
   }
 
   /** Draws the line for a plan computed outside a pointer move (auto-scroll). */
   private showPlan(plan: ListDropPlan | null): void {
     if (!plan || !this.list) return;
-    this.feedback.show(this.list, this.rows(), plan.insertionIndex, plan.label, plan.crossDocument);
+    this.feedback.show(this.list, this.rows(), plan.renderedIndex, plan.label, plan.crossDocument);
   }
 
   private clearDragState(): void {
@@ -376,12 +396,4 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     this.list = null;
     this.scroll = null;
   }
-}
-
-/** Row spans for the insertion rule; one helper keeps both paths aligned. */
-function rowSpans(rows: readonly HTMLElement[]): { top: number; bottom: number }[] {
-  return rows.map((row) => {
-    const rect = row.getBoundingClientRect();
-    return { top: rect.top, bottom: rect.bottom };
-  });
 }

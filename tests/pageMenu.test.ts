@@ -89,6 +89,8 @@ function fakeActions(overrides: Partial<PanelActions> = {}): PanelActions {
     reorderPages: vi.fn(),
     duplicatePage: vi.fn(),
     deletePage: vi.fn(),
+    duplicatePages: vi.fn(),
+    deletePages: vi.fn(),
     ...overrides,
   } as unknown as PanelActions;
 }
@@ -128,6 +130,7 @@ beforeEach(async () => {
   store.readOnly = false;
   localStorage.clear();
   pageStatus.reset();
+  pageReorder.reset();
   vi.mocked(confirmDialog).mockReset();
   vi.mocked(confirmDialog).mockResolvedValue(true);
   vi.mocked(showModal).mockReset();
@@ -386,13 +389,48 @@ describe("multi-page move targets", () => {
     pageReorder.reset();
   });
 
-  it("falls back to the current page when it is not part of the selection", () => {
+  it("follows the selection even when the visible page is not part of it", () => {
     const project = baseProject();
     store.setProject(project, PATH, false);
     const cards = mountCards(project);
     cards[0].dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
     cards[1].dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
-    expect(moveTargets(store.project!, "page_4")).toEqual(["page_4"]);
+    expect(moveTargets(store.project!, "page_4")).toEqual(["page_1", "page_2"]);
+    pageReorder.reset();
+  });
+
+  it("duplicates and deletes the whole Pages-panel selection from the keyboard", () => {
+    const project = baseProject();
+    store.setProject(project, PATH, false);
+    const cards = mountCards(project);
+    cards[0].dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    cards[2].dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    const actions = fakeActions();
+    expect(pageMenu.handleKey(keyEvent({ key: "d", altKey: true, shiftKey: true }), actions)).toBe(
+      true,
+    );
+    expect(actions.duplicatePages).toHaveBeenCalledWith(["page_1", "page_3"]);
+    expect(actions.duplicatePage).not.toHaveBeenCalled();
+    expect(
+      pageMenu.handleKey(keyEvent({ key: "Delete", altKey: true, shiftKey: true }), actions),
+    ).toBe(true);
+    expect(actions.deletePages).toHaveBeenCalledWith(["page_1", "page_3"]);
+    expect(actions.deletePage).not.toHaveBeenCalled();
+    pageReorder.reset();
+  });
+
+  it("uses the single-page actions when the selection holds one page", () => {
+    const project = baseProject();
+    store.setProject(project, PATH, false);
+    const cards = mountCards(project);
+    cards[0].dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    const actions = fakeActions();
+    pageMenu.handleKey(keyEvent({ key: "d", altKey: true, shiftKey: true }), actions);
+    expect(actions.duplicatePage).toHaveBeenCalledWith("page_1");
+    expect(actions.duplicatePages).not.toHaveBeenCalled();
+    pageMenu.handleKey(keyEvent({ key: "Delete", altKey: true, shiftKey: true }), actions);
+    expect(actions.deletePage).toHaveBeenCalledWith("page_1");
+    expect(actions.deletePages).not.toHaveBeenCalled();
     pageReorder.reset();
   });
 });

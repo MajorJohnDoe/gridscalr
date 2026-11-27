@@ -11,11 +11,12 @@ export { layersAfterPageRemoval } from "../../model/layerHierarchy";
 export {
   buildLayerTreeRows,
   layerAncestorRowIds,
+  layerRowPositions,
   layerRowsWithChildren,
   layerRenderedSiblingIds,
   layerSiblingIds,
 } from "./view";
-export type { LayerTreeRow, LayerTreeRowsOptions, LayerViewScope } from "./view";
+export type { LayerRowPosition, LayerTreeRow, LayerTreeRowsOptions, LayerViewScope } from "./view";
 export {
   duplicateLayerSubtree,
   layerMoveRejection,
@@ -35,4 +36,6 @@ export { layerDropPreview, layerRowSpans } from "./dropPreview";
 export type { LayerDropFeedback, LayerDropPreview, LayerRowSpan } from "./dropPreview";
 export { LayerTreeController } from "./controller";
 export type { LayerTreeControllerOptions } from "./controller";
+export { bindRovingTree, ensureTreeTabStop } from "./roving";
+export type { LayerRovingFocus } from "./roving";
 export type { LayerEffectiveState, LayerHierarchyIssue } from "../../model/layerHierarchy";
