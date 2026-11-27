@@ -74,9 +74,9 @@ an assumption.
 
 Observed results are recorded in
 [`performance/history.md`](performance/history.md) under the renderer follow-up
-entry. The high-DPR macOS WKWebView (zoom 1) and Windows WebView2 runs record
-larger page-wide differences (up to 4.7 %, no blank block and no explaining
-integer shift); they are the open finding F-150
+entry. The Windows WebView2 run and, when the tile path is used at zoom 1, the
+macOS WKWebView run record larger page-wide differences (up to 4.7 %, no blank
+block and no explaining integer shift); they are the open finding F-150
 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)), not verified
 matches.
 

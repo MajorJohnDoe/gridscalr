@@ -194,12 +194,13 @@ on each pull request.
   raster at zoom 1, 3 and 6. The packaged smoke test runs it on Linux, macOS and
   Windows and records a report-only `tile path probe` step with the verdict,
   difference, best 1-px shift and blank-block count. Linux WebKitGTK uses tiles
-  cleanly at all three zooms. macOS WKWebView used tiles on the final CI run:
-  zoom 6 matched, zoom 3 was per-tile antialiasing, and zoom 1 differed on 4.0 %
-  of pixels with no blank block and no improving integer shift. No blank or
-  integer-offset tile was found, so tiles stay enabled. The larger high-DPR
-  macOS zoom-1 and Windows WebView2 differences are the open finding F-150
-  ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)).
+  cleanly at all three zooms. macOS WKWebView used tiles at zoom 3 and 6 on the
+  final CI run (zoom 6 matched, zoom 3 was per-tile antialiasing); zoom 1 was
+  abandoned under the first-tile cost rule, while a preceding run used tiles
+  there and differed on 4.0 % of pixels with no blank block and no improving
+  integer shift. No blank or integer-offset tile was found, so tiles stay
+  enabled. The high-DPR macOS zoom-1 and Windows WebView2 differences are the
+  open finding F-150 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)).
 - `scripts/perf-probe.mjs` gains a split-view pan phase; `test:canvas` asserts
   both panes paint from a gesture raster during the pan.
 - Removed F-147 and F-149 from the open register; added F-150 with #389.
