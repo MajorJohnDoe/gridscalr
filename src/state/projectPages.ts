@@ -9,13 +9,17 @@ import {
 } from "../model/pages";
 import {
   deletePage as deletePageRecord,
+  deletePages as deletePagesRecord,
   duplicatePage as duplicatePageRecord,
+  duplicatePages as duplicatePagesRecord,
   insertPage as insertPageRecord,
   movePage as movePageRecord,
   movePages as movePagesRecord,
   type DeletePageSummary,
+  type DeletePagesSummary,
   type DuplicatePageOptions,
   type DuplicatePageSummary,
+  type DuplicatePagesSummary,
 } from "../model/pageList";
 import type {
   DocumentRef,
@@ -106,6 +110,27 @@ export class ProjectPages {
     const project = this.state.project;
     if (!project || this.state.readOnly) return null;
     const result = deletePageRecord(project, pageId);
+    if (!result) return null;
+    this.state.clearHistory();
+    this.state.prunePayloads();
+    this.session.ui.page = result.nextPageId ? pageNumber(project, result.nextPageId) : 1;
+    this.session.ui.selection = [];
+    this.session.ui.hover = null;
+    this.state.dirty = true;
+    this.state.revision += 1;
+    this.state.emit("project");
+    return result;
+  }
+
+  /**
+   * Deletes a page selection as one explicit structural operation. It writes
+   * one checkpoint outside the store, clears history once and emits once, so
+   * the cascade for every page is atomic and cannot be undone page by page.
+   */
+  deletePages(pageIds: readonly PageId[]): DeletePagesSummary | null {
+    const project = this.state.project;
+    if (!project || this.state.readOnly) return null;
+    const result = deletePagesRecord(project, pageIds);
     if (!result) return null;
     this.state.clearHistory();
     this.state.prunePayloads();
@@ -234,5 +259,31 @@ export class ProjectPages {
     this.state.revision += 1;
     this.state.emit("project");
     return result;
+  }
+
+  /**
+   * Appends a duplicate of every selected page as one undo step. Existing page
+   * IDs and page state are untouched; each copy gets a fresh `PageId`. The
+   * caller registers any cloned template document before the next render.
+   */
+  duplicatePages(
+    pageIds: readonly PageId[],
+    options: DuplicatePageOptions,
+  ): DuplicatePagesSummary | null {
+    let summary: DuplicatePagesSummary | null = null;
+    const changed = this.state.mutateIfChanged(
+      (project) => {
+        summary = duplicatePagesRecord(project, pageIds, options);
+        return summary !== null;
+      },
+      "project",
+      () => {
+        if (!summary) return;
+        this.session.ui.page = summary.lastPageNumber;
+        this.session.ui.selection = [];
+        this.session.ui.hover = null;
+      },
+    );
+    return changed ? summary : null;
   }
 }

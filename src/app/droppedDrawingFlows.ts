@@ -23,6 +23,7 @@ import { toast } from "../ui/toast";
 import { chooseImportPages, createImportedDocument, openDocument } from "./documentImport";
 import { describePages } from "./documentFlows";
 import type { ImportedRendererDocument } from "./rendererDocuments";
+import { applyImportManagedCopy, type ManagedCopyInfo } from "../features/sourceStorage";
 
 /**
  * A PDF/TIF dropped on the Pages panel. The selection, preflight, provenance
@@ -38,7 +39,8 @@ export interface DroppedDrawingHost {
     name: string,
     kind: "pdf" | "tiff" | "template",
   ): Promise<boolean>;
-  applySourceStorage(documentId: string): Promise<void>;
+  /** Verifies and writes a managed copy without writing the project. */
+  prepareSourceStorage(path: string, name: string, sha256: string): Promise<ManagedCopyInfo | null>;
   addImportedDocuments(entries: readonly ImportedRendererDocument[]): void;
   enqueuePageSize(page: number): Promise<PageSize | undefined>;
   resetPageSizes(): void;
@@ -147,6 +149,13 @@ export async function importDroppedDrawing(
       return;
     }
 
+    // The verified copy is written first and applied inside the same mutation
+    // as the imported pages, so one Undo removes the whole drop import.
+    let managedCopy: ManagedCopyInfo | null = null;
+    if (copyRecommended && file.path) {
+      managedCopy = await host.prepareSourceStorage(file.path, file.name, documentRef.sha256);
+    }
+
     await recordStructuralCheckpoint(
       t("sessionRecovery.checkpoint.importPages", {
         count: prepared.pageMap.length,
@@ -156,6 +165,14 @@ export async function importDroppedDrawing(
     try {
       store.mutate((project) => {
         commitProjectImport(project, prepared);
+        if (managedCopy) {
+          applyImportManagedCopy(project, {
+            documentId: importedDocument.id,
+            copy: managedCopy,
+            originalPath: file.path,
+            originalSha256: documentRef.sha256,
+          });
+        }
       }, "project");
     } catch (error) {
       await pdf.loadingTask.destroy();
@@ -184,9 +201,6 @@ export async function importDroppedDrawing(
     host.invalidate();
     host.renderAll();
 
-    // The managed-copy prompt is a separate structural step and therefore a
-    // later history boundary. The import itself stays one undo step.
-    if (copyRecommended) await host.applySourceStorage(importedDocument.id);
     if (dpiWarning) toast(t("app.dpiAssumed"), "warning");
     toast(
       t("app.addedPages", {

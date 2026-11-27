@@ -1,5 +1,5 @@
 import { t } from "../../i18n";
-import type { LayerTreeRow } from "../../features/layerTree";
+import type { LayerTreeRow, LayerRowPosition } from "../../features/layerTree";
 import {
   renameLayer,
   setLayerColor,
@@ -118,6 +118,8 @@ export function renderLayerRow(
   pageId: string,
   group: HTMLElement,
   actions: PanelActions,
+  position?: LayerRowPosition,
+  tabStop?: boolean,
 ): void {
   const page = store.ui.page;
   const layer = treeRow.layer;
@@ -126,12 +128,20 @@ export function renderLayerRow(
   const searching = Boolean(layerView.query.trim());
   const items = searching && searchHits.length ? searchHits : pageItems;
   const expanded = layerView.expanded.has(layer.id) || (searching && searchHits.length > 0);
+  const expandable = treeRow.hasChildren || items.length > 0;
   const row = el("div", "layer-row");
   row.dataset.layerId = layer.id;
   row.dataset.layerKind = layer.kind;
   row.dataset.layerDepth = String(treeRow.depth);
   row.style.setProperty("--layer-depth", String(treeRow.depth));
-  row.tabIndex = 0;
+  row.tabIndex = tabStop ? 0 : -1;
+  row.setAttribute("role", "treeitem");
+  row.setAttribute("aria-level", String(treeRow.depth + 1));
+  row.setAttribute("aria-selected", String(layerTreeController.selectionIds().includes(layer.id)));
+  if (position) {
+    row.setAttribute("aria-posinset", String(position.posInSet));
+    row.setAttribute("aria-setsize", String(position.setSize));
+  }
   row.classList.toggle("is-active", layer.id === project.activeLayerId);
   row.classList.toggle("is-hidden", !treeRow.visible);
   row.classList.toggle("is-inherited-hidden", Boolean(treeRow.inheritedHiddenBy));
@@ -139,7 +149,7 @@ export function renderLayerRow(
   row.classList.toggle("is-group", treeRow.hasChildren);
   row.setAttribute("aria-keyshortcuts", LAYER_KEYSHORTCUTS);
   row.setAttribute("aria-describedby", `${LAYER_ORDER_HINT_ID} ${LAYER_MENU_HINT_ID}`);
-  if (treeRow.hasChildren) row.setAttribute("aria-expanded", String(expanded));
+  if (expandable) row.setAttribute("aria-expanded", String(expanded));
 
   const panelId = `layer-items-${layer.id}`;
   const label = disclosureLabel(treeRow, expanded, items.length);
@@ -341,6 +351,6 @@ export function renderLayerRow(
   });
   group.append(row);
   if (expanded && items.length) {
-    group.append(buildLayerItems(project, layer, actions, items));
+    group.append(buildLayerItems(project, layer, actions, items, treeRow.depth + 2));
   }
 }

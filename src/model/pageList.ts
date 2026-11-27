@@ -38,12 +38,33 @@ export interface DuplicatePageOptions {
   copyScale: boolean;
   copyName: boolean;
   name: string;
+  /** Per-source names for a bulk duplicate; `name` is the fallback. */
+  names?: ReadonlyMap<PageId, string>;
 }
 
 export interface DuplicatePageSummary {
   pageId: PageId;
   pageNumber: number;
   copiedItems: number;
+}
+
+export interface DuplicatePagesSummary {
+  pageIds: PageId[];
+  pageNumbers: number[];
+  copiedItems: number;
+  /** Display page number of the last appended copy. */
+  lastPageNumber: number;
+}
+
+export interface DeletePagesSummary {
+  pageIds: PageId[];
+  pageNumbers: number[];
+  removedItems: number;
+  removedLayers: number;
+  removedDocuments: string[];
+  clearedSpaces: number;
+  clearedScheduleFilters: number;
+  nextPageId: PageId | null;
 }
 
 function cloneState(state: PageState | undefined): PageState {
@@ -275,7 +296,8 @@ export function duplicatePage(
   if (source.state.building) record.state.building = source.state.building;
   if (source.state.floor) record.state.floor = source.state.floor;
   if (options.copyName) {
-    const name = options.name.trim().slice(0, 80);
+    const sourceName = options.names?.get(pageId) ?? options.name;
+    const name = sourceName.trim().slice(0, 80);
     if (name) record.state.name = name;
     else delete record.state.name;
   } else {
@@ -304,6 +326,75 @@ export function duplicatePage(
     pageNumber: pageNumber(project, record.id),
     copiedItems,
   };
+}
+
+/**
+ * Duplicates a page selection in project order. Every existing page keeps its
+ * `PageId`; each copy gets a fresh one and appends after the previous copy.
+ * Page state, layer page state and optional items follow the same rules as one
+ * duplicate, so the caller can apply the whole block as one undo step.
+ */
+export function duplicatePages(
+  project: Project,
+  pageIds: readonly PageId[],
+  options: DuplicatePageOptions,
+): DuplicatePagesSummary | null {
+  const selected = new Set(pageIds);
+  const ordered = project.pages.filter((page) => selected.has(page.id)).map((page) => page.id);
+  if (!ordered.length) return null;
+  const result: DuplicatePagesSummary = {
+    pageIds: [],
+    pageNumbers: [],
+    copiedItems: 0,
+    lastPageNumber: 0,
+  };
+  for (const pageId of ordered) {
+    const summary = duplicatePage(project, pageId, options);
+    if (!summary) continue;
+    result.pageIds.push(summary.pageId);
+    result.pageNumbers.push(summary.pageNumber);
+    result.copiedItems += summary.copiedItems;
+    result.lastPageNumber = summary.pageNumber;
+  }
+  return result.pageIds.length ? result : null;
+}
+
+/**
+ * Deletes several pages by `PageId`. The model applies the same cascade as one
+ * deletion for every page, so no layer membership, item reference, space link
+ * or schedule filter is left pointing at a removed page.
+ */
+export function deletePages(
+  project: Project,
+  pageIds: readonly PageId[],
+): DeletePagesSummary | null {
+  const selected = new Set(pageIds);
+  const ordered = project.pages.filter((page) => selected.has(page.id));
+  if (!ordered.length) return null;
+  const firstIndex = pageIndex(project, ordered[0].id);
+  const summary: DeletePagesSummary = {
+    pageIds: [],
+    pageNumbers: ordered.map((page) => pageNumber(project, page.id)),
+    removedItems: 0,
+    removedLayers: 0,
+    removedDocuments: [],
+    clearedSpaces: 0,
+    clearedScheduleFilters: 0,
+    nextPageId: null,
+  };
+  for (const page of ordered) {
+    const removed = deletePage(project, page.id);
+    if (!removed) continue;
+    summary.pageIds.push(removed.pageId);
+    summary.removedItems += removed.removedItems;
+    summary.removedLayers += removed.removedLayers;
+    summary.removedDocuments.push(...removed.removedDocuments);
+    summary.clearedSpaces += removed.clearedSpaces;
+    summary.clearedScheduleFilters += removed.clearedScheduleFilters;
+  }
+  const nextIndex = Math.max(0, Math.min(firstIndex, project.pages.length - 1));
+  summary.nextPageId = project.pages[nextIndex]?.id ?? null;
+  return summary.pageIds.length ? summary : null;
 }
 
 /** Explicit cleanup for a superseded document and every page still on it. */

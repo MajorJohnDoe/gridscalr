@@ -88,3 +88,70 @@ export function duplicatePageDialog(
     };
   });
 }
+
+export interface BulkDuplicatePageDialogInput {
+  count: number;
+  firstNewPage: number;
+  lastNewPage: number;
+  hasScale: boolean;
+}
+
+/** Options for a page multi-selection; each copy keeps its source name. */
+export function bulkDuplicatePageDialog(
+  input: BulkDuplicatePageDialogInput,
+): Promise<Omit<DuplicatePageOptions, "names"> | null> {
+  const body = el("div", "form-stack");
+  body.append(
+    el(
+      "p",
+      "settings-note",
+      t("duplicate.bulkNote", {
+        count: input.count,
+        first: input.firstNewPage,
+        last: input.lastNewPage,
+      }),
+    ),
+  );
+
+  let copyName = true;
+  const nameToggle = checkRow(t("duplicate.copyName"), true, (checked) => {
+    copyName = checked;
+  });
+
+  let copyScale = input.hasScale;
+  const scaleToggle = checkRow(t("duplicate.copyScale"), input.hasScale, (checked) => {
+    copyScale = checked;
+  });
+  scaleToggle.input.disabled = !input.hasScale;
+  if (!input.hasScale) scaleToggle.input.title = t("duplicate.noScale");
+
+  let copyMarkups = false;
+  const markupToggle = checkRow(t("duplicate.copyMarkups"), false, (checked) => {
+    copyMarkups = checked;
+  });
+
+  body.append(
+    nameToggle.row,
+    scaleToggle.row,
+    markupToggle.row,
+    el("p", "settings-note", t("duplicate.note")),
+  );
+
+  return showModal({
+    title: t("duplicate.bulkTitle"),
+    subtitle: t("duplicate.bulkSubtitle", { count: input.count }),
+    body,
+    actions: [
+      { label: t("common.cancel"), value: "cancel" },
+      { label: t("duplicate.title"), value: "duplicate", primary: true },
+    ],
+  }).then((value) => {
+    if (value !== "duplicate") return null;
+    return {
+      copyMarkups,
+      copyScale,
+      copyName,
+      name: "",
+    };
+  });
+}

@@ -44,12 +44,17 @@ export function buildLayerItems(
   layer: Layer,
   actions: PanelActions,
   items: MarkupItem[],
+  level = 2,
 ): HTMLElement {
   const list = el("div", "layer-items");
   list.id = `layer-items-${layer.id}`;
   list.dataset.layerId = layer.id;
+  list.setAttribute("role", "group");
+  list.setAttribute("aria-label", t("layer.itemsGroupAria", { name: layer.name }));
   // Later items paint above earlier ones, so list the topmost item first.
+  let position = 0;
   for (const item of [...items].reverse()) {
+    position += 1;
     const ref = { layerId: layer.id, itemId: item.id };
     const key = selectionKey(ref);
     const metrics = itemMetrics(item, project);
@@ -64,6 +69,12 @@ export function buildLayerItems(
     row.type = "button";
     row.dataset.itemId = item.id;
     row.dataset.layerId = layer.id;
+    row.tabIndex = -1;
+    row.setAttribute("role", "treeitem");
+    row.setAttribute("aria-level", String(level));
+    row.setAttribute("aria-posinset", String(position));
+    row.setAttribute("aria-setsize", String(items.length));
+    row.setAttribute("aria-selected", String(selected));
     row.classList.toggle("is-selected", selected);
     row.classList.toggle("is-hidden", itemHidden);
     row.classList.toggle("is-locked", itemLocked);
@@ -133,6 +144,11 @@ export function buildLayerItems(
       if (!store.isSelected(ref)) store.setSelection(ref);
       layerView.itemAnchor = key;
       showSelectionMenuAt(event.clientX, event.clientY, actions);
+    });
+    row.addEventListener("keydown", (event) => {
+      if (event.target !== row || (event.key !== "Enter" && event.key !== " ")) return;
+      event.preventDefault();
+      row.click();
     });
 
     list.append(row);

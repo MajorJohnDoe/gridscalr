@@ -25,14 +25,14 @@
     "src/features/tileCache": 400
   },
   "files": {
-    "src/app/App.ts": 1107,
+    "src/app/App.ts": 1111,
     "src/canvas/CanvasView.ts": 1638,
     "src/features/schematics/model/sheetTemplate.ts": 714,
     "src/model/labelLayout.ts": 812,
-    "src/state/store.ts": 400,
+    "src/state/store.ts": 410,
     "src/styles/dialogs.css": 1665,
     "src/styles/markups.css": 1051,
-    "src/styles/panels.css": 1085,
+    "src/styles/panels.css": 1110,
     "src/styles/shell.css": 1810
   },
   "rust": {

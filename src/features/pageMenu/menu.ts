@@ -141,16 +141,24 @@ export function pageMenuItems(
       action: () => void movePageToPosition(actions, targets),
     },
     {
-      label: t("page.duplicate"),
+      label:
+        targets.length > 1
+          ? t("page.duplicateSelection", { count: targets.length })
+          : t("page.duplicate"),
       icon: "copy",
-      action: () => actions.duplicatePage(pageId),
+      action: () =>
+        targets.length > 1 ? actions.duplicatePages(targets) : actions.duplicatePage(pageId),
     },
     { separator: true },
     {
-      label: t("page.delete"),
+      label:
+        targets.length > 1
+          ? t("page.deleteSelection", { count: targets.length })
+          : t("page.delete"),
       icon: "trash",
       danger: true,
-      action: () => actions.deletePage(pageId),
+      action: () =>
+        targets.length > 1 ? actions.deletePages(targets) : actions.deletePage(pageId),
     },
   ];
 }

@@ -36,7 +36,10 @@ const KEY_COMMANDS: Record<string, ListMoveCommand> = {
 };
 
 export interface ListDropPlan {
+  /** Logical insertion index in the host's full entry list. */
   insertionIndex: number;
+  /** Insertion index among the mounted rows, for the drop line. */
+  renderedIndex: number;
   changesOrder: boolean;
   label: string | null;
   crossDocument: boolean;
@@ -65,6 +68,13 @@ export interface ListReorderOptions<E extends ListEntry> {
     ids: ReadonlySet<string>,
     insertionIndex: number,
   ) => { changesOrder: boolean; label: string | null; crossDocument: boolean };
+  /**
+   * Project index of the first rendered row when the host mounts a window or a
+   * filtered subset of its entry list. Rendered drop positions are translated
+   * by this offset before `planDrop` and `onMove`; keyboard positions are
+   * already global and are never translated.
+   */
+  renderedOffset?: () => number;
   dropLineClass?: string;
   dropLabelClass?: string;
   announcerClass?: string;
@@ -234,7 +244,7 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     entries: readonly E[],
     ids: ReadonlySet<string>,
     insertionIndex: number,
-  ): ListDropPlan {
+  ): Omit<ListDropPlan, "renderedIndex"> {
     if (this.options.planDrop) {
       return { insertionIndex, ...this.options.planDrop(entries, ids, insertionIndex) };
     }
@@ -284,7 +294,7 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     const plan = this.refreshPlan(clientX, clientY);
     if (!plan) return null;
     return {
-      insertionIndex: plan.insertionIndex,
+      insertionIndex: plan.renderedIndex,
       label: plan.label,
       crossDocument: plan.crossDocument,
     };
@@ -304,10 +314,11 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     }
     this.pointerX = clientX;
     this.pointerY = clientY;
-    const insertionIndex = insertionIndexAt(rowSpans(this.rows()), clientY);
+    const renderedIndex = insertionIndexAt(rowSpans(this.rows()), clientY);
+    const insertionIndex = renderedIndex + (this.options.renderedOffset?.() ?? 0);
     const plan = this.planFor(this.options.entries(), new Set(this.dragging), insertionIndex);
     this.updateAutoScroll();
-    return plan;
+    return { ...plan, renderedIndex };
   }
 
   private drop(clientX: number, clientY: number): void {
@@ -324,7 +335,7 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
   /** Draws the line for a plan computed outside a pointer move (auto-scroll). */
   private showPlan(plan: ListDropPlan | null): void {
     if (!plan || !this.list) return;
-    this.feedback.show(this.list, this.rows(), plan.insertionIndex, plan.label, plan.crossDocument);
+    this.feedback.show(this.list, this.rows(), plan.renderedIndex, plan.label, plan.crossDocument);
   }
 
   private clearDragState(): void {

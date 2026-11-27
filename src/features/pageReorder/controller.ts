@@ -44,6 +44,8 @@ function announceMove(outcome: MoveOutcome): string {
 
 export class PageReorderController {
   private actions: PageReorderActions | null = null;
+  /** Project index of the first mounted card while the panel shows a window. */
+  private windowOffset = 0;
   private readonly drag = new ListReorderController<PageReorderEntry>({
     rowSelector: ".page-card",
     rowId: (row) => row.dataset.pageId ?? null,
@@ -61,6 +63,7 @@ export class PageReorderController {
         crossDocument: plan.crossDocument,
       };
     },
+    renderedOffset: () => this.windowOffset,
     dropLineClass: "page-drop-line",
     dropLabelClass: "page-drop-label",
     announcerClass: "page-reorder-announcer",
@@ -73,6 +76,15 @@ export class PageReorderController {
   /** Rebinds the drag surface; card listeners are recreated by the panel render. */
   bindList(list: HTMLElement, scroll: HTMLElement): void {
     this.drag.bindList(list, scroll);
+  }
+
+  /**
+   * Sets the project index of the first mounted card. A windowed panel maps a
+   * rendered drop position back to the full page list with this offset, so a
+   * drop near a window edge never lands at the wrong project position.
+   */
+  setWindowOffset(offset: number): void {
+    this.windowOffset = Math.max(0, Math.round(offset));
   }
 
   /** Applies selection styling and the keyboard hint to one card. */

@@ -6,7 +6,7 @@ import { showPopoverAt } from "../../ui/popover";
 import { pageMenuItems } from "./menu";
 import { pageShortcutCommand, pageShortcutReadsOnly } from "./model";
 import { insertPageNear, movePageToPosition } from "./operations";
-import { moveTargets } from "./targets";
+import { pageEditTargets } from "./targets";
 
 /** Pointer or card position the menu opens at. */
 export interface PageMenuPosition {
@@ -60,24 +60,32 @@ export class PageMenuController {
       return true;
     }
     if (store.readOnly) return false;
-    const pageId = currentPageId(project, store.ui.page) ?? project.pages[0]?.id;
-    if (!pageId) return false;
+    const current = currentPageId(project, store.ui.page) ?? project.pages[0]?.id ?? null;
+    if (!current) return false;
+    const targets = pageEditTargets(project, current);
+    if (!targets.length) return false;
     event.preventDefault();
     switch (command) {
-      case "insertBefore":
-        void insertPageNear(actions, pageId, "before");
+      case "insertBefore": {
+        const anchor = targets[0];
+        if (anchor) void insertPageNear(actions, anchor, "before");
         break;
-      case "insertAfter":
-        void insertPageNear(actions, pageId, "after");
+      }
+      case "insertAfter": {
+        const anchor = targets[targets.length - 1];
+        if (anchor) void insertPageNear(actions, anchor, "after");
         break;
+      }
       case "movePage":
-        void movePageToPosition(actions, moveTargets(project, pageId));
+        void movePageToPosition(actions, targets);
         break;
       case "duplicatePage":
-        actions.duplicatePage(pageId);
+        if (targets.length > 1) actions.duplicatePages(targets);
+        else actions.duplicatePage(targets[0]);
         break;
       case "deletePage":
-        actions.deletePage(pageId);
+        if (targets.length > 1) actions.deletePages(targets);
+        else actions.deletePage(targets[0]);
         break;
       case "previousPage":
       case "nextPage":

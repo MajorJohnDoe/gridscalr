@@ -2,9 +2,10 @@ import { t } from "../../i18n";
 import type { DocumentRef } from "../../model/types";
 import { sourceStatus } from "../../source/sourceStatus";
 import { store } from "../../state/store";
-import { copyDocumentIntoProject, consolidateDrawings } from "./copyActions";
+import { copyDocumentIntoProject, consolidateDrawings, prepareImportCopy } from "./copyActions";
 import { findDocument } from "./documents";
 import { detectSourceLocation, shouldRecommendManagedCopy } from "./mode";
+import type { ManagedCopyInfo } from "./managedCopy";
 import { outsideProjectReferences } from "./outsideReferences";
 import type { SourceStorageHost } from "./ports";
 import { showOutsideReferenceBanner } from "./referenceWarning";
@@ -77,6 +78,15 @@ export class SourceStorageController {
   /** Runs the recommendation after the imported document exists in the store. */
   async applyImportChoice(documentId: string): Promise<void> {
     await this.copyIntoProject(documentId);
+  }
+
+  /**
+   * Verifies and writes a managed copy for a drop import without touching the
+   * project. The caller applies it inside the import mutation.
+   */
+  prepareImportCopy(path: string, name: string, sha256: string): Promise<ManagedCopyInfo | null> {
+    if (store.readOnly) return Promise.resolve(null);
+    return prepareImportCopy(this.host, { path, name, sha256 });
   }
 
   copyIntoProject(documentId: string): Promise<boolean> {

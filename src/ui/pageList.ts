@@ -1,4 +1,4 @@
-import { pageDisplayName, pageLocationLabel } from "../model/pages";
+import { currentPageId, pageDisplayName, pageLocationLabel } from "../model/pages";
 import type { PageId, PageSize } from "../model/types";
 import { store } from "../state/store";
 import {
@@ -27,6 +27,7 @@ import {
   type PageStatusFilter,
   type PageStatusRow,
 } from "../features/pageStatus";
+import { pageWindowControls, pageWindowState, type PageWindowAction } from "../features/pageWindow";
 import { el } from "./dom";
 import { icon } from "./icons";
 import { loadPanelPreferences } from "./preferences";
@@ -44,6 +45,9 @@ interface PendingThumbnail {
 let thumbnailObserver: IntersectionObserver | null = null;
 
 const pageNavigator = new RowNavigator(".page-card");
+
+/** One window control keeps focus across the panel render it triggers. */
+let pendingWindowFocus: PageWindowAction | null = null;
 
 /** Stops observing page cards when the Pages tab is no longer mounted. */
 export function disconnectPageThumbnails(): void {
@@ -136,6 +140,7 @@ export function updatePageSizeLabel(refs: ShellRefs, page: number, size: PageSiz
 
 function renderEmptyPages(refs: ShellRefs, actions: PanelActions): void {
   pageReorder.detach();
+  pageWindowState.reset();
   const empty = el("div", "page-list page-list-empty");
   empty.append(el("p", "empty-note", t("page.emptyProject")));
   const add = el("button", "btn btn-small", t("page.addPages"));
@@ -210,12 +215,46 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     refs.dockBody.append(pageStatusEmptyNote());
     return;
   }
+  const visibleIds = visible.map((row) => row.pageId);
+  const selectedAnchor = pageReorder.selectionIds().find((id) => visibleIds.includes(id));
+  const currentAnchor = currentPageId(project, store.ui.page);
+  const anchorId =
+    selectedAnchor ??
+    (currentAnchor && visibleIds.includes(currentAnchor) ? currentAnchor : null) ??
+    visibleIds[0] ??
+    null;
+  const window = pageWindowState.window(visibleIds, anchorId);
   const list = el("div", "page-list");
-  const max = Math.min(visible.length, 400);
   // Reordering maps a drop position in the rendered list, so it stays off while
   // a filter hides pages. Viewing, renaming and page actions still work.
   const reorderEnabled = !store.readOnly && filter === "all";
-  const shown = visible.slice(0, max);
+  pageReorder.setWindowOffset(window.start);
+  if (visible.length > window.end - window.start) {
+    const anchorRow = visible.find((row) => row.pageId === anchorId);
+    refs.dockBody.append(
+      pageWindowControls({
+        start: window.start,
+        end: window.end,
+        total: visible.length,
+        current: anchorRow?.page,
+        onNavigate: (action, page) => {
+          pendingWindowFocus = action;
+          if (action === "jump" && page !== undefined) {
+            const target = Math.max(1, Math.min(visible.length, Math.round(page)));
+            pageWindowState.jumpToPage(visible.length, target - 1);
+            const displayPage = visible[target - 1]?.page ?? target;
+            if (displayPage !== store.ui.page) actions.goToPage(displayPage, true);
+            else actions.refresh();
+          } else {
+            const step = window.end - window.start;
+            pageWindowState.shift(visible.length, action === "next" ? step : -step);
+            actions.refresh();
+          }
+        },
+      }),
+    );
+  }
+  const shown = visible.slice(window.start, window.end);
   const prefs = loadPanelPreferences();
   const runs = new Map<number, { documentId: string | null; count: number }>();
   if (prefs.pagesGrouped && project.documents.length > 1) {
@@ -357,13 +396,12 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   pageReorder.bindList(list, refs.dockBody);
   pageNavigator.bind(list);
   pageReorder.afterRender();
-  if (visible.length > max) {
-    const note = el(
-      "div",
-      "empty-note small",
-      t("page.showingFirst", { shown: max, total: visible.length }),
-    );
-    refs.dockBody.append(note);
+  const focusWindow = pendingWindowFocus;
+  pendingWindowFocus = null;
+  if (focusWindow) {
+    refs.dockBody
+      .querySelector<HTMLElement>(`[data-page-window-action="${focusWindow}"]`)
+      ?.focus({ preventScroll: true });
   }
   observeThumbnails(refs, actions, pendingThumbnails);
 }

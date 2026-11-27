@@ -7,6 +7,9 @@ export {
   documentSourceKey,
 } from "./managedCopy";
 export type { ConsolidateCandidate, ManagedCopyInfo } from "./managedCopy";
+export { applyImportManagedCopy } from "./importCopy";
+export type { PreparedImportCopy } from "./importCopy";
+export type { ImportCopyRequest } from "./copyActions";
 export {
   detectSourceLocation,
   documentStorage,

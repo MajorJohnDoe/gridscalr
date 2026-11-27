@@ -93,12 +93,11 @@ export class LayerTreeController {
     );
   }
 
-  /** Selection styling plus the `aria-pressed` state for a selected row. */
+  /** Selection styling plus the treeitem selected state for a row. */
   decorate(row: HTMLElement, id: string): void {
     const selected = this.selection.includes(id);
     row.classList.toggle("is-selected", selected);
-    if (selected) row.setAttribute("aria-pressed", "true");
-    else row.removeAttribute("aria-pressed");
+    row.setAttribute("aria-selected", String(selected));
   }
 
   applySelection(): void {

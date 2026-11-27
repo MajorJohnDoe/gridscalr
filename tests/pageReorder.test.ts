@@ -352,6 +352,45 @@ describe("pages panel controller", () => {
     expect(calls[0].insertionIndex).toBe(project.pages.length);
   });
 
+  it("maps a windowed drop position back to the project page list", () => {
+    const project = baseProject();
+    store.setProject(project, PATH, false);
+    document.body.innerHTML = "";
+    const scroll = document.createElement("div");
+    const list = document.createElement("div");
+    list.className = "page-list";
+    list.getBoundingClientRect = () => rect(0, 0, 100, 60);
+    scroll.getBoundingClientRect = () => rect(0, 0, 100, 60);
+    scroll.append(list);
+    document.body.append(scroll);
+    const shown = project.pages.slice(2, 4);
+    const cards = shown.map((page, index) => {
+      const card = document.createElement("button");
+      card.className = "page-card";
+      card.dataset.pageId = page.id;
+      card.dataset.page = String(index + 3);
+      card.getBoundingClientRect = () => rect(index * 20, 0, 100, 20);
+      list.append(card);
+      return card;
+    });
+    const calls: ReorderCall[] = [];
+    pageReorder.reset();
+    pageReorder.setActions({
+      reorder: (pageIds, insertionIndex) => calls.push({ pageIds: [...pageIds], insertionIndex }),
+      goToPage: () => undefined,
+    });
+    pageReorder.setWindowOffset(2);
+    pageReorder.bindList(list, scroll);
+    for (const card of cards) pageReorder.decorateCard(card, card.dataset.pageId ?? "");
+    const held = pressAndMove({ target: cards[0], x: 10, y: 10 }, { x: 10, y: 60 });
+    held.release({ x: 10, y: 60 });
+    // The two mounted cards are project rows 3 and 4; dropping below them lands
+    // at project insertion index 4, not at the rendered index 2.
+    expect(calls).toEqual([{ pageIds: ["page_3"], insertionIndex: 4 }]);
+    pageReorder.setWindowOffset(0);
+    pageReorder.reset();
+  });
+
   it("labels a cross-document drop in the indicator", () => {
     const project = baseProject();
     store.setProject(project, PATH, false);

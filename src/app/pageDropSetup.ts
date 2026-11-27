@@ -13,7 +13,7 @@ import type { ProjectImportHost } from "./projectImportFlows";
 export interface PageDropSetupHost {
   dockBody: HTMLElement;
   projectImportHost: () => ProjectImportHost;
-  sourceStorage: () => Pick<SourceStorageController, "recommendImport" | "applyImportChoice">;
+  sourceStorage: () => Pick<SourceStorageController, "recommendImport" | "prepareImportCopy">;
 }
 
 function createDroppedDrawingHost(host: PageDropSetupHost): DroppedDrawingHost {
@@ -21,7 +21,8 @@ function createDroppedDrawingHost(host: PageDropSetupHost): DroppedDrawingHost {
     ...host.projectImportHost(),
     recommendSourceStorage: (path, name, kind) =>
       host.sourceStorage().recommendImport(path, name, kind),
-    applySourceStorage: (documentId) => host.sourceStorage().applyImportChoice(documentId),
+    prepareSourceStorage: (path, name, sha256) =>
+      host.sourceStorage().prepareImportCopy(path, name, sha256),
   };
 }
 

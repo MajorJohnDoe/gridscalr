@@ -24,6 +24,61 @@ async function requireProjectPath(host: SourceStorageHost): Promise<string | nul
   return store.projectPath;
 }
 
+/** Raw source fields a drop import has before the document exists in the store. */
+export interface ImportCopyRequest {
+  path: string;
+  name: string;
+  sha256: string;
+}
+
+/**
+ * Copies a dropped drawing into the project before its import commits. The
+ * caller applies the returned record inside the same store mutation as the
+ * imported pages, so the copy and the pages share one undo step. It performs
+ * no checkpoint and no project write itself.
+ */
+export async function prepareImportCopy(
+  host: SourceStorageHost,
+  request: ImportCopyRequest,
+): Promise<ManagedCopyInfo | null> {
+  const project = store.project;
+  if (!project || !host.desktop) return null;
+  const projectPath = await requireProjectPath(host);
+  if (!projectPath) return null;
+  try {
+    const info = await sourceFileHash(request.path);
+    if (!info) {
+      await messageDialog(
+        t("sourceStorage.copyFailedTitle"),
+        t("sourceStorage.sourceMissing", { name: request.name }),
+        "warning",
+      );
+      return null;
+    }
+    if (request.sha256 && !checksumMatches(request.sha256, info.sha256)) {
+      await messageDialog(
+        t("sourceStorage.copyFailedTitle"),
+        t("sourceStorage.sourceChangedBeforeCopy", { name: request.name }),
+        "warning",
+      );
+      return null;
+    }
+    const copy = await copySourceToProject({
+      sourcePath: request.path,
+      projectPath,
+      displayName: request.name,
+      protectedPaths: managedCopyProtectedPaths(project, projectPath),
+    });
+    if (!checksumMatches(info.sha256, copy.sha256)) {
+      throw new Error(t("sourceStorage.copyVerifyFailed", { name: request.name }));
+    }
+    return copy;
+  } catch (error) {
+    await messageDialog(t("sourceStorage.copyFailedTitle"), describeError(error), "warning");
+    return null;
+  }
+}
+
 /** Explicit **Copy drawing into project** for one document. */
 export async function copyDocumentIntoProject(
   host: SourceStorageHost,

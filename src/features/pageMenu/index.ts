@@ -21,7 +21,7 @@ export type {
 } from "./model";
 export { pageMenuItems } from "./menu";
 export { insertPageNear, movePageToPosition } from "./operations";
-export { moveTargets } from "./targets";
+export { moveTargets, pageEditTargets } from "./targets";
 export {
   insertPageDialog,
   insertPositionLabel,
