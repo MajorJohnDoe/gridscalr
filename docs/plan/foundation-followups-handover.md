@@ -6,8 +6,8 @@ on each pull request.
 ## Phase 1 — enforce the 400-line foundation feature budget (F-144)
 
 - Issue: [#384](https://github.com/MajorJohnDoe/gridscalr/issues/384)
-- PR: pending
-- Commit: pending
+- PR: [#386](https://github.com/MajorJohnDoe/gridscalr/pull/386)
+- Commit: `af8fa63` (phase commit; the handover commit is the PR head)
 - Schema: unchanged (28)
 
 ### Completed
