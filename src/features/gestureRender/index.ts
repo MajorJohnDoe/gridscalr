@@ -18,10 +18,13 @@ export {
   GESTURE_REFRESH_MS,
   GESTURE_SETTLE_MS,
   MIN_GESTURE_SETTLE_MS,
+  captureStale,
   clampSettleMs,
+  gestureContentKey,
   movedFar,
   refreshDue,
   settleDelay,
   settleDue,
   type SettleClock,
 } from "./model";
+export { ViewGestureSignal, type ViewGestureEvent, type ViewGestureListener } from "./signal";

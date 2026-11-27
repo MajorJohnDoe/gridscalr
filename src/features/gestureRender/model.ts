@@ -1,11 +1,15 @@
+import { layerVisibleOnPage } from "../../model/layers";
+import { buildLayerHierarchy } from "../../model/layerHierarchy";
+import type { Project } from "../../model/types";
+
 /**
- * Gesture-time content reuse: the pure settle rule.
+ * Gesture-time content reuse: the pure settle and content-identity rules.
  *
  * While a pan or a wheel zoom is in flight the canvas paints the previous item
  * raster transformed by the gesture instead of redrawing every item. That
  * raster is only a stand-in, so a short idle window after the last gesture
- * input decides when the real redraw happens. The rule lives here so it can be
- * tested without a canvas, a clock or a timer.
+ * input decides when the real redraw happens. The rules live here so they can
+ * be tested without a canvas, a clock or a timer.
  */
 
 /** Default idle window after the last wheel event. */
@@ -63,6 +67,44 @@ export const GESTURE_REFRESH_DISTANCE = 0.3;
 export function refreshDue(now: number, refreshedAt: number): boolean {
   if (!Number.isFinite(now) || !Number.isFinite(refreshedAt)) return false;
   return now - refreshedAt >= GESTURE_REFRESH_MS;
+}
+
+/**
+ * Identity of the content a gesture raster captured: the page, every layer's
+ * effective visibility (including zero opacity) and, for a projectless scene,
+ * the loaded document and page. A page, document, hidden-layer or opacity
+ * change changes the key.
+ */
+export function gestureContentKey(
+  project: Project | null,
+  pageId: string | null,
+  documentKey = "",
+  pageNumber: number | null = null,
+): string | null {
+  if (!project) {
+    // The projectless raw-PDF reference scene has no PageId, but changing the
+    // loaded document or page still makes the captured raster stale.
+    if (!documentKey && pageNumber === null) return null;
+    return `doc:${documentKey}:${pageNumber ?? ""}`;
+  }
+  const id = pageId ?? "";
+  const hierarchy = buildLayerHierarchy(project.layers);
+  const visible = project.layers
+    .map((layer) => (layerVisibleOnPage(layer, id, hierarchy) && layer.opacity > 0 ? "1" : "0"))
+    .join("");
+  return `${id}:${visible}`;
+}
+
+/**
+ * True when the captured raster no longer describes the canvas content.
+ *
+ * The key covers the page identity and effective layer visibility, so a page
+ * change or a hidden layer never leaves the previous content in the raster. A
+ * missing key on either side does not invalidate, so an unkeyed host keeps the
+ * old pure-gesture behaviour.
+ */
+export function captureStale(captured: string | null, current: string | null): boolean {
+  return captured !== null && current !== null && captured !== current;
 }
 
 /** True when the view has moved far enough that the captured raster is stale. */

@@ -433,8 +433,10 @@ path.
 wheel zoom is in flight, transforming it with the gesture instead of redrawing
 every item, and redraws for real once the gesture settles (pointerup, or 120 ms
 after the last wheel event). The `interaction` canvas stays live throughout, so
-selection handles, the marquee, snapping and the draft overlay never lag. At rest
-the output is unchanged.
+selection handles, the marquee, snapping and the draft overlay never lag. The
+read-only reference pane mirrors the primary's gesture edges through the same
+feature, so a split-view pan also reuses the reference raster. At rest the output
+is unchanged.
 `src/features/displayLevels/` keeps one whole-page bitmap per page and zoom
 octave in memory (128 MiB, least recently used) so that a pan past the crop
 margin and a return to a visited zoom blit a page image instead of rendering the
@@ -444,10 +446,10 @@ the exact crop still renders whenever no level is sharp enough. It is display
 state only: never measured, printed, exported or written to the project file.
 `src/features/tileCache/` rasterises the primary canvas crop as 512 CSS px tiles
 in visible-first order, paints the first tile as soon as it exists and keeps a
-64 MiB RGBA cache evicted by distance from the viewport. The reference pane,
-split view, comparison and every read-only canvas stay on the full-page path,
-which is also the fallback when `createImageBitmap` or `OffscreenCanvas` is
-missing.
+128 MiB RGBA cache evicted by distance from the viewport. The tile path stays
+primary-only; the reference pane, split view, comparison and every read-only
+canvas use the full-page PDF raster, which is also the fallback when
+`createImageBitmap` or `OffscreenCanvas` is missing.
 The fields and spaces features in `src/features/fields/` and
 `src/features/spaces/` own typed property definitions, field sets, the room
 register and derived room areas; `src/features/schedules/` reads `spaceAreas()`

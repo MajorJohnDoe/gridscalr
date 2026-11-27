@@ -18,6 +18,7 @@ const VIEWPORT = { width: 1440, height: 900 };
 const DEVICE_SCALE_FACTOR = 1;
 const PAN_MS = 5000;
 const PAN_STEPS = 120;
+const SPLIT_PAN_STEPS = 60;
 const PAN_DISTANCE = 360;
 const ZOOM_STEPS = 3;
 const EDIT_COUNT = 20;
@@ -412,6 +413,61 @@ async function measureRasterLatency(page) {
   };
 }
 
+/**
+ * Split-view pan cost (F-147). The primary pane reuses its gesture raster, but
+ * before the follow signal the read-only reference pane still drew every item
+ * on each store "view" change. `draw-items` spans cover both canvases, so a
+ * drop from one item draw per frame to raster blits is the measurable signal.
+ */
+async function measureSplitPan(page) {
+  await page.keyboard.press("Control+Shift+2");
+  await page.waitForTimeout(400);
+  const reference = page.locator(".canvas-reference");
+  if (!(await reference.isVisible())) throw new Error("split view did not open");
+  const box = await page.locator("#canvas-interaction").boundingBox();
+  if (!box) throw new Error("the primary interaction canvas has no box in split view");
+  await page.keyboard.press("h");
+  await page.waitForTimeout(120);
+  await page.evaluate(() => {
+    window.__perfProbe.perf.clearPerfSamples();
+    performance.clearMeasures();
+  });
+  const startX = box.x + box.width * 0.5;
+  const startY = box.y + box.height * 0.5;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  for (let step = 1; step <= SPLIT_PAN_STEPS; step += 1) {
+    const progress = step / SPLIT_PAN_STEPS;
+    await page.mouse.move(
+      startX - progress * 240 + Math.sin(progress * Math.PI * 4) * 30,
+      startY + Math.sin(progress * Math.PI * 3) * 30,
+    );
+    await page.waitForTimeout(24);
+  }
+  await page.mouse.up();
+  await page.waitForTimeout(250);
+  const captured = await page.evaluate(() => {
+    const raw = {};
+    for (const entry of performance.getEntriesByType("measure")) {
+      (raw[entry.name] ??= []).push(entry.duration);
+    }
+    const snapshot = window.__perfProbe.perf.perfSnapshot(null);
+    return { raw, spans: snapshot.spans };
+  });
+  await page.keyboard.press("Control+Shift+2");
+  await page.waitForTimeout(200);
+  const span = captured.spans.find((row) => row.name === "draw-items") ?? null;
+  const durations = captured.raw["draw-items"] ?? [];
+  return {
+    frames: SPLIT_PAN_STEPS,
+    spans: span?.count ?? 0,
+    p50: round(span?.p50),
+    p95: round(span?.p95),
+    max: round(span?.max),
+    totalMs: round(durations.reduce((sum, value) => sum + value, 0)),
+  };
+}
+
 async function runOnce(browser, base) {
   const page = await browser.newPage({
     viewport: VIEWPORT,
@@ -439,6 +495,7 @@ async function runOnce(browser, base) {
     const interaction = await readWindow(page);
     if (!interaction.snapshot.frames) throw new Error("the recorder sampled no frames");
     const raster = await measureRasterLatency(page);
+    const splitPan = await measureSplitPan(page);
     if (pageErrors.length) throw new Error(`page errors: ${pageErrors.join("; ")}`);
 
     const blockedTotal = interaction.longTasks.reduce((sum, entry) => sum + entry.ms, 0);
@@ -457,6 +514,7 @@ async function runOnce(browser, base) {
       ),
       edits,
       raster,
+      splitPan,
       heapBytes: interaction.heapBytes,
       shape: interaction.snapshot.project,
     };
@@ -525,6 +583,14 @@ const summary = {
     cacheHits: medianCount(results.map((entry) => entry.raster.cacheHits)),
     cacheMisses: medianCount(results.map((entry) => entry.raster.cacheMisses)),
   },
+  splitPan: {
+    frames: SPLIT_PAN_STEPS,
+    spans: medianCount(results.map((entry) => entry.splitPan.spans)),
+    p50: round(median(results.map((entry) => entry.splitPan.p50))),
+    p95: round(median(results.map((entry) => entry.splitPan.p95))),
+    max: round(median(results.map((entry) => entry.splitPan.max))),
+    totalMs: round(median(results.map((entry) => entry.splitPan.totalMs))),
+  },
   edits: {
     count: EDIT_COUNT,
     p50Ms: round(median(results.map((entry) => entry.edits.p50Ms))),
@@ -551,6 +617,7 @@ const summary = {
     frames: entry.frames,
     blockedWindows: entry.blockedWindows,
     raster: entry.raster,
+    splitPan: entry.splitPan,
     edits: {
       p50Ms: entry.edits.p50Ms,
       p95Ms: entry.edits.p95Ms,

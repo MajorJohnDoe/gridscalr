@@ -19,9 +19,15 @@ import {
 import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { deleteItems, translateItems } from "../model/commands";
 import { perfSpan } from "../features/perfMonitor";
-import { GestureRenderController, type GestureKind } from "../features/gestureRender";
+import {
+  GestureRenderController,
+  gestureContentKey,
+  type GestureKind,
+  type ViewGestureSignal,
+} from "../features/gestureRender";
 import type { DisplayLevelStats } from "../features/displayLevels";
 import type { TileCacheStats } from "../features/tileCache";
+import { createTileProbeAccess, type TileProbeAccess } from "../features/tileProbe";
 
 import { focusViewTransform, pointInBox } from "./geometry";
 import { CanvasRasterController, backdropFor, drawLevelBitmap } from "./raster";
@@ -115,6 +121,12 @@ export interface CanvasViewOptions {
   canvasIdPrefix?: string;
   /** Optional project source for a read-only comparison pane. Defaults to the open project. */
   project?: () => Project | null;
+  /**
+   * Signal published by the editable primary. A read-only follower mirrors each
+   * gesture begin/end into its own gesture render controller, so a split-view
+   * pan reuses the follower's raster instead of redrawing every item.
+   */
+  gestureSignal?: ViewGestureSignal;
 }
 
 /** Dev-only coordinate bridge used by the Playwright canvas regression suite. */
@@ -134,6 +146,10 @@ export interface CanvasTestApi {
   } | null;
   tileCacheStats(): TileCacheStats | null;
   displayLevelStats(): DisplayLevelStats | null;
+  /** True while this canvas is reusing a raster for a pan or wheel gesture. */
+  gestureActive(): boolean;
+  /** Cumulative frames painted from the gesture raster; a pan must grow it. */
+  gesturePaintCount(): number;
 }
 
 const FONT_STACK = TEXT_FONT_STACK;
@@ -184,6 +200,7 @@ export class CanvasView {
   private drawSpanDepth = 0;
   private readonly gestureRender: GestureRenderController;
   private readonly raster: CanvasRasterController;
+  private readonly tileProbe: TileProbeAccess;
 
   constructor(host: HTMLElement, hooks: CanvasHooks, options: CanvasViewOptions = {}) {
     this.host = host;
@@ -211,13 +228,23 @@ export class CanvasView {
     this.baseCtx = this.base.getContext("2d")!;
     this.contentCtx = this.content.getContext("2d")!;
     this.interactionCtx = this.interaction.getContext("2d")!;
-    this.gestureRender = new GestureRenderController({
-      canvas: this.content,
-      context: this.contentCtx,
-      dpr: () => this.dpr,
-      viewport: () => this.view,
-      onSettle: () => this.invalidate(),
-    });
+    this.gestureRender = new GestureRenderController(
+      {
+        canvas: this.content,
+        context: this.contentCtx,
+        dpr: () => this.dpr,
+        viewport: () => this.view,
+        contentKey: () =>
+          gestureContentKey(
+            this.sceneProject,
+            this.viewPageId,
+            this.hooks.getRenderer()?.contentKey,
+            this.viewPage,
+          ),
+        onSettle: () => this.invalidate(),
+      },
+      { follow: options.gestureSignal },
+    );
 
     this.loading = document.createElement("div");
     this.loading.className = "canvas-loading";
@@ -245,6 +272,11 @@ export class CanvasView {
           this.hooks.onError?.(t("canvas.renderPageFailed", { error: describeError(error) })),
       },
       { tiled: options.readOnly !== true, levels: options.readOnly !== true },
+    );
+    this.tileProbe = createTileProbeAccess(
+      this.raster,
+      () => this.base,
+      () => this.baseCtx,
     );
 
     this.editors = new CanvasEditorController({
@@ -581,6 +613,26 @@ export class CanvasView {
   setSpaceDown(down: boolean): void {
     this.pointers.setSpaceDown(down);
     this.updateCursor();
+  }
+
+  /** The signal the editable canvas publishes its view-gesture edges on. */
+  get gestureSignal(): ViewGestureSignal {
+    return this.gestureRender.signal;
+  }
+
+  /** Begins a view gesture from the reference pane's two-finger navigation. */
+  beginExternalViewGesture(kind: GestureKind): void {
+    this.gestureRender.begin(kind);
+  }
+
+  /** Ends a gesture started by the reference pane's two-finger navigation. */
+  endExternalViewGesture(kind: GestureKind): void {
+    this.gestureRender.end(kind);
+  }
+
+  /** Debug probe bridge used by the packaged smoke flow; never called by the UI. */
+  get tileProbeAccess(): TileProbeAccess {
+    return this.tileProbe;
   }
 
   get isBusy(): boolean {
@@ -1545,6 +1597,8 @@ export class CanvasView {
       searchHighlights: () => this.searchHits,
       tileCacheStats: () => this.raster.tileStats(),
       displayLevelStats: () => this.raster.levelStats(),
+      gestureActive: () => this.gestureRender.isActive,
+      gesturePaintCount: () => this.gestureRender.framesPainted,
       annotationScreenPoint: (itemId) => {
         const project = store.project;
         const found = project ? findItem(project, itemId) : undefined;

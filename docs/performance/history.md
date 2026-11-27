@@ -881,3 +881,131 @@ view has been idle for ~150 ms instead of rendering it immediately on each
 settle, so a fast zoom burst coalesces into one crop instead of one per stop. It
 is deliberately not taken now: the settled image would then stay at level
 sharpness for that window, and no measured complaint justifies it yet.
+
+## Renderer follow-ups — reference gesture reuse and WebKit tile verification (2026-11-27)
+
+- Code measured: branch `perf/reference-gesture-and-webkit-tiles`, cut from
+  `main` `82b8669`. Schema: unchanged (28). No project-file, export or UI change.
+- F-147 measurement: the same extended probe on the `ci` performance shape
+  (40 pages, 4 162 items), three runs, median. The "before" tree is `82b8669`
+  with only `scripts/perf-probe.mjs` replaced, so the split pan is measured the
+  same way on both sides. The split pan is a scripted 60-step pointer pan with
+  the split reference pane open; `draw-items` covers both canvases.
+- F-149 measurement: the packaged debug app on Linux WebKitGTK, run with
+  `xvfb-run -a src-tauri/target/debug/gridscalr --smoke-test <dir>`; the
+  `tile path probe` step in `result.json`. The WebKitGTK, WKWebView and WebView2
+  CI results come from the same packaged smoke test on the `ubuntu-22.04`,
+  `macos-latest` and `windows-latest` desktop jobs. The method and thresholds are
+  in [`../testing.md`](../testing.md).
+
+### What changed
+
+- `src/features/gestureRender/signal.ts` publishes the begin and end of every
+  view gesture from the gesture render controller. A read-only follower passes
+  the primary's signal to its own controller and mirrors both edges, so the
+  reference pane reuses its own raster for the duration of a split-view pan and
+  redraws for real at the same settle. A two-finger pan on the reference surface
+  also starts and ends the primary gesture through
+  `beginExternalViewGesture`/`endExternalViewGesture`, so that path is covered.
+- `src/features/tileProbe/` is a debug-only probe. `model.ts` owns the raster
+  comparison, the 1-pixel shift test, the coarse blank-block test, the verdict
+  and the centred views; `controller.ts` captures the tiled and whole-page base
+  rasters at zoom 1, 3 and 6; `access.ts` isolates the canvas reads. The packaged
+  smoke test records one `tile path probe` step, report-only, so a platform
+  result is evidence rather than an assumption.
+- No primary tile-cache, queue or budget change. No operator-list cache (F-148).
+
+### F-147 — split-view pan, before and after
+
+| Measure (`draw-items`, 60 frames) | Before | After | Change |
+| --- | --- | --- | --- |
+| p50 | 6.2 ms | **0.6 ms** | −90.3 % |
+| p95 | 17.9 ms | 18.3 ms | +2.2 % (settle/refresh frames, noise) |
+| max | 22.6 ms | 19.3 ms | −14.6 % |
+| total | 954.1 ms | **506.9 ms** | **−46.9 %** |
+| spans | 121 | 122 | unchanged |
+| Frame p95 | 16.7 ms | 16.7 ms | unchanged |
+
+The p50 drop is the per-frame reference-pane item draw becoming a raster blit.
+The p95 and max are the real redraws that remain at the 120 ms refresh and at
+settle, so they do not move. The demo project (174 items) shows the same shape
+at a smaller absolute cost: p50 1.8 → 0.7 ms, total 182.0 → 119.8 ms. The resting
+image is the unchanged real redraw: with no gesture active `paint()` returns
+false and the canvas draws the items directly. The split-view canvas regression
+asserts that both panes paint from a gesture raster during the pan and settle to
+a real redraw. The visual harness masks every canvas, so it is not cited as pixel
+evidence for the resting image.
+
+### F-149 — packaged tile-path probe
+
+The packaged probe runs in the smoke test on the `ubuntu-22.04`, `macos-latest`
+and `windows-latest` desktop jobs. When the platform supports the tile cache the
+probe forces the tiled path for every capture, so a level is real tile
+verification instead of the run-dependent outcome of the live first-tile cost
+rule. The live app keeps that rule; a forced level records `forced: true`.
+Linux WebKitGTK (local packaged debug build, 820 × 820 CSS px viewport, DPR 1)
+reports `createImageBitmap` and `OffscreenCanvas` and captured through the
+forced tiled path at all three zooms:
+
+| Zoom | Path | `tilesUsed` | Differing pixels | Max delta | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| 1 | forced | yes | 1 130 / 672 256 (0.168 %) | 6 | match |
+| 3 | forced | yes | 6 760 / 672 256 (1.006 %) | 156 | mismatch |
+| 6 | forced | yes | 0 | 0 | match |
+
+The `ubuntu-22.04` CI smoke on head `5a5f368` (run 46025400494) is what exposed
+the variability: under the live first-tile rule zoom 1 and zoom 3 were
+`not-used` and only zoom 6 used tiles. The forced local run above is the Linux
+verification record; the next CI run forces each level there too.
+
+macOS WKWebView (packaged CI smoke test, 234 016 px viewport) used the live
+tiled path at all three zooms before forcing was added (head `5a5f368`):
+
+| Zoom | Path | `tilesUsed` | Differing pixels | Max delta | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| 1 | live tiled | yes | 9 380 / 234 016 (4.008 %) | 161 | mismatch |
+| 3 | live tiled | yes | 2 760 / 234 016 (1.179 %) | 119 | mismatch |
+| 6 | live tiled | yes | 257 / 234 016 (0.110 %) | 1 | match |
+
+Windows WebView2 (packaged CI smoke test, 266 800 px viewport) used the live
+tiled path at all three zooms on the same head; the forced run reproduces the
+same verdicts:
+
+| Zoom | Path | `tilesUsed` | Differing pixels | Max delta | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| 1 | live tiled | yes | 12 474 / 266 800 (4.675 %) | 132 | mismatch |
+| 3 | live tiled | yes | 6 658 / 266 800 (2.496 %) | 145 | mismatch |
+| 6 | live tiled | yes | 6 216 / 266 800 (2.330 %) | 156 | mismatch |
+
+At zoom 3 on both WebKit runtimes the difference is page-wide (Linux bounding
+box 5,0 – 819,805; macOS 3,16 – 409,567) and no coarse grid block is blank. The
+best 1-pixel shift only moves the macOS ratio from 1.179 % to 1.118 % and does
+not materially explain either difference. Their maximum channel delta (156 and
+119) does exceed the 64 allowance, so the tightened verdict is `mismatch`, not
+antialias. A `not-used` level now means the platform lacks the bitmap APIs or
+the forced capture failed; it never passes.
+
+The macOS zoom-1 level measured 9 380 / 234 016 (4.008 %, max delta 161) on head
+`5a5f368`, page-wide, with no blank grid block and no material integer shift.
+That zoom-1 difference, together with the Windows WebView2 differences and the
+max-delta failures above, is tracked as F-150
+([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)). It is larger than
+the ≤ 0.17 % recorded for the phase 4 Chromium probe at 1440 × 900 DPR 1; it is
+not a blank or integer-offset tile, and no platform fallback is added here. The
+probe records `forced`, `tilesUsed` and `tilePathExercised` so a fallback result
+is not mistaken for tile verification.
+
+### What this says
+
+- A split-view pan now costs the reference pane one blit per frame instead of a
+  full item draw, with the same settled image and no frame regression.
+- The tiled path is exercised on real WebKitGTK, WKWebView and WebView2
+  runtimes, not only Chromium. Where it was used there is no blank tile, no
+  integer-pixel offset and no seam; the WebKit zoom-3 differences exceed the
+  channel-delta allowance and are recorded as `mismatch`, not claimed as
+  antialiasing.
+- The macOS zoom-1, the WebKit zoom-3 and the Windows WebView2 differences
+  remain open as F-150; the probe records them instead of claiming a clean
+  result or adding an assumed fallback.
+- The safe full-page path remains the fallback when either bitmap API is
+  missing or a tile render fails.

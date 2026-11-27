@@ -45,6 +45,78 @@ ADR together.
 specifier, when an import resolves into `src/features`; it has no allowlist, and
 `eslint.config.mjs` blocks the same import.
 
+## WebKit tile-path verification (F-149)
+
+The tile cache depends on `createImageBitmap` and `OffscreenCanvas`, and the
+browser suites run on Chromium. The packaged debug app therefore runs a tile
+probe on every desktop platform, so WebKitGTK and WKWebView are exercised
+rather than assumed:
+
+1. `npm run tauri build -- --debug --no-bundle`
+2. Run the packaged app against a temporary directory:
+   - Linux: `xvfb-run -a src-tauri/target/debug/gridscalr --smoke-test "$(mktemp -d)"`
+   - macOS: `src-tauri/target/debug/gridscalr --smoke-test "$(mktemp -d)"`
+   - Windows: `Start-Process src-tauri/target/debug/gridscalr.exe -ArgumentList "--smoke-test <dir>" -Wait`
+3. Read the `tile path probe` step in that directory's `result.json`. The
+   desktop CI matrix runs the same smoke test on Ubuntu, macOS and Windows.
+
+The probe centres the current page at zoom 1, 3 and 6, captures the primary
+canvas's base raster through the tiled path and then the whole-page path with
+the display-level underlay disabled, and compares the pixels. When the runtime
+supports the tile cache, the probe **forces** the tiled path for every capture,
+even when the live first-tile cost rule would fall back. Each level therefore
+verifies real tile output instead of recording the run-dependent decision of
+that rule. The live app keeps the rule; the report marks a forced capture with
+`forced: true` so it is never read as the live path. If the runtime lacks
+`createImageBitmap`/`OffscreenCanvas`, or the forced capture fails, the level
+keeps `tilesUsed: false` and is `not-used`. Each level gets a verdict: `match`
+(≤ 1 % differing pixels and a maximum channel delta of 64), `antialias` (a
+difference up to 2 % whose differing-pixel bounds cover at least a quarter of
+the page, with a maximum channel delta of 64 and no 1-pixel shift or blank grid
+block), `offset` (a non-zero shift materially lowers the difference), `blank` (a
+coarse grid block carries drawing in the full page and almost none in the tiled
+one), `mismatch`, `unready`, or `not-used` (the platform lacks the tile path or
+the forced capture failed). A `not-used` level is never a pass, and the report's
+`tilePathExercised` flag is true only when at least one level actually captured
+through tiles, forced or not. The step is report-only in the smoke report: it
+records the result instead of turning CI red, and a platform fallback is a
+reviewed decision, not an assumption.
+
+Observed results (the same numbers are in
+[`performance/history.md`](performance/history.md) under the renderer follow-up
+entry). The Linux rows are the forced tiled path produced locally on this head.
+The macOS and Windows rows are the packaged CI smoke results from the desktop
+matrix; the probe forces the tiled path, so the numbers do not depend on which
+run's first-tile rule fired:
+
+| Platform and run | Capture | Zoom | Tiles used | Differing pixels | Max delta | Verdict |
+| --- | --- | --- | --- | --- | --- | --- |
+| Packaged local Linux WebKitGTK (820 × 820, DPR 1) | forced tiled path | 1 | yes | 1 130 / 672 256 (0.168 %) | 6 | match |
+| | | 3 | yes | 6 760 / 672 256 (1.006 %) | 156 | mismatch |
+| | | 6 | yes | 0 | 0 | match |
+| CI macOS WKWebView | forced tiled path | 1 | yes | 9 380 / 234 016 (4.008 %) | 161 | mismatch |
+| | | 3 | yes | 2 760 / 234 016 (1.179 %) | 119 | mismatch |
+| | | 6 | yes | 257 / 234 016 (0.110 %) | 1 | match |
+| CI Windows WebView2 | forced tiled path | 1 | yes | 12 474 / 266 800 (4.675 %) | 132 | mismatch |
+| | | 3 | yes | 6 658 / 266 800 (2.496 %) | 145 | mismatch |
+| | | 6 | yes | 6 216 / 266 800 (2.330 %) | 156 | mismatch |
+
+Every Linux level above recorded `forced: true` and `tilesUsed: true`, so
+`tilePathExercised` is true and each level is tile verification rather than a
+fallback. The macOS and Windows rows used the live tile path at all three zooms
+on that run; the probe now forces them as well, so their next CI report records
+`forced: true`. On the same `ubuntu-22.04` CI head the live first-tile rule left
+zoom 1 and zoom 3 `not-used` while zoom 6 used tiles, which is why the probe
+forces the path instead of pinning one run. A `not-used` level now means the
+runtime lacks `createImageBitmap`/`OffscreenCanvas` or the forced capture
+failed; it is never a pass. The WebKit zoom-3 differences are page-wide and
+have no blank block or material 1-pixel shift, but their maximum channel delta
+(156 on Linux, 119 on macOS) exceeds the 64 allowance, so the tightened verdict
+records them as `mismatch`. The Windows WebView2 differences and the macOS
+WKWebView zoom-1 difference (4.008 %) are the open finding F-150
+([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)), not verified
+matches.
+
 ## Module boundaries and the Rust command cap
 
 `npm run check:modules` owns two boundaries. The frontend half is ADR 0013:

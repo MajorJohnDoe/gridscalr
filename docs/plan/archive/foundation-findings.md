@@ -3761,6 +3761,13 @@ this table was written and are corrected here.
   still use the full-page `renderCrop()` path, so split-view pan cost is
   unchanged. No follow signal was added; this remains the next renderer-seam
   decision.
+- **Outcome (foundation follow-up phase 3, #385):** fixed. The gesture render
+  controller now publishes each begin/end edge through
+  `src/features/gestureRender/signal.ts`; the read-only reference pane mirrors
+  the primary's signal into its own controller, and a two-finger pan on the
+  reference surface begins and ends the primary gesture. On the `ci` shape a
+  60-frame split-view pan dropped `draw-items` p50 from 6.2 to 0.6 ms and total
+  from 954.1 to 506.9 ms; the settled image is the unchanged real redraw.
 - **Related:** #350, [`docs/adr/0001-feature-modules.md`](../../adr/0001-feature-modules.md),
   `src/features/gestureRender/`.
 
@@ -3808,6 +3815,20 @@ this table was written and are corrected here.
 - **Next step:** Before 1.0, run the packaged Linux build on WebKitGTK and
   compare the primary canvas at rest with the full-page path. If a tile is blank
   or offset, force the full-page path for that platform and record why.
+- **Outcome (foundation follow-up phase 3, #385):** fixed. The packaged debug
+  probe (`src/features/tileProbe/`) now runs in the smoke test on every desktop
+  platform. On Linux WebKitGTK the tiled path was used at zoom 1, 3 and 6:
+  zoom 1 and 6 matched the whole-page raster, and zoom 3 differed on 1.007 % of
+  pixels (max delta 156). The CI Ubuntu WebKitGTK job used the tile path at all
+  three zooms with the same result. The zoom-3 difference has a page-wide
+  bounding box, no blank grid block and no improving 1-pixel shift, so the
+  tightened verdict records it as a mismatch. On macOS WKWebView the CI run used
+  tiles at all three zooms: zoom 6 matched (0.110 % differing, max delta 1),
+  zoom 3 differed on 1.179 % (max delta 119) and zoom 1 differed on 4.008 %
+  (max delta 161), both mismatches. No blank or integer-offset tile was found,
+  so tiles stay enabled and no platform fallback was added. The macOS zoom-1
+  difference and the Windows WebView2 differences are the separate finding
+  F-150 (#389), not part of this blank/offset verification.
 - **Related:** #351, [`docs/limitations.md`](../../limitations.md),
   `src/features/tileCache/model.ts`.
 

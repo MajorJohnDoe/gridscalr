@@ -1,4 +1,12 @@
-import { GESTURE_SETTLE_MS, movedFar, refreshDue, settleDelay, type SettleClock } from "./model";
+import {
+  GESTURE_SETTLE_MS,
+  captureStale,
+  movedFar,
+  refreshDue,
+  settleDelay,
+  type SettleClock,
+} from "./model";
+import { ViewGestureSignal, type ViewGestureEvent } from "./signal";
 
 /** The zoom and pan of one viewport, in CSS pixels. */
 export interface GestureViewport {
@@ -37,6 +45,11 @@ export interface GestureRenderHost {
   context: CanvasRenderingContext2D;
   dpr(): number;
   viewport(): GestureViewport;
+  /**
+   * Identity of the content captured into the raster: page and effective layer
+   * visibility. A change drops the raster instead of painting old content.
+   */
+  contentKey?(): string | null;
   /** Real content redraw for the viewport that is current when the gesture settles. */
   onSettle(): void;
 }
@@ -57,18 +70,35 @@ export class GestureRenderController {
   private buffer: HTMLCanvasElement | null = null;
   /** Viewport the captured pixels were drawn at; latched at gesture start. */
   private baseView: GestureViewport | null = null;
+  /** Content key of the captured pixels; compared on every paint. */
+  private captureKey: string | null = null;
   private active = false;
   private painted = false;
   private timer: number | null = null;
+  /** Cumulative frames painted from the captured raster; used by the probe. */
+  private paintedFrames = 0;
   /** When the last real content redraw happened inside this gesture. */
   private refreshedAt = 0;
   /** Set while the caller draws the items for real after a refresh. */
   private rearm = false;
   private readonly clock: SettleClock = { lastInputAt: 0, idleMs: GESTURE_SETTLE_MS };
+  /** Published on every begin/end edge; a read-only follower subscribes. */
+  readonly signal = new ViewGestureSignal();
+  private readonly unsubscribeFollow: (() => void) | null;
 
-  constructor(private readonly host: GestureRenderHost) {}
+  constructor(
+    private readonly host: GestureRenderHost,
+    options: { follow?: ViewGestureSignal } = {},
+  ) {
+    this.unsubscribeFollow =
+      options.follow?.subscribe((event: ViewGestureEvent) => {
+        if (event.phase === "begin") this.begin(event.kind);
+        else this.end(event.kind);
+      }) ?? null;
+  }
 
   begin(kind: GestureKind): void {
+    this.signal.publish({ phase: "begin", kind });
     this.clearTimer();
     const now = performance.now();
     if (!this.active) {
@@ -89,6 +119,7 @@ export class GestureRenderController {
   }
 
   end(kind: GestureKind): void {
+    this.signal.publish({ phase: "end", kind });
     if (!this.active) return;
     if (kind === "pointer") {
       this.settle();
@@ -101,6 +132,11 @@ export class GestureRenderController {
   /** True while a pan or wheel gesture is still running. */
   get isActive(): boolean {
     return this.active;
+  }
+
+  /** Cumulative frames painted from the captured raster (probe/diagnostics). */
+  get framesPainted(): number {
+    return this.paintedFrames;
   }
 
   /**
@@ -121,6 +157,11 @@ export class GestureRenderController {
       this.dropRaster();
       return false;
     }
+    if (this.raster && captureStale(this.captureKey, this.contentKey())) {
+      // A page change or a hidden layer must not keep painting the old content.
+      this.invalidate();
+      return false;
+    }
     if (this.raster && !this.fitsCanvas()) {
       // The canvas was resized mid-gesture, so the raster no longer describes
       // it. Drop reuse and let this frame draw the items for real.
@@ -135,6 +176,7 @@ export class GestureRenderController {
     if (!this.raster || !this.baseView) return false;
     this.paintRaster(this.raster, this.baseView);
     this.painted = true;
+    this.paintedFrames += 1;
     return true;
   }
 
@@ -150,8 +192,26 @@ export class GestureRenderController {
     this.refreshedAt = performance.now();
   }
 
+  /**
+   * Drops the captured raster because the displayed content changed. The next
+   * frame draws the items for real and the controller stays inactive until the
+   * next begin, so a cleared wheel settle cannot leave a gesture running with
+   * no timer to end it.
+   */
+  invalidate(): void {
+    if (!this.active) {
+      this.dropRaster();
+      return;
+    }
+    this.clearTimer();
+    this.rearm = false;
+    this.active = false;
+    this.dropRaster();
+  }
+
   /** Ends any gesture and drops the raster; the next frame draws for real. */
   dispose(): void {
+    this.unsubscribeFollow?.();
     this.clearTimer();
     this.active = false;
     this.dropRaster();
@@ -183,6 +243,10 @@ export class GestureRenderController {
     context.restore();
   }
 
+  private contentKey(): string | null {
+    return this.host.contentKey?.() ?? null;
+  }
+
   private capture(): boolean {
     const { canvas } = this.host;
     if (canvas.width < 1 || canvas.height < 1) return false;
@@ -198,6 +262,7 @@ export class GestureRenderController {
     if (!context) return false;
     context.drawImage(canvas, 0, 0);
     this.raster = raster;
+    this.captureKey = this.contentKey();
     return true;
   }
 
@@ -238,6 +303,7 @@ export class GestureRenderController {
   private dropRaster(): void {
     this.raster = null;
     this.baseView = null;
+    this.captureKey = null;
     this.painted = false;
   }
 

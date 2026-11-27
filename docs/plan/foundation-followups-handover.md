@@ -173,3 +173,138 @@ on each pull request.
 ### Next
 
 - Phase 3, [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385).
+
+## Phase 3 — renderer follow-ups: reference gesture reuse and WebKit tile verification (F-147/F-149)
+
+- Issue: [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385)
+- PR: [#388](https://github.com/MajorJohnDoe/gridscalr/pull/388)
+- Commit: `c727432` (implementation); review fixes in the latest commit on this
+  PR
+- Schema: unchanged (28)
+
+### Completed
+
+- **F-147** — `src/features/gestureRender/signal.ts` publishes every pan/wheel
+  begin and end from the gesture render controller. The read-only reference pane
+  passes the primary's signal to its own controller and mirrors both edges, so a
+  split-view pan reuses its own raster and settles with the primary. A two-finger
+  pan on the reference surface begins and ends the primary gesture through
+  `beginExternalViewGesture`/`endExternalViewGesture`. The resting image is the
+  unchanged real redraw; the visual harness masks the canvas, so the evidence is
+  the gesture-inactive code path and the split-view canvas regression, not a
+  pixel baseline.
+- **F-147 follow-up** — the gesture raster is keyed on the page ID and the
+  effective visibility of every layer. A page change or a hidden layer drops the
+  raster and redraws for real, so the previous page or a hidden layer cannot
+  linger in the gesture image. The probe restores the tile-path and level state
+  it found instead of forcing tiles on after a run where the first-tile rule had
+  disabled them.
+- **F-149** — `src/features/tileProbe/` compares the tiled and whole-page base
+  raster at zoom 1, 3 and 6. The packaged smoke test runs it on Linux, macOS and
+  Windows and records a report-only `tile path probe` step with the verdict,
+  difference, best 1-px shift, blank-block count, `forced`, `tilesUsed` and
+  `tilePathExercised`. The probe forces the tiled path past the live first-tile
+  cost rule when the platform supports it, so each level is real verification
+  and `not-used` now means a missing platform capability or a failed force. The
+  packaged Linux WebKitGTK forced run used tiles at all three zooms (match,
+  mismatch, match). The head `5a5f368` macOS WKWebView CI run used tiles at all
+  three zooms (mismatch, mismatch, match), and Windows WebView2 used tiles at all
+  three zooms and recorded mismatches (2.33–4.68 %). The WebKit zoom-3
+  differences are page-wide with no blank or
+  material integer shift, but their maximum channel delta (156/119) exceeds the
+  64 allowance, so the tightened verdict records them as `mismatch`. No blank or
+  integer-offset tile was found, so tiles stay enabled. The differences are the
+  open finding F-150 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)).
+- `scripts/perf-probe.mjs` gains a split-view pan phase; `test:canvas` asserts
+  both panes paint from a gesture raster during the pan.
+- Removed F-147 and F-149 from the open register; added F-150 with #389.
+- Pre-existing on `main` before this branch (`36c2526`): the tile-cache
+  description says 128 MiB, matching `TILE_CACHE_BUDGET_BYTES`. This branch does
+  not change it.
+
+### Modules
+
+- New: `src/features/gestureRender/signal.ts`,
+  `src/features/tileProbe/{index,model,controller,access}.ts`,
+  `src/canvas/rasterCadence.ts`, `src/app/tileProbeFlow.ts`,
+  `tests/tileProbe.test.ts`, `tests/gestureRenderController.test.ts`.
+- Changed: `src/features/gestureRender/{controller,index}.ts`,
+  `src/canvas/{CanvasView,raster}.ts`, `src/app/{App,referenceController}.ts`,
+  `scripts/{canvas-regression,perf-probe}.mjs`, `tests/gestureRender.test.ts`,
+  `file-budgets.json`, `AGENTS.md`, `README.md`,
+  `docs/{architecture,testing,limitations,performance/history}.md`,
+  `docs/plan/{foundation-findings,archive/foundation-findings}.md`.
+
+### Decisions
+
+- The signal lives on the gesture controller rather than the store or a global:
+  one responsibility, no UI or Tauri dependency, and the follower reuses the same
+  controller path.
+- The probe disables the display-level underlay and forces each path so it
+  compares raster to raster; otherwise an exact level can serve both paths and
+  mask a tile difference. When the platform supports the tile cache it also
+  forces the tiled path past the live first-tile cost rule for each capture and
+  records `forced`, so the verification no longer depends on a run-dependent
+  fallback. The live app keeps the cost rule.
+- A level where `tilesUsed` is false is `not-used` and can never pass. Reporting
+  the full-page fallback as a match was the review's P2 evidence-integrity
+  finding; `tilePathExercised` makes the distinction explicit in the report.
+- A non-zero blank-block count is decisive before the strict-match return, so a
+  faint, sparse mark under the 1 % ratio cannot hide a missing tile.
+- `antialias` requires a page-wide differing bound (at least a quarter of the page
+  area), the 2 % differing ratio, a maximum channel delta within the existing 64
+  allowance, and no 1-pixel shift or blank block. A localized high-delta seam or
+  a 2-pixel shift is `mismatch`.
+- Existing legacy budgets for `App.ts` (+4) and `CanvasView.ts` (+46) were
+  updated with `check:file-budgets -- --update`; no new file exception.
+- No platform fallback was added. No blank or integer-offset tile was found;
+  the page-wide differences are F-150 rather than an assumed fallback.
+
+### Findings
+
+- F-147 and F-149 fixed and removed from the open register.
+- F-150 (P3, [#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)) now
+  covers the Windows WebView2 differences, the macOS zoom-1 difference and the
+  WebKit zoom-3 differences above the tightened 64 max-delta allowance; no blank
+  or integer offset was found.
+
+### Open questions
+
+- None for this phase. F-150 owns the tile-quality decision.
+
+### Checks
+
+- Local gate: `check:versions`, `check:file-budgets`, `check:write-sites`,
+  `check:modules`, `check:cycles`, `check:security`, `check:actions`,
+  `check:dependencies`, `check:docs`, `format:check`, `lint`, `check:i18n`,
+  `check:themes`, `npx tsc --noEmit` — pass.
+- Focused: `tileProbe`, `gestureRender` and `gestureRenderController` (56
+  tests), plus `rasterController`, `rasterCache` and `storeGesture` (40 tests) —
+  pass.
+- `test:canvas` — pass.
+- `npm run tauri build -- --debug --no-bundle` and the packaged Linux WebKitGTK
+  smoke probe — re-run after the forced-path fix. Every level records
+  `forced:true` and `tilesUsed:true`; zoom 1 match (0.168 %), zoom 3 mismatch
+  (1.006 %, max delta 156) and zoom 6 match. `tilePathExercised:true`. The probe
+  step stays `ok:true` because it is report-only.
+- Left to CI: the remaining browser suites and the desktop matrix on the final
+  handover commit.
+
+### Review
+
+- Independent review returned pass-with-findings. The P2 evidence-integrity,
+  P3 verdict-honesty and P4 findings were fixed in `4e29a75`.
+- Delta review on `4e29a75` found one P2 documentation error in the tile-probe
+  artifacts and four P4s: the stale handover claim, two gesture content-key
+  holes, the invalidate-without-settle state and the Linux/macOS-only platform
+  comments. All are fixed in this commit; re-review is pending.
+- Delta review on `5a5f368` found that `tilesUsed` still depended on the live
+  first-tile cost rule, so CI Ubuntu reported `not-used` on some levels on one
+  run and tiles on another. The probe now forces the tiled path for each capture
+  when the platform supports the cache and records `forced`; the Linux forced
+  run is recorded in `docs/testing.md` and the platform prose no longer pins the
+  variable live-run tile activity.
+
+### Next
+
+- Phase 4, [#306](https://github.com/MajorJohnDoe/gridscalr/issues/306).

@@ -27,8 +27,7 @@ and `docs/limitations.md`.
 
 | Finding | Severity | Problem | Issue |
 | --- | --- | --- | --- |
-| F-147 | P3 | The read-only reference pane redraws every item during a split-view pan. | [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385) |
-| F-149 | P2 | The tile path is feature-detected but never verified on WebKitGTK or WKWebView. | [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385) |
+| F-150 | P3 | Tiled rasters differ from the whole-page path at rest: Windows WebView2 (2.33–4.68 %), macOS WKWebView zoom 1 (4.008 %), and the WebKit zoom-3 runs (1.006–1.179 %) whose maximum channel delta exceeds the 64 allowance. No blank or integer offset was found. | [#389](https://github.com/MajorJohnDoe/gridscalr/issues/389) |
 
 ## History
 
