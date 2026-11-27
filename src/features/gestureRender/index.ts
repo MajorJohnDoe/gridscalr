@@ -25,3 +25,4 @@ export {
   settleDue,
   type SettleClock,
 } from "./model";
+export { ViewGestureSignal, type ViewGestureEvent, type ViewGestureListener } from "./signal";

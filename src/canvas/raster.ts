@@ -227,6 +227,7 @@ export class CanvasRasterController {
   private lastCostMs = 0;
   private gestureAtLastSchedule = false;
   private tilesDisabled = false;
+  private levelsDisabled = false;
   private busyValue = false;
   private useTiles: boolean;
   private readonly tiles: TileCacheController | null;
@@ -304,6 +305,29 @@ export class CanvasRasterController {
   /** The previous complete raster, kept visible while a new crop fills in. */
   get backdrop(): RenderResult | null {
     return this.backdropValue;
+  }
+
+  /** Debug probe: whether the tiled path is actually in use for this view. */
+  get tilePathActive(): boolean {
+    return this.useTiles && !this.tilesDisabled && this.tiles?.isSupported === true;
+  }
+
+  /** Debug probe: force the tile or whole-page path, hide the level underlay and re-render. */
+  setProbePath(tiled: boolean, levels: boolean): void {
+    this.levelsDisabled = !levels;
+    this.useTiles = tiled && this.tiles !== null;
+    this.tilesDisabled = false;
+    if (!this.useTiles) this.tiles?.cancel();
+    this.generation += 1;
+    this.rasterValue = null;
+    this.renderedView = null;
+    this.backdropValue = null;
+    this.pending = null;
+    this.pendingView = null;
+    this.busyValue = false;
+    this.clearTimer();
+    this.schedule();
+    this.host.drawBase();
   }
 
   get rendering(): boolean {
@@ -398,7 +422,7 @@ export class CanvasRasterController {
    * same single image it did before levels existed.
    */
   underlay(): DisplayLevel | null {
-    if (!this.levels) return null;
+    if (!this.levels || this.levelsDisabled) return null;
     const request = this.levelRequest();
     if (!request) return null;
     if (this.covers(request.page, this.host.zoom(), this.host.dpr())) return null;
@@ -418,6 +442,7 @@ export class CanvasRasterController {
    * exact crop plus the coarse pass already cover that case.
    */
   private levelRequest(): LevelRequest | null {
+    if (this.levelsDisabled) return null;
     const size = this.host.pageSize();
     const pageId = this.host.pageId();
     if (!size || !pageId) return null;

@@ -116,6 +116,7 @@ import { openExportMenu, setMenuActions } from "../ui/topMenu";
 import { detectPlatform, mountWindowControls, type WindowControls } from "../ui/windowChrome";
 import { refreshSourceStatusPanels, toggleInspector, toggleSidebar } from "../ui/sidebar";
 import { ReferenceController } from "./referenceController";
+import { recordSmokeTileProbe } from "./tileProbeFlow";
 import { sendDrawingByEmail } from "./shareByEmailFlow";
 import {
   openPackageFlow,
@@ -999,6 +1000,12 @@ export class App {
       } else {
         record("ocr ran", false, "no renderer");
       }
+
+      // Compare the tiled and whole-page primary raster at several zoom levels.
+      // Report-only: a blank or offset tile is recorded so the platform
+      // decision is made from evidence instead of a probe crash.
+      const probe = await recordSmokeTileProbe(this.canvas);
+      record("tile path probe", probe.ok, probe.detail);
 
       await this.saveProjectToPath(savePath);
       record("project saved", await pathExists(savePath));

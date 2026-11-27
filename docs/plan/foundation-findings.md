@@ -27,8 +27,7 @@ and `docs/limitations.md`.
 
 | Finding | Severity | Problem | Issue |
 | --- | --- | --- | --- |
-| F-147 | P3 | The read-only reference pane redraws every item during a split-view pan. | [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385) |
-| F-149 | P2 | The tile path is feature-detected but never verified on WebKitGTK or WKWebView. | [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385) |
+| F-149 | P2 | The tiled path is verified on Linux WebKitGTK; macOS WKWebView verification is pending. | [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385) |
 
 ## History
 

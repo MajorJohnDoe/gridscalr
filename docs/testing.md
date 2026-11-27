@@ -45,6 +45,37 @@ ADR together.
 specifier, when an import resolves into `src/features`; it has no allowlist, and
 `eslint.config.mjs` blocks the same import.
 
+## WebKit tile-path verification (F-149)
+
+The tile cache depends on `createImageBitmap` and `OffscreenCanvas`, and the
+browser suites run on Chromium. The packaged debug app therefore runs a tile
+probe on every desktop platform, so WebKitGTK and WKWebView are exercised
+rather than assumed:
+
+1. `npm run tauri build -- --debug --no-bundle`
+2. Run the packaged app against a temporary directory:
+   - Linux: `xvfb-run -a src-tauri/target/debug/gridscalr --smoke-test "$(mktemp -d)"`
+   - macOS: `src-tauri/target/debug/gridscalr --smoke-test "$(mktemp -d)"`
+   - Windows: `Start-Process src-tauri/target/debug/gridscalr.exe -ArgumentList "--smoke-test <dir>" -Wait`
+3. Read the `tile path probe` step in that directory's `result.json`. The
+   desktop CI matrix runs the same smoke test on Ubuntu, macOS and Windows.
+
+The probe centres the current page at zoom 1, 3 and 6, captures the primary
+canvas's base raster through the tiled path and then the whole-page path with
+the display-level underlay disabled, and compares the pixels. Each level gets a
+verdict: `match` (≤ 1 % differing pixels and a maximum channel delta of 64),
+`antialias` (a page-wide difference up to 2 % that no 1-pixel shift and no blank
+grid block explains, which is per-tile rasterisation), `offset` (a non-zero
+shift materially lowers the difference), `blank` (a coarse grid block carries
+drawing in the full page and almost none in the tiled one), `mismatch` or
+`unready`. The step is report-only in the smoke report: it records the result
+instead of turning CI red, and a platform fallback is a reviewed decision, not
+an assumption.
+
+Observed results are recorded in
+[`performance/history.md`](performance/history.md) under the renderer follow-up
+entry.
+
 ## Module boundaries and the Rust command cap
 
 `npm run check:modules` owns two boundaries. The frontend half is ADR 0013:

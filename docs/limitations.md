@@ -218,12 +218,17 @@ current viewport are evicted first, and the tiles of the current view are never
 evicted.
 
 The full-page crop remains the fallback and the only path for the reference
-pane, split view, comparison and every read-only canvas. It is also used for the
-life of the page when `createImageBitmap` or `OffscreenCanvas` is missing, so a
-WebKit runtime without both APIs never attempts a tile; a tile render error
-falls back to the full-page path. The tile path has not been manually verified on
-WebKitGTK in this development environment, so the fallback is the safe default
-there (F-149).
+pane, split view, comparison and every read-only canvas's PDF raster. It is also
+used for the life of the page when `createImageBitmap` or `OffscreenCanvas` is
+missing, so a WebKit runtime without both APIs never attempts a tile; a tile
+render error falls back to the full-page path. The packaged debug probe
+([`testing.md`](testing.md)) compares the tiled and whole-page rasters on the
+real platform runtimes. On Linux WebKitGTK the tiled path was used at zoom 1, 3
+and 6: zoom 1 and 6 matched, and zoom 3 differed only on 1.0 % of pixels with a
+page-wide bounding box and no improving 1-pixel shift, so it is per-tile
+antialiasing rather than a blank or offset tile. Tiles stay enabled on
+WebKitGTK. macOS is recorded from the same packaged probe on the desktop CI
+matrix.
 
 Tiles are abandoned for the rest of the session once the first tile costs more
 than 30 ms, because PDF.js re-walks the page operator list per tile and on a dense

@@ -881,3 +881,88 @@ view has been idle for ~150 ms instead of rendering it immediately on each
 settle, so a fast zoom burst coalesces into one crop instead of one per stop. It
 is deliberately not taken now: the settled image would then stay at level
 sharpness for that window, and no measured complaint justifies it yet.
+
+## Renderer follow-ups — reference gesture reuse and WebKit tile verification (2026-11-27)
+
+- Code measured: branch `perf/reference-gesture-and-webkit-tiles`, cut from
+  `main` `82b8669`. Schema: unchanged (28). No project-file, export or UI change.
+- F-147 measurement: the same extended probe on the `ci` performance shape
+  (40 pages, 4 162 items), three runs, median. The "before" tree is `82b8669`
+  with only `scripts/perf-probe.mjs` replaced, so the split pan is measured the
+  same way on both sides. The split pan is a scripted 60-step pointer pan with
+  the split reference pane open; `draw-items` covers both canvases.
+- F-149 measurement: the packaged debug app on Linux WebKitGTK, run with
+  `xvfb-run -a src-tauri/target/debug/gridscalr --smoke-test <dir>`; the
+  `tile path probe` step in `result.json`. The macOS WKWebView result comes from
+  the same packaged smoke test on the `macos-latest` desktop CI job. The method
+  and thresholds are in [`../testing.md`](../testing.md).
+
+### What changed
+
+- `src/features/gestureRender/signal.ts` publishes the begin and end of every
+  view gesture from the gesture render controller. A read-only follower passes
+  the primary's signal to its own controller and mirrors both edges, so the
+  reference pane reuses its own raster for the duration of a split-view pan and
+  redraws for real at the same settle. A two-finger pan on the reference surface
+  also starts and ends the primary gesture through
+  `beginExternalViewGesture`/`endExternalViewGesture`, so that path is covered.
+- `src/features/tileProbe/` is a debug-only probe. `model.ts` owns the raster
+  comparison, the 1-pixel shift test, the coarse blank-block test, the verdict
+  and the centred views; `controller.ts` captures the tiled and whole-page base
+  rasters at zoom 1, 3 and 6; `access.ts` isolates the canvas reads. The packaged
+  smoke test records one `tile path probe` step, report-only, so a platform
+  result is evidence rather than an assumption.
+- No primary tile-cache, queue or budget change. No operator-list cache (F-148).
+
+### F-147 — split-view pan, before and after
+
+| Measure (`draw-items`, 60 frames) | Before | After | Change |
+| --- | --- | --- | --- |
+| p50 | 6.2 ms | **0.6 ms** | −90.3 % |
+| p95 | 17.9 ms | 18.3 ms | +2.2 % (settle/refresh frames, noise) |
+| max | 22.6 ms | 19.3 ms | −14.6 % |
+| total | 954.1 ms | **506.9 ms** | **−46.9 %** |
+| spans | 121 | 122 | unchanged |
+| Frame p95 | 16.7 ms | 16.7 ms | unchanged |
+
+The p50 drop is the per-frame reference-pane item draw becoming a raster blit.
+The p95 and max are the real redraws that remain at the 120 ms refresh and at
+settle, so they do not move. The demo project (174 items) shows the same shape
+at a smaller absolute cost: p50 1.8 → 0.7 ms, total 182.0 → 119.8 ms. The resting
+image is the unchanged real redraw; `test:visual` passes with no baseline change,
+and the split-view canvas regression asserts that both panes paint from a
+gesture raster during the pan.
+
+### F-149 — packaged tile-path probe
+
+Linux WebKitGTK (packaged debug build, 820 × 820 CSS px viewport, DPR 1) reports
+`createImageBitmap` and `OffscreenCanvas` and uses the tiled path at all three
+zooms:
+
+| Zoom | `tilesUsed` | Differing pixels | Max delta | Verdict |
+| --- | --- | --- | --- | --- |
+| 1 | yes | 1 130 / 672 256 (0.168 %) | 6 | match |
+| 3 | yes | 6 760 / 672 256 (1.006 %) | 156 | antialias |
+| 6 | yes | 0 | 0 | match |
+
+At zoom 3 the difference is page-wide (bounding box 5,0 – 819,805), no coarse
+grid block is blank, and the best 1-pixel shift (dx −1) only moves the ratio
+from 1.006 % to 0.987 %, so it is per-tile antialiasing, not a misplaced or
+blank tile. Tiles stay enabled on WebKitGTK; no platform fallback is added.
+The first-tile cost rule can still abandon tiles on a slow page; when it did on
+one run, the probe recorded `tilesUsed: false` and compared the fallback with
+itself, which is the honest result.
+
+macOS WKWebView: recorded from the packaged smoke probe on the `macos-latest`
+desktop CI job for this branch (see the pull request run).
+
+### What this says
+
+- A split-view pan now costs the reference pane one blit per frame instead of a
+  full item draw, with the same settled image and no frame regression.
+- The tiled path is verified on a real WebKitGTK runtime, not only Chromium.
+  There is no blank tile, no offset and no seam; the only difference is
+  per-tile antialiasing at zoom 3, within the 2 % allowance that the shift and
+  blank-block checks justify.
+- The safe full-page path remains the fallback when either bitmap API is
+  missing or a tile render fails.

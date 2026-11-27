@@ -1,4 +1,5 @@
 import { GESTURE_SETTLE_MS, movedFar, refreshDue, settleDelay, type SettleClock } from "./model";
+import { ViewGestureSignal, type ViewGestureEvent } from "./signal";
 
 /** The zoom and pan of one viewport, in CSS pixels. */
 export interface GestureViewport {
@@ -60,15 +61,30 @@ export class GestureRenderController {
   private active = false;
   private painted = false;
   private timer: number | null = null;
+  /** Cumulative frames painted from the captured raster; used by the probe. */
+  private paintedFrames = 0;
   /** When the last real content redraw happened inside this gesture. */
   private refreshedAt = 0;
   /** Set while the caller draws the items for real after a refresh. */
   private rearm = false;
   private readonly clock: SettleClock = { lastInputAt: 0, idleMs: GESTURE_SETTLE_MS };
+  /** Published on every begin/end edge; a read-only follower subscribes. */
+  readonly signal = new ViewGestureSignal();
+  private readonly unsubscribeFollow: (() => void) | null;
 
-  constructor(private readonly host: GestureRenderHost) {}
+  constructor(
+    private readonly host: GestureRenderHost,
+    options: { follow?: ViewGestureSignal } = {},
+  ) {
+    this.unsubscribeFollow =
+      options.follow?.subscribe((event: ViewGestureEvent) => {
+        if (event.phase === "begin") this.begin(event.kind);
+        else this.end(event.kind);
+      }) ?? null;
+  }
 
   begin(kind: GestureKind): void {
+    this.signal.publish({ phase: "begin", kind });
     this.clearTimer();
     const now = performance.now();
     if (!this.active) {
@@ -89,6 +105,7 @@ export class GestureRenderController {
   }
 
   end(kind: GestureKind): void {
+    this.signal.publish({ phase: "end", kind });
     if (!this.active) return;
     if (kind === "pointer") {
       this.settle();
@@ -101,6 +118,11 @@ export class GestureRenderController {
   /** True while a pan or wheel gesture is still running. */
   get isActive(): boolean {
     return this.active;
+  }
+
+  /** Cumulative frames painted from the captured raster (probe/diagnostics). */
+  get framesPainted(): number {
+    return this.paintedFrames;
   }
 
   /**
@@ -135,6 +157,7 @@ export class GestureRenderController {
     if (!this.raster || !this.baseView) return false;
     this.paintRaster(this.raster, this.baseView);
     this.painted = true;
+    this.paintedFrames += 1;
     return true;
   }
 
@@ -152,6 +175,7 @@ export class GestureRenderController {
 
   /** Ends any gesture and drops the raster; the next frame draws for real. */
   dispose(): void {
+    this.unsubscribeFollow?.();
     this.clearTimer();
     this.active = false;
     this.dropRaster();

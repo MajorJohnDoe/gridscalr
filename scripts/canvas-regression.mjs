@@ -685,6 +685,46 @@ try {
     () => document.querySelector("#reference-pdf")?.toDataURL().length ?? 0,
   );
   assert.ok(referencePixels > 1000, "the reference pane should render the page");
+  // A split-view pan must reuse a raster in the reference pane, not redraw its
+  // items on every pointer move (F-147). The paint counters are cumulative.
+  const referencePaintsBefore = await page.evaluate(() =>
+    window.__gridscalr.app.reference.view.getTestApi().gesturePaintCount(),
+  );
+  const primaryPaintsBefore = await page.evaluate(() =>
+    window.__gridscalr.canvas.gesturePaintCount(),
+  );
+  const primaryBox = await page.locator("#canvas-interaction").boundingBox();
+  assert.ok(primaryBox, "the primary canvas should still have a box in split view");
+  await page.mouse.move(primaryBox.x + primaryBox.width / 2, primaryBox.y + primaryBox.height / 2);
+  await page.mouse.down({ button: "middle" });
+  for (let step = 1; step <= 6; step += 1) {
+    await page.mouse.move(
+      primaryBox.x + primaryBox.width / 2 + step * 8,
+      primaryBox.y + primaryBox.height / 2 + step * 4,
+    );
+  }
+  const gestureDuringPan = await page.evaluate(() => ({
+    primary: window.__gridscalr.canvas.gestureActive(),
+    reference: window.__gridscalr.app.reference.view.getTestApi().gestureActive(),
+  }));
+  await page.mouse.up({ button: "middle" });
+  await page.waitForTimeout(150);
+  const paintsAfter = await page.evaluate(() => ({
+    primary: window.__gridscalr.canvas.gesturePaintCount(),
+    reference: window.__gridscalr.app.reference.view.getTestApi().gesturePaintCount(),
+    referenceActive: window.__gridscalr.app.reference.view.getTestApi().gestureActive(),
+  }));
+  assert.equal(gestureDuringPan.primary, true, "the primary should be in a gesture mid-pan");
+  assert.equal(gestureDuringPan.reference, true, "the reference pane should follow the gesture");
+  assert.ok(
+    paintsAfter.primary > primaryPaintsBefore,
+    "the primary should paint from its gesture raster during the pan",
+  );
+  assert.ok(
+    paintsAfter.reference > referencePaintsBefore,
+    "the reference pane should paint from its gesture raster during a split-view pan",
+  );
+  assert.equal(paintsAfter.referenceActive, false, "the reference gesture should settle");
   const zoomBeforeReferenceWheel = await page.evaluate(() => window.__gridscalr.store.ui.zoom);
   await page.mouse.move(referenceBox.x + referenceBox.width / 2, referenceBox.y + 200);
   await page.mouse.wheel(0, -120);

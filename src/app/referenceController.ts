@@ -71,6 +71,7 @@ export class ReferenceController {
       {
         readOnly: true,
         canvasIdPrefix: "reference",
+        gestureSignal: options.primaryCanvas.gestureSignal,
         project: () =>
           this.session
             ? this.session.kind === "project"
@@ -126,7 +127,9 @@ export class ReferenceController {
       },
       onGestureStart: () => {
         primaryStart = { zoom: store.ui.zoom, panX: store.ui.panX, panY: store.ui.panY };
+        options.primaryCanvas.beginExternalViewGesture("pointer");
       },
+      onGestureEnd: () => options.primaryCanvas.endExternalViewGesture("pointer"),
       setView: (next, start) => {
         store.setView(
           next.zoom,

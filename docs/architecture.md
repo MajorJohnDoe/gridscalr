@@ -59,10 +59,14 @@ src/
   features/gestureRender/index.ts public surface for gesture-time content raster reuse
   features/gestureRender/model.ts pure settle rule: the idle window before the real redraw
   features/gestureRender/controller.ts gesture state, raster transform and content capture/paint
+  features/gestureRender/signal.ts primary-to-follower view-gesture signal for the split reference pane
   features/tileCache/index.ts public surface for the primary-canvas tile raster
-  features/tileCache/model.ts pure device-pixel grid, zoom bucket, visible-first order, 64 MiB budget and distance eviction
+  features/tileCache/model.ts pure device-pixel grid, zoom bucket, visible-first order, 128 MiB budget and distance eviction
   features/tileCache/controller.ts visible-first queue, cancellation, ImageBitmap with canvas fallback and composition paint
   features/tileCache/render.ts clipped-viewport render adapter shared with PdfRenderer.renderCrop
+  features/tileProbe/index.ts public surface for the debug-only tile-path verification probe
+  features/tileProbe/model.ts pure raster comparison, edge tolerance and centred-view rules
+  features/tileProbe/controller.ts packaged tiled-versus-whole-page capture loop per zoom level
   features/displayLevels/index.ts public surface for the in-memory whole-page level cache
   features/displayLevels/model.ts pure octave index, level pixel cap, sharpness rule and LRU selection
   features/displayLevels/controller.ts build, reuse and evict one whole-page level per page and octave

@@ -528,11 +528,16 @@ src/features/gestureRender/ gesture-time content raster reuse: pure settle rule,
 src/features/gestureRender/index.ts public surface: controller, settle rule and transform types
 src/features/gestureRender/model.ts pure settle rule: the idle window before the real redraw
 src/features/gestureRender/controller.ts gesture state, raster transform, capture and paint
-src/features/tileCache/  primary-canvas tile raster: pure grid, zoom bucket, visible-first queue, 64 MiB cache
+src/features/gestureRender/signal.ts primary-to-follower view-gesture signal for the split reference pane
+src/features/tileCache/  primary-canvas tile raster: pure grid, zoom bucket, visible-first queue, 128 MiB cache
 src/features/tileCache/index.ts public surface: controller, budget, grid, render adapter and stats
 src/features/tileCache/model.ts pure device-pixel grid, visible-first order, budget and distance eviction
 src/features/tileCache/controller.ts queue, cancellation, ImageBitmap/canvas fallback and composition paint
 src/features/tileCache/render.ts clipped-viewport render adapter shared with PdfRenderer.renderCrop
+src/features/tileProbe/  debug-only tiled-versus-whole-page raster probe run by the packaged smoke test
+src/features/tileProbe/index.ts public surface: probe controller and comparison rules
+src/features/tileProbe/model.ts pure raster comparison, tolerance and centred-view rules
+src/features/tileProbe/controller.ts packaged tiled/full-page capture loop per zoom level
 src/features/displayLevels/ in-memory whole-page bitmap per page and zoom octave: level rule, 128 MiB LRU and build controller
 src/features/displayLevels/index.ts public surface: controller, octave rule, level caps and eviction
 src/features/displayLevels/model.ts pure octave index, level pixel cap, sharpness rule and LRU selection

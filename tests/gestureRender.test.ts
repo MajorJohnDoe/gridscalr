@@ -4,6 +4,7 @@ import {
   GESTURE_REFRESH_MS,
   GESTURE_SETTLE_MS,
   MIN_GESTURE_SETTLE_MS,
+  ViewGestureSignal,
   clampSettleMs,
   movedFar,
   rasterTransform,
@@ -115,5 +116,48 @@ describe("gesture distance rule", () => {
 
   it("refreshes a fast drag well before a quarter of a second", () => {
     expect(GESTURE_REFRESH_MS).toBeLessThanOrEqual(150);
+  });
+});
+
+describe("view gesture signal", () => {
+  it("delivers each begin and end edge to every listener", () => {
+    const signal = new ViewGestureSignal();
+    const first: string[] = [];
+    const second: string[] = [];
+    signal.subscribe((event) => first.push(`${event.phase}:${event.kind}`));
+    signal.subscribe((event) => second.push(`${event.phase}:${event.kind}`));
+
+    signal.publish({ phase: "begin", kind: "pointer" });
+    signal.publish({ phase: "end", kind: "pointer" });
+    signal.publish({ phase: "begin", kind: "wheel" });
+
+    expect(first).toEqual(["begin:pointer", "end:pointer", "begin:wheel"]);
+    expect(second).toEqual(first);
+  });
+
+  it("stops delivering to a listener once it unsubscribes", () => {
+    const signal = new ViewGestureSignal();
+    const events: string[] = [];
+    const unsubscribe = signal.subscribe((event) => events.push(event.phase));
+
+    signal.publish({ phase: "begin", kind: "pointer" });
+    unsubscribe();
+    signal.publish({ phase: "end", kind: "pointer" });
+
+    expect(events).toEqual(["begin"]);
+  });
+
+  it("keeps the listener set stable when one listener unsubscribes mid-publish", () => {
+    const signal = new ViewGestureSignal();
+    const events: string[] = [];
+    const unsubscribe = signal.subscribe((event) => {
+      events.push(`first:${event.phase}`);
+      unsubscribe();
+    });
+    signal.subscribe((event) => events.push(`second:${event.phase}`));
+
+    signal.publish({ phase: "begin", kind: "pointer" });
+
+    expect(events).toEqual(["first:begin", "second:begin"]);
   });
 });
