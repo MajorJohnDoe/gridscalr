@@ -230,8 +230,9 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     }
   }
 
-  private prune(): void {
-    const entries = this.options.entries();
+  /** Drops selection entries the mounted (or filtered) list no longer shows. */
+  prune(): void {
+    const entries = this.options.visibleEntries?.() ?? this.options.entries();
     this.selection = pruneSelection(entries, this.selection);
     if (this.anchor && !entries.some((entry) => entry.id === this.anchor)) this.anchor = null;
   }

@@ -218,6 +218,8 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   }
   const visible = pageStatus.visibleFrom(rows);
   if (!visible.length) {
+    // The filter hid every page, so no mounted card can keep a selection.
+    pageReorder.setVisibleIds([]);
     pageReorder.detach();
     refs.dockBody.append(pageStatusEmptyNote());
     return;
@@ -417,6 +419,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   pageReorder.setActions({
     reorder: (pageIds, insertionIndex) => actions.reorderPages(pageIds, insertionIndex),
     goToPage: (page) => actions.goToPage(page, true),
+    refresh: () => actions.refresh(),
   });
   list.append(pageReorderHint(), pageSelectHint(), pageMenuHint());
   refs.dockBody.append(list);
@@ -445,6 +448,20 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
 }
 
 /**
+ * Remembers which range-bar control had focus before a rebuild, so a filtered
+ * status refresh can put focus back on the same control instead of the filter
+ * chip. The panel owns the hand-off through `pendingWindowFocus`.
+ */
+function captureWindowFocus(): void {
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement)) return;
+  const action = active.closest<HTMLElement>("[data-page-window-action]")?.dataset.pageWindowAction;
+  if (action === "previous" || action === "next" || action === "jump") {
+    pendingWindowFocus = action;
+  }
+}
+
+/**
  * Refresh only the parts of the mounted Pages panel that derive from the
  * source-status summary. The project has not changed, so the cards keep their
  * thumbnails, listeners and any rename field that is open; only the badge rows,
@@ -457,6 +474,7 @@ export function refreshPageStatusBadges(refs: ShellRefs, actions: PanelActions):
   const project = store.project;
   if (!project) return;
   if (pageStatus.activeFilter !== "all") {
+    captureWindowFocus();
     renderPages(refs, actions);
     return;
   }

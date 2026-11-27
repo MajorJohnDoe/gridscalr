@@ -463,14 +463,15 @@ on each pull request.
   empty apart from F-150, so no row was removed.
 - No new findings.
 - **Review fixes (2026-11-27):** the window follows the current page instead of
-  a stale selection anchor, reveals a moved block and focuses the copy a
-  duplicate created; Shift ranges are clamped to the mounted cards; the external
-  drawing drop is mapped through the window offset; the layer treeitem owns its
+  a stale selection anchor, reveals a moved block after the checkpoint resolves
+  and focuses the copy a duplicate created; the whole page selection is pruned
+  to the mounted cards when the range or filter moves; the external drawing drop
+  is mapped through the mounted page numbers; the layer treeitem owns its
   group; the roving-claim text matches the real tab stops; focus is restored to
-  the focused layer or item row. Covered by `tests/pageList.test.ts`,
-  `tests/pageWindow.test.ts`, `tests/pageReorder.test.ts`,
-  `tests/listInteraction.test.ts`, `tests/droppedDrawingImport.test.ts` and
-  `tests/layerTreeA11y.test.ts`.
+  the focused layer or item row and to the range bar across a filtered status
+  refresh. Covered by `tests/pageList.test.ts`, `tests/pageWindow.test.ts`,
+  `tests/pageReorder.test.ts`, `tests/listInteraction.test.ts`,
+  `tests/droppedDrawingImport.test.ts` and `tests/layerTreeA11y.test.ts`.
 
 ### Checks
 

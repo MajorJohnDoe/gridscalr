@@ -114,28 +114,20 @@ export function documentSegments(pages: readonly PageReorderEntry[]): DocumentSe
 /**
  * Maps an insertion index in the rendered card order to the project page list.
  *
- * `renderedOffset` is the project index of the first mounted card, as the
- * internal drag path uses. When the mounted rows start exactly there they are a
- * contiguous window, so the project index is simply offset + rendered index —
- * including a drop below the last mounted card, which stays inside the window
- * instead of jumping to the end of the project. When a status filter makes the
- * rows non-contiguous, the display page numbers decide where a drop lands.
- * Dropping below the last visible card of a filtered list lands after that page.
+ * The mounted cards carry their display page numbers, and a page's position is
+ * its 1-based number, so a rendered position translates directly: a drop above
+ * a card lands before that page, and a drop below the last mounted card lands
+ * after that page instead of jumping to the end of the project. This holds for
+ * a contiguous window and for a non-contiguous filtered list alike.
  */
 export function fullListInsertionIndex(
   visiblePages: readonly number[],
   insertionIndex: number,
   totalPages: number,
-  renderedOffset = 0,
 ): number {
   const total = Math.max(0, Math.round(totalPages));
   if (!visiblePages.length) return total;
   const clamped = Math.max(0, Math.min(visiblePages.length, Math.round(insertionIndex)));
-  const offset = Math.max(0, Math.round(renderedOffset));
-  if (isContiguousWindow(visiblePages, offset)) {
-    // A contiguous window of the unfiltered list.
-    return Math.max(0, Math.min(total, offset + clamped));
-  }
   if (clamped >= visiblePages.length) {
     // After the last mounted card, not the end of the project.
     const lastPage = Math.round(visiblePages[visiblePages.length - 1]);
@@ -143,18 +135,6 @@ export function fullListInsertionIndex(
   }
   const page = Math.round(visiblePages[clamped]);
   return Math.max(0, Math.min(total, page - 1));
-}
-
-/** True when the mounted display pages are consecutive from the window start. */
-function isContiguousWindow(visiblePages: readonly number[], offset: number): boolean {
-  const first = Math.round(visiblePages[0]);
-  if (first - 1 !== offset) return false;
-  for (let index = 1; index < visiblePages.length; index += 1) {
-    if (Math.round(visiblePages[index]) !== Math.round(visiblePages[index - 1]) + 1) {
-      return false;
-    }
-  }
-  return true;
 }
 
 export interface PageOrderOutcome {

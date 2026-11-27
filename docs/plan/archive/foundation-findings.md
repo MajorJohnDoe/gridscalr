@@ -1905,7 +1905,7 @@ this table was written and are corrected here.
   before the import mutation and applies it inside the same `store.mutate`
   (`src/features/sourceStorage/importCopy.ts`). One Undo removes the imported
   pages and the managed document reference; the copied file stays on disk for
-  the project doctor's unused-copy cleanup. `tests/importManagedCopy.test.ts`
+  the project doctor's unused-copy cleanup. `tests/droppedDrawingImport.test.ts`
   proves the real `importDroppedDrawing()` path, not a hand-wrapped mutate.
 - **Evidence:** `importDroppedDrawing()` commits the pages with one
   `store.mutate`. If the user accepts the managed-copy recommendation for a

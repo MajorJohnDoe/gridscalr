@@ -294,7 +294,7 @@ export class App {
       reorderPage: (pageId, targetIndex) =>
         void reorderProjectPage(this.pageActionHost(), pageId, targetIndex),
       reorderPages: (pageIds, insertionIndex) =>
-        void reorderProjectPages(this.pageActionHost(), pageIds, insertionIndex),
+        reorderProjectPages(this.pageActionHost(), pageIds, insertionIndex).then(() => undefined),
       insertPage: (pageId, index) => void insertProjectPage(this.pageActionHost(), pageId, index),
       replaceSource: (documentId) => void replaceSourceFlow(this.replacementFlowHost(), documentId),
       consolidateDrawings: () => void this.sourceStorage.consolidate(),

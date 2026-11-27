@@ -62,6 +62,6 @@ export async function movePageToPosition(
   if (index === null) return;
   const chosen = positions.find((position) => position.index === index);
   if (!chosen) return;
-  actions.reorderPages([...pageIds], chosen.index);
+  void actions.reorderPages([...pageIds], chosen.index);
   toast(t("page.movedToast", { position: movePositionLabel(chosen) }), "info");
 }

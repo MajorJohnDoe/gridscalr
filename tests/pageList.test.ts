@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { pageMenu } from "../src/features/pageMenu";
+import { pageEditTargets, pageMenu } from "../src/features/pageMenu";
 import { pageReorder } from "../src/features/pageReorder";
 import { PAGE_WINDOW_SIZE, pageWindowState } from "../src/features/pageWindow";
 import { pageStatus } from "../src/features/pageStatus";
 import { createProject, defaultDocument } from "../src/model/layers";
 import { store } from "../src/state/store";
-import { renderPages } from "../src/ui/pageList";
+import { refreshPageStatusBadges, renderPages } from "../src/ui/pageList";
 import type { PanelActions } from "../src/ui/panels";
 import type { ShellRefs } from "../src/ui/shell";
 import { withTestPageIds } from "./helpers/pages";
@@ -107,7 +107,7 @@ describe("Pages panel window", () => {
     expect(refs.dockBody.querySelectorAll(".page-card")).toHaveLength(PAGE_WINDOW_SIZE);
   });
 
-  it("recentres on the current page after Previous/Next, even with a selection", () => {
+  it("recentres on the current page after Previous/Next and drops the off-window selection", () => {
     store.setProject(projectWithPages(300), "/tmp/page-list.gridscalr", false);
     store.ui.leftTab = "pages";
     store.ui.page = 1;
@@ -116,11 +116,13 @@ describe("Pages panel window", () => {
     click(card(refs, 1));
     expect(pageReorder.selectionIds()).toEqual(["page_1"]);
 
-    // Previous/Next pins the range without changing the drawing.
+    // Previous/Next pins the range without changing the drawing. Page 1 is no
+    // longer mounted, so it leaves the selection.
     pageWindowState.shift(300, PAGE_WINDOW_SIZE, "page_1");
     render();
     expect(pageWindowState.startIndex).toBe(PAGE_WINDOW_SIZE);
     expect(card(refs, PAGE_WINDOW_SIZE + 1)).not.toBeNull();
+    expect(pageReorder.selectionIds()).toEqual([]);
 
     // PageDown from the pinned range navigates to page 2 and follows it.
     pageMenu.handleKey(new KeyboardEvent("keydown", { key: "PageDown" }), actions);
@@ -128,7 +130,7 @@ describe("Pages panel window", () => {
     expect(store.ui.page).toBe(2);
     expect(pageWindowState.startIndex).toBe(0);
     expect(card(refs, 2)).not.toBeNull();
-    expect(pageReorder.selectionIds()).toEqual(["page_1"]);
+    expect(pageReorder.selectionIds()).toEqual([]);
   });
 
   it("counts matching pages when a status filter narrows the list", () => {
@@ -177,5 +179,64 @@ describe("Pages panel window", () => {
     render();
     render();
     expect(refs.dockBody.querySelectorAll(".page-window-bar")).toHaveLength(1);
+  });
+
+  it("drops a Ctrl/Cmd selection when Previous/Next leaves it off-screen", () => {
+    const project = projectWithPages(300);
+    store.setProject(project, "/tmp/page-list.gridscalr", false);
+    store.ui.leftTab = "pages";
+    store.ui.page = 1;
+    const { refs, render } = mount();
+    render();
+    card(refs, 1).dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    card(refs, 2).dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    expect(pageReorder.selectionIds()).toEqual(["page_1", "page_2"]);
+    expect(pageEditTargets(store.project!, "page_1")).toEqual(["page_1", "page_2"]);
+
+    pageWindowState.shift(300, PAGE_WINDOW_SIZE, "page_1");
+    render();
+    expect(card(refs, PAGE_WINDOW_SIZE + 1)).not.toBeNull();
+    // The stale Ctrl selection cannot reach a bulk delete; only the current
+    // page remains as the fallback target.
+    expect(pageReorder.selectionIds()).toEqual([]);
+    expect(pageEditTargets(store.project!, "page_1")).toEqual(["page_1"]);
+  });
+
+  it("drops a selection that a status filter no longer shows", () => {
+    const project = projectWithPages(150);
+    project.pages[0].state = { scaleLocked: true };
+    store.setProject(project, "/tmp/page-list.gridscalr", false);
+    store.ui.leftTab = "pages";
+    store.ui.page = 1;
+    const { refs, render } = mount();
+    render();
+    card(refs, 1).dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    card(refs, 5).dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    expect(pageReorder.selectionIds()).toEqual(["page_1", "page_5"]);
+
+    pageStatus.setFilter("lockedScale");
+    render();
+    expect(refs.dockBody.querySelectorAll(".page-card")).toHaveLength(1);
+    expect(pageReorder.selectionIds()).toEqual(["page_1"]);
+  });
+
+  it("restores focus to the jump field across a filtered status refresh", () => {
+    const project = projectWithPages(150);
+    project.documents[0].kind = "tiff";
+    store.setProject(project, "/tmp/page-list.gridscalr", false);
+    store.ui.leftTab = "pages";
+    store.ui.page = 1;
+    pageStatus.setFilter("missingOcr");
+    const { refs, actions, render } = mount();
+    render();
+    const input = refs.dockBody.querySelector<HTMLInputElement>(".page-window-input")!;
+    input.focus();
+    expect(document.activeElement).toBe(input);
+
+    refreshPageStatusBadges(refs, actions);
+    const next = refs.dockBody.querySelector<HTMLInputElement>(".page-window-input")!;
+    expect(next).not.toBe(input);
+    expect(document.activeElement).toBe(next);
+    expect(next.getAttribute("data-page-window-action")).toBe("jump");
   });
 });

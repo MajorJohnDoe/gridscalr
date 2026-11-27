@@ -7,7 +7,7 @@ export interface PageWindowControlsOptions {
   start: number;
   end: number;
   total: number;
-  /** Display number of the page the window was anchored on, when inside it. */
+  /** 1-based position in the filtered list of the page the window was anchored on. */
   current?: number;
   /**
    * True when a status filter narrows the list. The range and the jump field

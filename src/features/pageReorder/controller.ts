@@ -14,8 +14,10 @@ import { fullListInsertionIndex, planDrop, type PageReorderEntry } from "./model
  */
 export interface PageReorderActions {
   /** Applies one checkpoint and moves the pages as one undo step. */
-  reorder: (pageIds: readonly PageId[], insertionIndex: number) => void;
+  reorder: (pageIds: readonly PageId[], insertionIndex: number) => void | Promise<void>;
   goToPage: (page: number) => void;
+  /** Repaints the panel after an asynchronous move resolves. */
+  refresh?: () => void;
 }
 
 function projectEntries(): PageReorderEntry[] {
@@ -53,7 +55,7 @@ export class PageReorderController {
     rowSelector: ".page-card",
     rowId: (row) => row.dataset.pageId ?? null,
     entries: projectEntries,
-    // Shift-click ranges stay inside the mounted window, so a confirmation
+    // The whole selection stays inside the mounted window, so a bulk action
     // never acts on pages that were not on screen.
     visibleEntries: () =>
       this.mountedIds
@@ -62,10 +64,19 @@ export class PageReorderController {
     canReorder: () => !store.readOnly,
     selectable: true,
     onMove: (ids, insertionIndex, changesOrder) => {
-      // A moved block outside the window asks the next render to reveal it, so
-      // a keyboard move or drop at the window edge stays visible and focused.
-      if (changesOrder && ids[0]) pageWindowState.reveal(ids[0]);
-      this.actions?.reorder(ids as PageId[], insertionIndex);
+      const revealId = ids[0];
+      const result = this.actions?.reorder(ids as PageId[], insertionIndex);
+      if (!changesOrder || !revealId) return;
+      // A checkpoint sits between the gesture and the store mutation, so a
+      // render can happen before the new order exists. Ask for the reveal only
+      // after the move resolves, then repaint so the moved block stays visible.
+      const reveal = () => {
+        pageWindowState.reveal(revealId);
+        pageWindowState.requestFocus(revealId);
+        this.actions?.refresh?.();
+      };
+      if (isPromise(result)) void result.then(reveal);
+      else reveal();
     },
     announce: (_ids, outcome) => announceMove(outcome),
     planDrop: (entries, selected, insertionIndex) => {
@@ -101,9 +112,10 @@ export class PageReorderController {
     this.windowOffset = Math.max(0, Math.round(offset));
   }
 
-  /** Sets the pages the panel currently mounts; used to clamp range selection. */
+  /** Sets the pages the panel currently mounts; used to clamp the selection. */
   setVisibleIds(pageIds: readonly PageId[]): void {
     this.mountedIds = new Set(pageIds);
+    this.drag.prune();
   }
 
   /** Applies selection styling and the keyboard hint to one card. */
@@ -150,17 +162,11 @@ export class PageReorderController {
   showExternalDrop(clientY: number): number {
     const index = this.drag.previewExternalDrop(clientY, (renderedIndex, rows) => {
       // The rendered cards are a window of the page list or a filtered subset.
-      // The window offset maps the rendered position back to the project list;
-      // the page numbers pick up a non-contiguous filtered list.
+      // Their display page numbers place a drop without a separate offset.
       const visiblePages = rows
         .map((row) => Number(row.dataset.page ?? 0))
         .filter((page) => Number.isFinite(page) && page > 0);
-      return fullListInsertionIndex(
-        visiblePages,
-        renderedIndex,
-        store.project?.pages.length ?? 0,
-        this.windowOffset,
-      );
+      return fullListInsertionIndex(visiblePages, renderedIndex, store.project?.pages.length ?? 0);
     });
     return index ?? 0;
   }
@@ -169,4 +175,9 @@ export class PageReorderController {
   hideExternalDrop(): void {
     this.drag.hideExternalDrop();
   }
+}
+
+/** A host action may keep the panel open while its checkpoint resolves. */
+function isPromise(value: unknown): value is Promise<void> {
+  return typeof (value as { then?: unknown } | null | undefined)?.then === "function";
 }
