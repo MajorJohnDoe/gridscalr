@@ -90,7 +90,6 @@ describe("quantity report palette", () => {
   it("uses the printed table palette for ink, rules and the header band", () => {
     expect(REPORT_COLORS.ink).toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.ink));
     expect(REPORT_COLORS.muted).toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.inkMuted));
-    expect(REPORT_COLORS.line).toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.rule));
     expect(REPORT_COLORS.sectionRule).toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.ruleStrong));
     expect(REPORT_COLORS.headerBackground).toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.bandHeader));
     expect(REPORT_COLORS.headerInk).toEqual(pdfColor(DOCUMENT_SCHEDULE_STYLE.inkStrong));

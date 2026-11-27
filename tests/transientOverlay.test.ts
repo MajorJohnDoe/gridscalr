@@ -32,7 +32,8 @@ function surface(
 }
 
 afterEach(() => {
-  while (closeTopTransient()) {
+  // Bounded: a host that forgets to unregister must not hang the cleanup.
+  for (let attempt = 0; attempt < 4 && closeTopTransient(); attempt += 1) {
     // Every host unregisters in its own Escape callback.
   }
   closeAllDialogs();

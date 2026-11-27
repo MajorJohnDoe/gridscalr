@@ -16,7 +16,6 @@ const TABLE = documentScheduleTableStyle();
 export const REPORT_COLORS = {
   ink: pdfColor(TABLE.ink),
   muted: pdfColor(TABLE.inkMuted),
-  line: pdfColor(TABLE.rule),
   sectionRule: pdfColor(TABLE.ruleStrong),
   headerBackground: pdfColor(TABLE.bandHeader),
   headerInk: pdfColor(TABLE.inkStrong),
