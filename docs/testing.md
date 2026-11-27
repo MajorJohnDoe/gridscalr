@@ -81,24 +81,26 @@ entry):
 | Platform and run | Zoom | Tiles used | Differing pixels | Max delta | Verdict |
 | --- | --- | --- | --- | --- | --- |
 | Packaged local Linux WebKitGTK (820 × 820, DPR 1) | 1 | yes | 1 130 / 672 256 (0.168 %) | 6 | match |
-| | 3 | yes | 6 760 / 672 256 (1.006 %) | 156 | mismatch |
+| | 3 | yes | 6 770 / 672 256 (1.007 %) | 156 | mismatch |
 | | 6 | yes | 0 | 0 | match |
-| CI Ubuntu 22.04 WebKitGTK | 1, 3, 6 | no | 0 | 0 | not-used |
-| CI macOS WKWebView | 1 | no | 0 | 0 | not-used |
+| CI Ubuntu 22.04 WebKitGTK (job 140582960671) | 1 | yes | 1 130 / 672 256 (0.168 %) | 6 | match |
+| | 3 | yes | 6 770 / 672 256 (1.007 %) | 156 | mismatch |
+| | 6 | yes | 0 | 0 | match |
+| CI macOS WKWebView (job 140582960617) | 1 | yes | 9 380 / 234 016 (4.008 %) | 161 | mismatch |
 | | 3 | yes | 2 760 / 234 016 (1.179 %) | 119 | mismatch |
 | | 6 | yes | 257 / 234 016 (0.110 %) | 1 | match |
-| CI Windows WebView2 | 1 | yes | 12 474 / 266 800 (4.675 %) | 132 | mismatch |
+| CI Windows WebView2 (job 140582960662) | 1 | yes | 12 474 / 266 800 (4.675 %) | 132 | mismatch |
 | | 3 | yes | 6 658 / 266 800 (2.496 %) | 145 | mismatch |
 | | 6 | yes | 6 216 / 266 800 (2.330 %) | 156 | mismatch |
-| Earlier macOS WKWebView run | 1 | yes | 9 380 / 234 016 (4.008 %) | 161 | mismatch |
 
-The two WebKit zoom-3 differences are page-wide and have no blank block or
-material 1-pixel shift, but their maximum channel delta (156 on Linux, 119 on
-macOS) exceeds the 64 allowance, so the tightened verdict records them as
-`mismatch`. The CI Ubuntu WebKitGTK job did not use the tile path at any zoom;
-its `not-used` levels are evidence that the full-page fallback ran, not that
-tiles matched. The Windows WebView2 differences and the earlier high-DPR macOS
-zoom-1 difference are the open finding F-150
+Every report on this head (CI run 46021784653) has `tilePathExercised: true`, so
+the Ubuntu, macOS and Windows levels above are tile verification rather than
+fallback results. The
+WebKit zoom-3 differences are page-wide and have no blank block or material
+1-pixel shift, but their maximum channel delta (156 on Linux, 119 on macOS)
+exceeds the 64 allowance, so the tightened verdict records them as `mismatch`.
+The Windows WebView2 differences and the macOS WKWebView zoom-1 difference
+(4.008 %) are the open finding F-150
 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)), not verified
 matches.
 

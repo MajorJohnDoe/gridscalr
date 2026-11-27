@@ -5,8 +5,8 @@ import { runTileProbe, type TileProbeReport } from "../features/tileProbe";
 /**
  * Runs the debug-only tile-path probe against the live primary canvas and
  * returns a smoke-test step. The packaged smoke test calls this on every
- * desktop platform, so WebKitGTK and WKWebView exercise the tiled path instead
- * of assuming Chromium behaviour. A probe failure is recorded, not thrown.
+ * desktop platform, so WebKitGTK, WKWebView and WebView2 exercise the tiled path
+ * instead of assuming Chromium behaviour. A probe failure is recorded, not thrown.
  */
 export async function recordSmokeTileProbe(
   canvas: CanvasView,

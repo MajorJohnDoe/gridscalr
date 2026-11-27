@@ -3818,17 +3818,17 @@ this table was written and are corrected here.
 - **Outcome (foundation follow-up phase 3, #385):** fixed. The packaged debug
   probe (`src/features/tileProbe/`) now runs in the smoke test on every desktop
   platform. On Linux WebKitGTK the tiled path was used at zoom 1, 3 and 6:
-  zoom 1 and 6 matched the whole-page raster, and zoom 3 differed on 1.0 % of
-  pixels with a page-wide bounding box, no blank grid block and no improving
-  1-pixel shift, so it is per-tile antialiasing. On macOS WKWebView the final CI run
-  used tiles at zoom 3 and 6: zoom 6 matched (0.11 % differing, max delta 1),
-  zoom 3 was antialiasing (1.18 %, max delta 119) and zoom 1 was abandoned
-  under the first-tile cost rule. A preceding run used tiles at zoom 1 and
-  differed on 4.0 % of pixels with a page-wide bounding box, no blank block and
-  no improving integer shift. No blank or integer-offset tile was found, so
-  tiles stay enabled and no platform fallback was added. That high-DPR macOS
-  zoom-1 difference and the Windows WebView2 differences are the separate
-  finding F-150 (#389), not part of this blank/offset verification.
+  zoom 1 and 6 matched the whole-page raster, and zoom 3 differed on 1.007 % of
+  pixels (max delta 156). The CI Ubuntu WebKitGTK job used the tile path at all
+  three zooms with the same result. The zoom-3 difference has a page-wide
+  bounding box, no blank grid block and no improving 1-pixel shift, so the
+  tightened verdict records it as a mismatch. On macOS WKWebView the CI run used
+  tiles at all three zooms: zoom 6 matched (0.110 % differing, max delta 1),
+  zoom 3 differed on 1.179 % (max delta 119) and zoom 1 differed on 4.008 %
+  (max delta 161), both mismatches. No blank or integer-offset tile was found,
+  so tiles stay enabled and no platform fallback was added. The macOS zoom-1
+  difference and the Windows WebView2 differences are the separate finding
+  F-150 (#389), not part of this blank/offset verification.
 - **Related:** #351, [`docs/limitations.md`](../../limitations.md),
   `src/features/tileCache/model.ts`.
 

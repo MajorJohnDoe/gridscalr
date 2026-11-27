@@ -234,7 +234,13 @@ export class CanvasView {
         context: this.contentCtx,
         dpr: () => this.dpr,
         viewport: () => this.view,
-        contentKey: () => gestureContentKey(this.sceneProject, this.viewPageId),
+        contentKey: () =>
+          gestureContentKey(
+            this.sceneProject,
+            this.viewPageId,
+            this.hooks.getRenderer()?.contentKey,
+            this.viewPage,
+          ),
         onSettle: () => this.invalidate(),
       },
       { follow: options.gestureSignal },

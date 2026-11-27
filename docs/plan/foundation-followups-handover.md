@@ -204,11 +204,11 @@ on each pull request.
   Windows and records a report-only `tile path probe` step with the verdict,
   difference, best 1-px shift, blank-block count, `tilesUsed` and
   `tilePathExercised`. The local packaged Linux WebKitGTK run used tiles at all
-  three zooms (match, mismatch, match). The CI Ubuntu WebKitGTK job did not use
-  the tile path at any zoom, so its levels are `not-used`, not passes. macOS
-  WKWebView used tiles at zoom 3 and 6 (mismatch, match) and did not use them at
-  zoom 1. Windows WebView2 used tiles at all three zooms and recorded mismatches
-  (2.33–4.68 %). The WebKit zoom-3 differences are page-wide with no blank or
+  three zooms (match, mismatch, match). The CI Ubuntu WebKitGTK job used the tile
+  path at all three zooms with the same result, and macOS WKWebView used tiles at
+  all three zooms (mismatch, mismatch, match). Windows WebView2 used tiles at all
+  three zooms and recorded mismatches (2.33–4.68 %). The WebKit zoom-3
+  differences are page-wide with no blank or
   material integer shift, but their maximum channel delta (156/119) exceeds the
   64 allowance, so the tightened verdict records them as `mismatch`. No blank or
   integer-offset tile was found, so tiles stay enabled. The differences are the
@@ -216,15 +216,16 @@ on each pull request.
 - `scripts/perf-probe.mjs` gains a split-view pan phase; `test:canvas` asserts
   both panes paint from a gesture raster during the pan.
 - Removed F-147 and F-149 from the open register; added F-150 with #389.
-- Unrelated drive-by documentation fix in this PR: the tile-cache description now
-  says 128 MiB, matching `TILE_CACHE_BUDGET_BYTES` (the code already had 128 MiB;
-  only the prose said 64 MiB).
+- Pre-existing on `main` before this branch (`36c2526`): the tile-cache
+  description says 128 MiB, matching `TILE_CACHE_BUDGET_BYTES`. This branch does
+  not change it.
 
 ### Modules
 
 - New: `src/features/gestureRender/signal.ts`,
   `src/features/tileProbe/{index,model,controller,access}.ts`,
-  `src/app/tileProbeFlow.ts`, `tests/tileProbe.test.ts`.
+  `src/app/tileProbeFlow.ts`, `tests/tileProbe.test.ts`,
+  `tests/gestureRenderController.test.ts`.
 - Changed: `src/features/gestureRender/{controller,index}.ts`,
   `src/canvas/{CanvasView,raster}.ts`, `src/app/{App,referenceController}.ts`,
   `scripts/{canvas-regression,perf-probe}.mjs`, `tests/gestureRender.test.ts`,
@@ -258,13 +259,13 @@ on each pull request.
 
 - F-147 and F-149 fixed and removed from the open register.
 - F-150 (P3, [#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)) now
-  covers the Windows WebView2 differences, the earlier high-DPR macOS zoom-1
-  difference and the WebKit zoom-3 differences above the tightened 64 max-delta
-  allowance; no blank or integer offset was found.
+  covers the Windows WebView2 differences, the macOS zoom-1 difference and the
+  WebKit zoom-3 differences above the tightened 64 max-delta allowance; no blank
+  or integer offset was found.
 
 ### Open questions
 
-- None for this phase. F-150 owns the high-DPR tile-quality decision.
+- None for this phase. F-150 owns the tile-quality decision.
 
 ### Checks
 
@@ -272,12 +273,13 @@ on each pull request.
   `check:modules`, `check:cycles`, `check:security`, `check:actions`,
   `check:dependencies`, `check:docs`, `format:check`, `lint`, `check:i18n`,
   `check:themes`, `npx tsc --noEmit` — pass.
-- Focused: `tileProbe` and `gestureRender` (52 tests), plus
-  `rasterController`, `rasterCache` and `storeGesture` (40 tests) — pass.
+- Focused: `tileProbe`, `gestureRender` and `gestureRenderController` (56
+  tests), plus `rasterController`, `rasterCache` and `storeGesture` (40 tests) —
+  pass.
 - `test:canvas` — pass.
 - `npm run tauri build -- --debug --no-bundle` and the packaged Linux WebKitGTK
   smoke probe — re-run after the review fixes. `tilePathExercised:true`; zoom 1
-  match (0.168 %), zoom 3 mismatch (1.006 %, max delta 156) and zoom 6 match. The
+  match (0.168 %), zoom 3 mismatch (1.007 %, max delta 156) and zoom 6 match. The
   probe step stays `ok:true` because it is report-only.
 - Left to CI: the remaining browser suites and the desktop matrix on the final
   handover commit.
@@ -285,8 +287,11 @@ on each pull request.
 ### Review
 
 - Independent review returned pass-with-findings. The P2 evidence-integrity,
-  P3 verdict-honesty and P4 findings are fixed in this commit; re-review is
-  pending.
+  P3 verdict-honesty and P4 findings were fixed in `4e29a75`.
+- Delta review on `4e29a75` found one P2 documentation error in the tile-probe
+  artifacts and four P4s: the stale handover claim, two gesture content-key
+  holes, the invalidate-without-settle state and the Linux/macOS-only platform
+  comments. All are fixed in this commit; re-review is pending.
 
 ### Next
 

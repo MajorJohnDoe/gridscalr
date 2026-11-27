@@ -70,15 +70,27 @@ export function refreshDue(now: number, refreshedAt: number): boolean {
 }
 
 /**
- * Identity of the content a gesture raster captured: the page and every layer's
- * effective visibility. A page change or a hidden layer changes the key.
+ * Identity of the content a gesture raster captured: the page, every layer's
+ * effective visibility (including zero opacity) and, for a projectless scene,
+ * the loaded document and page. A page, document, hidden-layer or opacity
+ * change changes the key.
  */
-export function gestureContentKey(project: Project | null, pageId: string | null): string | null {
-  if (!project) return null;
+export function gestureContentKey(
+  project: Project | null,
+  pageId: string | null,
+  documentKey = "",
+  pageNumber: number | null = null,
+): string | null {
+  if (!project) {
+    // The projectless raw-PDF reference scene has no PageId, but changing the
+    // loaded document or page still makes the captured raster stale.
+    if (!documentKey && pageNumber === null) return null;
+    return `doc:${documentKey}:${pageNumber ?? ""}`;
+  }
   const id = pageId ?? "";
   const hierarchy = buildLayerHierarchy(project.layers);
   const visible = project.layers
-    .map((layer) => (layerVisibleOnPage(layer, id, hierarchy) ? "1" : "0"))
+    .map((layer) => (layerVisibleOnPage(layer, id, hierarchy) && layer.opacity > 0 ? "1" : "0"))
     .join("");
   return `${id}:${visible}`;
 }

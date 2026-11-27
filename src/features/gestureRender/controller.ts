@@ -193,9 +193,10 @@ export class GestureRenderController {
   }
 
   /**
-   * Drops the captured raster because the displayed content changed. While a
-   * gesture runs the next frame draws the items for real and re-arms the
-   * capture from that drawing.
+   * Drops the captured raster because the displayed content changed. The next
+   * frame draws the items for real and the controller stays inactive until the
+   * next begin, so a cleared wheel settle cannot leave a gesture running with
+   * no timer to end it.
    */
   invalidate(): void {
     if (!this.active) {
@@ -203,7 +204,7 @@ export class GestureRenderController {
       return;
     }
     this.clearTimer();
-    this.rearm = true;
+    this.rearm = false;
     this.active = false;
     this.dropRaster();
   }

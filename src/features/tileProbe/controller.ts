@@ -94,8 +94,8 @@ export interface TileProbeReport {
 /**
  * Captures the primary canvas through the tiled path and then the whole-page
  * path at the same centred views, and compares the pixels. The probe is
- * debug-only: the packaged smoke test runs it, so Linux and macOS exercise the
- * same code path that ships.
+ * debug-only: the packaged smoke test runs it on Linux, macOS and Windows, so
+ * WebKitGTK, WKWebView and WebView2 exercise the same code path that ships.
  */
 export async function runTileProbe(
   host: TileProbeHost,

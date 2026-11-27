@@ -128,8 +128,24 @@ describe("gesture content identity", () => {
     expect(gestureContentKey(project, "page-a")).not.toBe(visible);
   });
 
-  it("has no key without a project", () => {
+  it("keys the projectless scene by document and page", () => {
+    const first = gestureContentKey(null, null, "doc-a", 1);
+    expect(first).not.toBeNull();
+    expect(gestureContentKey(null, null, "doc-a", 1)).toBe(first);
+    expect(gestureContentKey(null, null, "doc-b", 1)).not.toBe(first);
+    expect(gestureContentKey(null, null, "doc-a", 2)).not.toBe(first);
+  });
+
+  it("has no key without a project or a fallback identity", () => {
     expect(gestureContentKey(null, "page-a")).toBeNull();
+    expect(gestureContentKey(null, null)).toBeNull();
+  });
+
+  it("changes when a layer's opacity reaches zero", () => {
+    const project = layersProject();
+    const visible = gestureContentKey(project, "page-a");
+    project.layers[1].opacity = 0;
+    expect(gestureContentKey(project, "page-a")).not.toBe(visible);
   });
 });
 

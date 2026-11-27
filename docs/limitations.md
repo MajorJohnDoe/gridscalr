@@ -224,22 +224,20 @@ missing, so a WebKit runtime without both APIs never attempts a tile; a tile
 render error falls back to the full-page path. The packaged debug probe
 ([`testing.md`](testing.md)) compares the tiled and whole-page rasters on the
 real platform runtimes. The packaged local Linux WebKitGTK run used the tiled
-path at zoom 1, 3 and 6: zoom 1 and 6 matched, while zoom 3 differed on 1.006 %
+path at zoom 1, 3 and 6: zoom 1 and 6 matched, while zoom 3 differed on 1.007 %
 of pixels (max delta 156) and is recorded as `mismatch` under the tightened
-verdict. The CI Ubuntu WebKitGTK job did not use the tile path at any zoom, so
-those levels are `not-used`, not passes. On macOS WKWebView the final CI run used
-tiles at zoom 3 and 6: zoom 6 matched (0.110 % differing, max delta 1), zoom 3
-differed on 1.179 % with max delta 119 and is `mismatch`, and zoom 1 did not use
-the tile path under the first-tile cost rule. A preceding macOS run used tiles at
-zoom 1 and differed on 4.008 % of pixels (max delta 161). The WebKit zoom-3
-differences have a page-wide bounding box and no blank or integer-offset tile;
-the best 1-pixel shift moves the Linux ratio from 1.006 % to 0.987 % and the macOS
-ratio from 1.179 % to 1.118 %, which does not materially explain the difference.
-Tiles stay enabled. The Windows WebView2 differences (2.330–4.675 % at rest, no
-blank block, no material integer offset), the earlier high-DPR macOS zoom-1
-difference and the max-delta failures above are tracked as F-150
-([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)) and are not yet a
-recorded platform fallback.
+verdict. The CI Ubuntu WebKitGTK job used the tile path at all three zooms with
+the same result: zoom 1 and 6 matched and zoom 3 is the 1.007 % mismatch. On
+macOS WKWebView the CI run used tiles at all three zooms: zoom 6 matched (0.110 %
+differing, max delta 1), zoom 3 differed on 1.179 % with max delta 119, and
+zoom 1 differed on 4.008 % of pixels (max delta 161); zoom 3 and zoom 1 are
+`mismatch`. The WebKit zoom-3 differences have a page-wide bounding box and no
+blank or integer-offset tile; the best 1-pixel shift does not materially explain
+them (the macOS ratio moves only from 1.179 % to 1.118 %). Tiles stay enabled.
+The Windows WebView2 differences (2.330–4.675 % at rest, no blank block, no
+material integer offset), the macOS zoom-1 difference and the max-delta failures
+above are tracked as F-150 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389))
+and are not yet a recorded platform fallback.
 
 Tiles are abandoned for the rest of the session once the first tile costs more
 than 30 ms, because PDF.js re-walks the page operator list per tile and on a dense
