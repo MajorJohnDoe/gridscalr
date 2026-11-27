@@ -21,6 +21,11 @@ function entry(file: string, lines: number) {
   return { file, lines };
 }
 
+function committedFeatureScope() {
+  const config = JSON.parse(readFileSync(resolve(root, "file-budgets.json"), "utf8"));
+  return { defaultMax: config.defaultMax, directoryMax: config.directoryMax };
+}
+
 function evaluate(files: Record<string, number | { max: number; reason: string }>, lines: number) {
   return evaluateScope({
     scope: scope(files),
@@ -149,5 +154,53 @@ describe("file budget rules", () => {
     const config = JSON.parse(readFileSync(resolve(root, "file-budgets.json"), "utf8"));
     expect(config.rust.defaultMax).toBe(400);
     expect(validateScope(config.rust, "Rust", { reviewed: true })).toEqual([]);
+  });
+
+  it("applies the 400-line feature budget to a directory added later", () => {
+    const config = JSON.parse(readFileSync(resolve(root, "file-budgets.json"), "utf8"));
+    expect(config.directoryMax["src/features"]).toBe(400);
+    const result = evaluateScope({
+      scope: committedFeatureScope(),
+      entries: [entry("src/features/newArea/model.ts", 401)],
+      label: "Frontend",
+    });
+    expect(result.ok).toBe(false);
+    expect(result.violations).toHaveLength(1);
+    expect(result.violations[0]).toMatchObject({
+      file: "src/features/newArea/model.ts",
+      budget: 400,
+      reviewed: false,
+    });
+  });
+
+  it("passes a feature file exactly on the 400-line limit", () => {
+    const result = evaluateScope({
+      scope: committedFeatureScope(),
+      entries: [entry("src/features/newArea/model.ts", 400)],
+      label: "Frontend",
+    });
+    expect(result.ok).toBe(true);
+    expect(result.violations).toEqual([]);
+  });
+
+  it("refuses --update for a new oversized file in a fresh feature directory", () => {
+    const scope = committedFeatureScope();
+    const result = evaluateScope({
+      scope,
+      entries: [entry("src/features/newArea/model.ts", 430)],
+      label: "Frontend",
+    });
+    const update = planUpdate({
+      scope,
+      violations: result.violations,
+      stale: result.stale,
+      label: "Frontend",
+    });
+    expect(update.ok).toBe(false);
+    expect(update.next).toBeUndefined();
+    expect(update.unknown).toHaveLength(1);
+    expect(update.errors[0]).toContain(
+      "src/features/newArea/model.ts: 430 lines, budget 400 (+30)",
+    );
   });
 });

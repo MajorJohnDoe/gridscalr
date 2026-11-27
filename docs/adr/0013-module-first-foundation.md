@@ -80,7 +80,10 @@ model / io / state
 
 - Target: **300 lines** per new file.
 - Hard limit: **400 lines** per new file.
-- Hard limit: **400 lines** per new foundation feature directory.
+- Hard limit: **400 lines** for every file under `src/features/**`. One
+  `src/features` directory budget in `file-budgets.json` covers a feature
+  directory added later without a registration step; a file here needs a split,
+  not a new exception.
 - New files must not be added to `LEGACY_LARGE_FILES` or to a per-file
   `file-budgets.json` exception.
 - `check:file-budgets --update` may adjust an existing legacy budget but must
@@ -89,7 +92,7 @@ model / io / state
   `src-tauri/src/commands.rs`. Large Rust modules need the same responsibility
   split even though the frontend budget script does not scan them.
 
-The initial directory budgets are:
+The original directory budgets for the foundation phases are:
 
 | Directory | Budget |
 | --- | ---: |
@@ -98,6 +101,10 @@ The initial directory budgets are:
 | `src/features/pageModel` | 400 |
 | `src/features/sourceStorage` | 400 |
 | `src/features/projectIntegrity` | 400 |
+
+The single `src/features` entry now applies that same 400-line limit to every
+feature directory. The per-directory entries remain as the reviewed set the
+foundation phases started with; they are not required for a new directory.
 
 ### Module maps for the foundation phases
 
@@ -183,8 +190,11 @@ before the first production file is added.
 
 ### Enforcement
 
-- `file-budgets.json` carries the directory limits above.
+- `file-budgets.json` carries a `src/features` directory limit of 400, so every
+  file in a feature directory, including one added later, is capped at 400.
 - `scripts/check-file-budgets.mjs` refuses to record new files with `--update`.
+  `tests/fileBudgetRules.test.ts` proves that a file over 400 lines in a fresh
+  `src/features/<area>/` directory fails and that `--update` refuses it.
 - `npm run check:modules` verifies that:
   - every existing foundation feature directory has `index.ts`;
   - files outside a foundation feature import only its `index.ts`;

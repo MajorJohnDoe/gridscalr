@@ -115,7 +115,8 @@ the website shows changes, then `npm run site:build` and `npm run site:check`.
 `file-budgets.json` and fails on any file above its budget:
 
 - the frontend: every `.ts` and `.css` file under `src`, default 700 lines, with
-  tighter directory limits and per-file caps for legacy modules;
+  a 400-line directory budget for every file under `src/features/**`, tighter
+  limits for other directories and per-file caps for legacy modules;
 - the Rust shell: every `.rs` file under `src-tauri/src`, default 400 lines,
   target 300. `*_tests.rs` modules count because they belong to the same module
   surface. `target/`, `node_modules/`, `dist/` and generated files such as
@@ -124,23 +125,24 @@ the website shows changes, then `npm run site:build` and `npm run site:check`.
 New files must stay within the target and may never be added to an exception
 list. An existing legacy module may keep a per-file exception, which is a cap:
 the file may shrink but grows only through a reviewed change. Rust exceptions
-must use the object form `{ "max": 2289, "reason": "…" }` so the review reason
+must use the object form `{ "max": 445, "reason": "…" }` so the review reason
 is recorded next to the limit; a missing or too-short reason fails the check.
-The committed Rust exceptions are `commands.rs`, `package.rs`,
-`project_write.rs` and `source_copy.rs`.
+The committed Rust exceptions are `commands.rs`, `project_write.rs` and
+`source_copy.rs`.
 
 `npm run check:file-budgets -- --update` raises an existing exception to the
 current line count and prunes an exception whose file no longer exists (a stale
 exception also fails a normal run). It refuses to create a new exception for a
 file that is over budget, so a new Rust command must live in its own module
-rather than growing `commands.rs` or `package.rs`. See ADR
+rather than growing `commands.rs` or the package modules. See ADR
 [0013](adr/0013-module-first-foundation.md).
 
 `tests/fileBudgetRules.test.ts` proves the pure rules in
 `scripts/file-budget-rules.mjs`: a file within budget passes, a new oversized
 file fails, `--update` may raise an existing exception, `--update` refuses a
-new oversized file, a removed exception is stale, and every Rust exception
-records a reason.
+new oversized file, a file over 400 lines in a fresh `src/features/<area>/`
+directory fails and is refused by `--update`, a removed exception is stale, and
+every Rust exception records a reason.
 
 ## Dependency gate
 

@@ -1,6 +1,7 @@
 {
   "defaultMax": 700,
   "directoryMax": {
+    "src/features": 400,
     "src/canvas/items": 400,
     "src/canvas/pointer": 500,
     "src/pdf/export": 400,

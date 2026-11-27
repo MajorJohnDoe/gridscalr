@@ -30,7 +30,6 @@ and `docs/limitations.md`.
 | F-126 | P4 | A schedule total on a hidden field is calculated but has no cell to render in; the builder only warns. | [#383](https://github.com/MajorJohnDoe/gridscalr/issues/383) |
 | F-137 | P3 | Flyouts and popovers sit outside the dialog stack, so Escape is routed by a CSS class-name lookup. | [#383](https://github.com/MajorJohnDoe/gridscalr/issues/383) |
 | F-140 | P3 | The dock table and the quantity report do not share the placed table's band palette. | [#383](https://github.com/MajorJohnDoe/gridscalr/issues/383) |
-| F-144 | P2 | A new foundation feature directory gets 700 lines of gate headroom although the documented limit is 400. | [#384](https://github.com/MajorJohnDoe/gridscalr/issues/384) |
 | F-147 | P3 | The read-only reference pane redraws every item during a split-view pan. | [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385) |
 | F-149 | P2 | The tile path is feature-detected but never verified on WebKitGTK or WKWebView. | [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385) |
 
