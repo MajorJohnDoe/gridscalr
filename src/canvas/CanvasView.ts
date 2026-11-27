@@ -21,6 +21,7 @@ import { deleteItems, translateItems } from "../model/commands";
 import { perfSpan } from "../features/perfMonitor";
 import {
   GestureRenderController,
+  gestureContentKey,
   type GestureKind,
   type ViewGestureSignal,
 } from "../features/gestureRender";
@@ -233,6 +234,7 @@ export class CanvasView {
         context: this.contentCtx,
         dpr: () => this.dpr,
         viewport: () => this.view,
+        contentKey: () => gestureContentKey(this.sceneProject, this.viewPageId),
         onSettle: () => this.invalidate(),
       },
       { follow: options.gestureSignal },

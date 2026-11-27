@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   TILE_PROBE_ANTIALIAS_MAX_RATIO,
+  TILE_PROBE_ANTIALIAS_MIN_COVERAGE,
   TILE_PROBE_MAX_CHANNEL_DELTA,
   TILE_PROBE_MAX_DIFF_RATIO,
+  ProbePathSwitch,
   bestShift,
   blankBlocks,
+  boundsCoverage,
   centeredView,
   compareRasters,
   isOffsetShift,
@@ -31,6 +34,14 @@ function setPixel(image: RasterPixels, x: number, y: number, value: number): voi
   image.data[index] = value;
   image.data[index + 1] = value;
   image.data[index + 2] = value;
+}
+
+/** Spreads `count` differing pixels over the page so the bounds stay page-wide. */
+function spreadDifference(image: RasterPixels, count: number, value: number): void {
+  for (let index = 0; index < count; index += 1) {
+    const row = Math.floor(index / image.width);
+    setPixel(image, index % image.width, (index * 7 + row * 3) % image.height, value);
+  }
 }
 
 describe("tile probe comparison", () => {
@@ -97,6 +108,13 @@ describe("tile probe comparison", () => {
   it("pins the documented tolerance", () => {
     expect(TILE_PROBE_MAX_DIFF_RATIO).toBe(0.01);
     expect(TILE_PROBE_MAX_CHANNEL_DELTA).toBe(64);
+    expect(TILE_PROBE_ANTIALIAS_MIN_COVERAGE).toBe(0.25);
+  });
+
+  it("measures a differing bound against the page area", () => {
+    expect(boundsCoverage({ minX: 0, minY: 0, maxX: 49, maxY: 49 }, 100 * 100)).toBeCloseTo(0.25);
+    expect(boundsCoverage({ minX: 10, minY: 10, maxX: 19, maxY: 19 }, 100 * 100)).toBeCloseTo(0.01);
+    expect(boundsCoverage(null, 100)).toBe(0);
   });
 });
 
@@ -167,13 +185,13 @@ describe("tile probe blank regions", () => {
   });
 });
 
-function probeHost(tiled: RasterPixels, full: RasterPixels, supported = true) {
+function probeHost(tiled: RasterPixels, full: RasterPixels, supported = true, active = true) {
   let useTiles = true;
   return {
     pageSize: () => ({ width: 100, height: 100 }),
     viewportSize: () => ({ width: 100, height: 100 }),
     tileSupported: () => supported,
-    tilePathActive: () => useTiles,
+    tilePathActive: () => active && useTiles,
     setPath: (next: boolean) => {
       useTiles = next;
     },
@@ -182,6 +200,27 @@ function probeHost(tiled: RasterPixels, full: RasterPixels, supported = true) {
     captureBase: () => (useTiles ? tiled : full),
   };
 }
+
+describe("tile probe path state", () => {
+  it("restores the tile and level state the probe found", () => {
+    const probePath = new ProbePathSwitch();
+    const original = { useTiles: false, tilesDisabled: true, levelsDisabled: false };
+    expect(probePath.apply(true, false, original)).toEqual({
+      useTiles: true,
+      tilesDisabled: false,
+      levelsDisabled: true,
+    });
+    expect(probePath.apply(false, false, original).useTiles).toBe(false);
+    expect(probePath.apply(true, true, original)).toEqual(original);
+  });
+
+  it("keeps the original state when tiles were enabled", () => {
+    const probePath = new ProbePathSwitch();
+    const original = { useTiles: true, tilesDisabled: false, levelsDisabled: true };
+    probePath.apply(true, false, original);
+    expect(probePath.apply(true, true, original)).toEqual(original);
+  });
+});
 
 describe("tile probe verdicts", () => {
   it("passes an identical tiled raster as a match", async () => {
@@ -199,17 +238,52 @@ describe("tile probe verdicts", () => {
 
   it("accepts a page-wide antialiasing difference that no shift explains", async () => {
     const full = raster(100, 100, 255);
-    setPixel(full, 50, 50, 20);
+    setPixel(full, 0, 99, 20);
     const tiled = raster(100, 100, 255);
-    setPixel(tiled, 50, 50, 20);
-    for (let index = 0; index < 150; index += 1) {
-      setPixel(tiled, index % 100, Math.floor(index / 100) + 10, 240);
-    }
+    setPixel(tiled, 0, 99, 20);
+    spreadDifference(tiled, 150, 240);
     const report = await runTileProbe(probeHost(tiled, full), [1]);
     expect(report.levels[0].strictMatch).toBe(false);
     expect(report.levels[0].verdict).toBe("antialias");
     expect(report.levels[0].passed).toBe(true);
     expect(report.levels[0].differingRatio).toBeLessThanOrEqual(TILE_PROBE_ANTIALIAS_MAX_RATIO);
+    expect(
+      boundsCoverage(report.levels[0].diffBounds, report.levels[0].total),
+    ).toBeGreaterThanOrEqual(TILE_PROBE_ANTIALIAS_MIN_COVERAGE);
+  });
+
+  it("fails a localized high-delta seam as a mismatch", async () => {
+    const full = raster(100, 100, 255);
+    const tiled = raster(100, 100, 255);
+    setPixel(full, 0, 99, 20);
+    setPixel(tiled, 0, 99, 20);
+    for (let y = 30; y < 40; y += 1) {
+      for (let x = 30; x < 40; x += 1) setPixel(tiled, x, y, 0);
+    }
+    const report = await runTileProbe(probeHost(tiled, full), [1]);
+    expect(report.levels[0].verdict).toBe("mismatch");
+    expect(report.levels[0].passed).toBe(false);
+    expect(report.levels[0].maxDelta).toBeGreaterThan(TILE_PROBE_MAX_CHANNEL_DELTA);
+  });
+
+  it("fails a two-pixel shift even when its bounds are page-wide", async () => {
+    const full = raster(100, 100, 255);
+    const tiled = raster(100, 100, 255);
+    for (let row = 0; row < 10; row += 1) {
+      for (let column = 0; column < 10; column += 1) {
+        const x = 5 + column * 10;
+        const y = 5 + row * 10;
+        setPixel(full, x, y, 20);
+        setPixel(tiled, x + 2, y, 20);
+      }
+    }
+    const report = await runTileProbe(probeHost(tiled, full), [1]);
+    expect(report.levels[0].verdict).toBe("mismatch");
+    expect(report.levels[0].passed).toBe(false);
+    expect(report.levels[0].maxDelta).toBeGreaterThan(TILE_PROBE_MAX_CHANNEL_DELTA);
+    expect(
+      boundsCoverage(report.levels[0].diffBounds, report.levels[0].total),
+    ).toBeGreaterThanOrEqual(TILE_PROBE_ANTIALIAS_MIN_COVERAGE);
   });
 
   it("fails a one-pixel offset as an offset", async () => {
@@ -232,5 +306,45 @@ describe("tile probe verdicts", () => {
     const report = await runTileProbe(probeHost(raster(100, 100, 255), full), [1]);
     expect(report.levels[0].verdict).toBe("blank");
     expect(report.levels[0].passed).toBe(false);
+  });
+
+  it("fails a sparse faint blank block even when the strict match passes", async () => {
+    const full = raster(100, 100, 255);
+    const tiled = raster(100, 100, 255);
+    setPixel(full, 0, 99, 20);
+    setPixel(tiled, 0, 99, 20);
+    // A light-grey mark (max channel 199) under 1 % of the page: the strict
+    // ratio and channel limits accept it, but the block is still missing.
+    for (let y = 10; y < 15; y += 1) {
+      for (let x = 10; x < 20; x += 1) setPixel(full, x, y, 199);
+    }
+    const report = await runTileProbe(probeHost(tiled, full), [1]);
+    expect(report.levels[0].strictMatch).toBe(true);
+    expect(report.levels[0].blankBlocks).toBeGreaterThan(0);
+    expect(report.levels[0].verdict).toBe("blank");
+    expect(report.levels[0].passed).toBe(false);
+  });
+
+  it("never passes a level where the tile path was not exercised", async () => {
+    const image = raster(100, 100, 255);
+    setPixel(image, 50, 50, 20);
+    const report = await runTileProbe(probeHost(image, image, true, false), [1]);
+    expect(report.levels[0]).toMatchObject({
+      ready: true,
+      tilesUsed: false,
+      strictMatch: true,
+      verdict: "not-used",
+      passed: false,
+    });
+    expect(report.tilePathExercised).toBe(false);
+    expect(report.passed).toBe(false);
+  });
+
+  it("reports that the tile path was exercised when a level used tiles", async () => {
+    const image = raster(100, 100, 255);
+    setPixel(image, 50, 50, 20);
+    const report = await runTileProbe(probeHost(image, image), [1]);
+    expect(report.tilePathExercised).toBe(true);
+    expect(report.levels[0].tilesUsed).toBe(true);
   });
 });

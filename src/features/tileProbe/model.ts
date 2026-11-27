@@ -39,11 +39,17 @@ export const TILE_PROBE_MAX_CHANNEL_DELTA = 64;
 
 /**
  * A page-wide difference above the strict match but below this share, with no
- * 1-pixel shift and no blank region, is per-tile antialiasing. A blank or
- * misplaced tile is far larger (one clipped 512 px tile is tens of percent of
- * the viewport).
+ * 1-pixel shift, no blank region and a maximum channel delta inside the strict
+ * allowance, is per-tile antialiasing. A blank or misplaced tile is far larger
+ * (one clipped 512 px tile is tens of percent of the viewport).
  */
 export const TILE_PROBE_ANTIALIAS_MAX_RATIO = 0.02;
+
+/**
+ * Share of the page area the differing-pixel bounds must cover for a difference
+ * to count as page-wide. A localized seam does not qualify.
+ */
+export const TILE_PROBE_ANTIALIAS_MIN_COVERAGE = 0.25;
 
 /** Coarse grid used to spot a blank region even when the total difference is small. */
 export const TILE_PROBE_BLANK_BLOCKS = 8;
@@ -103,6 +109,17 @@ export function compareRasters(a: RasterPixels, b: RasterPixels): RasterDiff {
     maxDelta,
     bounds: differing > 0 ? { minX, minY, maxX, maxY } : null,
   };
+}
+
+/**
+ * Share of the raster area covered by a differing-pixel bounding box. A null
+ * bound or an empty raster covers nothing.
+ */
+export function boundsCoverage(bounds: DiffBounds | null, total: number): number {
+  if (!bounds || total <= 0) return 0;
+  const width = Math.max(0, bounds.maxX - bounds.minX + 1);
+  const height = Math.max(0, bounds.maxY - bounds.minY + 1);
+  return (width * height) / total;
 }
 
 function isContentPixel(data: Uint8ClampedArray, index: number): boolean {

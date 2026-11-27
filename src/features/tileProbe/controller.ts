@@ -1,8 +1,11 @@
 import {
   TILE_PROBE_ANTIALIAS_MAX_RATIO,
+  TILE_PROBE_ANTIALIAS_MIN_COVERAGE,
+  TILE_PROBE_MAX_CHANNEL_DELTA,
   TILE_PROBE_ZOOMS,
   bestShift,
   blankBlocks,
+  boundsCoverage,
   centeredView,
   compareRasters,
   isOffsetShift,
@@ -29,18 +32,33 @@ export interface TileProbeHost {
   captureBase(): RasterPixels | null;
 }
 
-export type TileProbeVerdict = "match" | "antialias" | "offset" | "blank" | "mismatch" | "unready";
+export type TileProbeVerdict =
+  "match" | "antialias" | "offset" | "blank" | "mismatch" | "not-used" | "unready";
 
 function verdictFor(
+  tilesUsed: boolean,
   strict: boolean,
   blanks: number,
   offset: boolean,
   ratio: number,
+  maxDelta: number,
+  bounds: DiffBounds | null,
+  total: number,
 ): TileProbeVerdict {
-  if (!strict && blanks > 0) return "blank";
+  // A level that never ran through the tile path must never look like a pass.
+  if (!tilesUsed) return "not-used";
+  // A missing tile can hide inside the strict-match tolerance when the mark is
+  // faint and sparse, so a blank block is decisive before the strict return.
+  if (blanks > 0) return "blank";
   if (offset) return "offset";
   if (strict) return "match";
-  if (ratio <= TILE_PROBE_ANTIALIAS_MAX_RATIO) return "antialias";
+  if (
+    ratio <= TILE_PROBE_ANTIALIAS_MAX_RATIO &&
+    maxDelta <= TILE_PROBE_MAX_CHANNEL_DELTA &&
+    boundsCoverage(bounds, total) >= TILE_PROBE_ANTIALIAS_MIN_COVERAGE
+  ) {
+    return "antialias";
+  }
   return "mismatch";
 }
 
@@ -67,6 +85,8 @@ export interface TileProbeLevel {
 
 export interface TileProbeReport {
   supported: boolean;
+  /** False when no level actually ran through the tile path. */
+  tilePathExercised: boolean;
   levels: TileProbeLevel[];
   passed: boolean;
 }
@@ -83,7 +103,9 @@ export async function runTileProbe(
 ): Promise<TileProbeReport> {
   const pageSize = host.pageSize();
   const supported = host.tileSupported();
-  if (!pageSize) return { supported, levels: [], passed: false };
+  if (!pageSize) {
+    return { supported, tilePathExercised: false, levels: [], passed: false };
+  }
 
   const levels: TileProbeLevel[] = [];
   try {
@@ -135,7 +157,16 @@ export async function runTileProbe(
         rasterHasContent(tiled) && rasterHasContent(full) ? blankBlocks(tiled, full) : 1;
       const shift = strict || blanks > 0 ? null : bestShift(tiled, full);
       const offset = shift ? isOffsetShift(shift, diff.differingRatio) : false;
-      const verdict = verdictFor(strict, blanks, offset, diff.differingRatio);
+      const verdict = verdictFor(
+        tilesUsed,
+        strict,
+        blanks,
+        offset,
+        diff.differingRatio,
+        diff.maxDelta,
+        diff.bounds,
+        diff.total,
+      );
       levels.push({
         zoom,
         ready: true,
@@ -157,5 +188,10 @@ export async function runTileProbe(
     // Leave the live canvas on the path and underlay it shipped with.
     host.setPath(true, true);
   }
-  return { supported, levels, passed: levels.length > 0 && levels.every((level) => level.passed) };
+  return {
+    supported,
+    tilePathExercised: levels.some((level) => level.tilesUsed),
+    levels,
+    passed: levels.length > 0 && levels.every((level) => level.passed),
+  };
 }

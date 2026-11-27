@@ -178,7 +178,8 @@ on each pull request.
 
 - Issue: [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385)
 - PR: [#388](https://github.com/MajorJohnDoe/gridscalr/pull/388)
-- Commit: `c727432` (implementation); this handover is updated in the same PR
+- Commit: `c727432` (implementation); review fixes in the latest commit on this
+  PR
 - Schema: unchanged (28)
 
 ### Completed
@@ -189,21 +190,35 @@ on each pull request.
   split-view pan reuses its own raster and settles with the primary. A two-finger
   pan on the reference surface begins and ends the primary gesture through
   `beginExternalViewGesture`/`endExternalViewGesture`. The resting image is the
-  unchanged real redraw.
+  unchanged real redraw; the visual harness masks the canvas, so the evidence is
+  the gesture-inactive code path and the split-view canvas regression, not a
+  pixel baseline.
+- **F-147 follow-up** — the gesture raster is keyed on the page ID and the
+  effective visibility of every layer. A page change or a hidden layer drops the
+  raster and redraws for real, so the previous page or a hidden layer cannot
+  linger in the gesture image. The probe restores the tile-path and level state
+  it found instead of forcing tiles on after a run where the first-tile rule had
+  disabled them.
 - **F-149** — `src/features/tileProbe/` compares the tiled and whole-page base
   raster at zoom 1, 3 and 6. The packaged smoke test runs it on Linux, macOS and
   Windows and records a report-only `tile path probe` step with the verdict,
-  difference, best 1-px shift and blank-block count. Linux WebKitGTK uses tiles
-  cleanly at all three zooms. macOS WKWebView used tiles at zoom 3 and 6 on the
-  final CI run (zoom 6 matched, zoom 3 was per-tile antialiasing); zoom 1 was
-  abandoned under the first-tile cost rule, while a preceding run used tiles
-  there and differed on 4.0 % of pixels with no blank block and no improving
-  integer shift. No blank or integer-offset tile was found, so tiles stay
-  enabled. The high-DPR macOS zoom-1 and Windows WebView2 differences are the
+  difference, best 1-px shift, blank-block count, `tilesUsed` and
+  `tilePathExercised`. The local packaged Linux WebKitGTK run used tiles at all
+  three zooms (match, mismatch, match). The CI Ubuntu WebKitGTK job did not use
+  the tile path at any zoom, so its levels are `not-used`, not passes. macOS
+  WKWebView used tiles at zoom 3 and 6 (mismatch, match) and did not use them at
+  zoom 1. Windows WebView2 used tiles at all three zooms and recorded mismatches
+  (2.33–4.68 %). The WebKit zoom-3 differences are page-wide with no blank or
+  material integer shift, but their maximum channel delta (156/119) exceeds the
+  64 allowance, so the tightened verdict records them as `mismatch`. No blank or
+  integer-offset tile was found, so tiles stay enabled. The differences are the
   open finding F-150 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)).
 - `scripts/perf-probe.mjs` gains a split-view pan phase; `test:canvas` asserts
   both panes paint from a gesture raster during the pan.
 - Removed F-147 and F-149 from the open register; added F-150 with #389.
+- Unrelated drive-by documentation fix in this PR: the tile-cache description now
+  says 128 MiB, matching `TILE_CACHE_BUDGET_BYTES` (the code already had 128 MiB;
+  only the prose said 64 MiB).
 
 ### Modules
 
@@ -225,20 +240,27 @@ on each pull request.
 - The probe disables the display-level underlay and forces each path so it
   compares raster to raster; otherwise an exact level can serve both paths and
   mask a tile difference.
-- The 2 % antialias allowance is justified by the 1-px shift and blank-block
-  checks: a misplaced or blank tile fails both. The high-DPR macOS and Windows
-  results are kept as a finding instead of widening the allowance.
+- A level where `tilesUsed` is false is `not-used` and can never pass. Reporting
+  the full-page fallback as a match was the review's P2 evidence-integrity
+  finding; `tilePathExercised` makes the distinction explicit in the report.
+- A non-zero blank-block count is decisive before the strict-match return, so a
+  faint, sparse mark under the 1 % ratio cannot hide a missing tile.
+- `antialias` requires a page-wide differing bound (at least a quarter of the page
+  area), the 2 % differing ratio, a maximum channel delta within the existing 64
+  allowance, and no 1-pixel shift or blank block. A localized high-delta seam or
+  a 2-pixel shift is `mismatch`.
 - Existing legacy budgets for `App.ts` (+4) and `CanvasView.ts` (+46) were
   updated with `check:file-budgets -- --update`; no new file exception.
 - No platform fallback was added. No blank or integer-offset tile was found;
-  the high-DPR difference is F-150 rather than an assumed fallback.
+  the page-wide differences are F-150 rather than an assumed fallback.
 
 ### Findings
 
 - F-147 and F-149 fixed and removed from the open register.
-- New F-150 (P3, [#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)):
-  high-DPR macOS WKWebView (zoom 1) and Windows WebView2 tiled rasters differ
-  by up to 4.7 % at rest, with no blank or integer offset.
+- F-150 (P3, [#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)) now
+  covers the Windows WebView2 differences, the earlier high-DPR macOS zoom-1
+  difference and the WebKit zoom-3 differences above the tightened 64 max-delta
+  allowance; no blank or integer offset was found.
 
 ### Open questions
 
@@ -250,19 +272,21 @@ on each pull request.
   `check:modules`, `check:cycles`, `check:security`, `check:actions`,
   `check:dependencies`, `check:docs`, `format:check`, `lint`, `check:i18n`,
   `check:themes`, `npx tsc --noEmit` — pass.
-- Focused: `gestureRender`, `tileCache`, `rasterController`, `rasterCache`,
-  `referenceSession`, `tileProbe` — 90 tests pass.
-- `test:canvas`, `test:visual` (4 screens, 0 differing pixels),
-  `check:performance` — pass.
-- Packaged Linux WebKitGTK smoke probe — pass; desktop CI matrix — green, with
-  the report-only probe recording the macOS high-DPR zoom-1 and Windows
-  differences as F-150.
+- Focused: `tileProbe` and `gestureRender` (52 tests), plus
+  `rasterController`, `rasterCache` and `storeGesture` (40 tests) — pass.
+- `test:canvas` — pass.
+- `npm run tauri build -- --debug --no-bundle` and the packaged Linux WebKitGTK
+  smoke probe — re-run after the review fixes. `tilePathExercised:true`; zoom 1
+  match (0.168 %), zoom 3 mismatch (1.006 %, max delta 156) and zoom 6 match. The
+  probe step stays `ok:true` because it is report-only.
 - Left to CI: the remaining browser suites and the desktop matrix on the final
   handover commit.
 
 ### Review
 
-- Pending the conductor's independent review.
+- Independent review returned pass-with-findings. The P2 evidence-integrity,
+  P3 verdict-honesty and P4 findings are fixed in this commit; re-review is
+  pending.
 
 ### Next
 

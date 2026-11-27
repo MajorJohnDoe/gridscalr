@@ -1,4 +1,11 @@
-import { GESTURE_SETTLE_MS, movedFar, refreshDue, settleDelay, type SettleClock } from "./model";
+import {
+  GESTURE_SETTLE_MS,
+  captureStale,
+  movedFar,
+  refreshDue,
+  settleDelay,
+  type SettleClock,
+} from "./model";
 import { ViewGestureSignal, type ViewGestureEvent } from "./signal";
 
 /** The zoom and pan of one viewport, in CSS pixels. */
@@ -38,6 +45,11 @@ export interface GestureRenderHost {
   context: CanvasRenderingContext2D;
   dpr(): number;
   viewport(): GestureViewport;
+  /**
+   * Identity of the content captured into the raster: page and effective layer
+   * visibility. A change drops the raster instead of painting old content.
+   */
+  contentKey?(): string | null;
   /** Real content redraw for the viewport that is current when the gesture settles. */
   onSettle(): void;
 }
@@ -58,6 +70,8 @@ export class GestureRenderController {
   private buffer: HTMLCanvasElement | null = null;
   /** Viewport the captured pixels were drawn at; latched at gesture start. */
   private baseView: GestureViewport | null = null;
+  /** Content key of the captured pixels; compared on every paint. */
+  private captureKey: string | null = null;
   private active = false;
   private painted = false;
   private timer: number | null = null;
@@ -143,6 +157,11 @@ export class GestureRenderController {
       this.dropRaster();
       return false;
     }
+    if (this.raster && captureStale(this.captureKey, this.contentKey())) {
+      // A page change or a hidden layer must not keep painting the old content.
+      this.invalidate();
+      return false;
+    }
     if (this.raster && !this.fitsCanvas()) {
       // The canvas was resized mid-gesture, so the raster no longer describes
       // it. Drop reuse and let this frame draw the items for real.
@@ -171,6 +190,22 @@ export class GestureRenderController {
     this.active = true;
     this.baseView = { ...this.host.viewport() };
     this.refreshedAt = performance.now();
+  }
+
+  /**
+   * Drops the captured raster because the displayed content changed. While a
+   * gesture runs the next frame draws the items for real and re-arms the
+   * capture from that drawing.
+   */
+  invalidate(): void {
+    if (!this.active) {
+      this.dropRaster();
+      return;
+    }
+    this.clearTimer();
+    this.rearm = true;
+    this.active = false;
+    this.dropRaster();
   }
 
   /** Ends any gesture and drops the raster; the next frame draws for real. */
@@ -207,6 +242,10 @@ export class GestureRenderController {
     context.restore();
   }
 
+  private contentKey(): string | null {
+    return this.host.contentKey?.() ?? null;
+  }
+
   private capture(): boolean {
     const { canvas } = this.host;
     if (canvas.width < 1 || canvas.height < 1) return false;
@@ -222,6 +261,7 @@ export class GestureRenderController {
     if (!context) return false;
     context.drawImage(canvas, 0, 0);
     this.raster = raster;
+    this.captureKey = this.contentKey();
     return true;
   }
 
@@ -262,6 +302,7 @@ export class GestureRenderController {
   private dropRaster(): void {
     this.raster = null;
     this.baseView = null;
+    this.captureKey = null;
     this.painted = false;
   }
 

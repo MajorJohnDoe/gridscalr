@@ -27,7 +27,7 @@ and `docs/limitations.md`.
 
 | Finding | Severity | Problem | Issue |
 | --- | --- | --- | --- |
-| F-150 | P3 | The high-DPR macOS WKWebView (zoom 1) and Windows WebView2 tiled rasters differ from the whole-page path by up to 4.7 % at rest, with no blank or integer offset found. | [#389](https://github.com/MajorJohnDoe/gridscalr/issues/389) |
+| F-150 | P3 | Tiled rasters differ from the whole-page path at rest: Windows WebView2 (2.33–4.68 %), the earlier high-DPR macOS zoom-1 run (4.01 %), and the WebKit zoom-3 runs (1.006–1.179 %) whose maximum channel delta exceeds the 64 allowance. No blank or integer offset was found. | [#389](https://github.com/MajorJohnDoe/gridscalr/issues/389) |
 
 ## History
 

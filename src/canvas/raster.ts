@@ -1,11 +1,7 @@
 /**
- * The primary canvas raster controller: one place that schedules a PDF render,
- * chooses the tile cache or the full-page fallback, and keeps the generation
- * guard. `CanvasView` only forwards its viewport, draws `current`, and asks for
- * `rendering` and tile statistics.
- *
- * Read-only canvases (the split reference pane, comparison and the reference
- * source) never use the tile cache; they keep the pre-tile `renderCrop()` path.
+ * The primary canvas raster controller: schedules a PDF render, chooses the tile
+ * cache or the full-page fallback and keeps the generation guard. Read-only
+ * canvases keep the pre-tile `renderCrop()` path.
  */
 
 import { perfMark, perfSpanAsync } from "../features/perfMonitor";
@@ -19,6 +15,7 @@ import {
   type DisplayLevelStats,
   type LevelRequest,
 } from "../features/displayLevels";
+import { ProbePathSwitch } from "../features/tileProbe";
 import {
   TileCacheController,
   type TileCacheStats,
@@ -228,6 +225,7 @@ export class CanvasRasterController {
   private gestureAtLastSchedule = false;
   private tilesDisabled = false;
   private levelsDisabled = false;
+  private readonly probePath = new ProbePathSwitch();
   private busyValue = false;
   private useTiles: boolean;
   private readonly tiles: TileCacheController | null;
@@ -312,11 +310,16 @@ export class CanvasRasterController {
     return this.useTiles && !this.tilesDisabled && this.tiles?.isSupported === true;
   }
 
-  /** Debug probe: force the tile or whole-page path, hide the level underlay and re-render. */
+  /** Debug probe: force a path, hide the level underlay and re-render; restore the session on `(true, true)`. */
   setProbePath(tiled: boolean, levels: boolean): void {
-    this.levelsDisabled = !levels;
-    this.useTiles = tiled && this.tiles !== null;
-    this.tilesDisabled = false;
+    const next = this.probePath.apply(tiled, levels, {
+      useTiles: this.useTiles,
+      tilesDisabled: this.tilesDisabled,
+      levelsDisabled: this.levelsDisabled,
+    });
+    this.useTiles = next.useTiles && this.tiles !== null;
+    this.tilesDisabled = next.tilesDisabled;
+    this.levelsDisabled = next.levelsDisabled;
     if (!this.useTiles) this.tiles?.cancel();
     this.generation += 1;
     this.rasterValue = null;

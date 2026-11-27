@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
+import type { Project } from "../src/model/types";
 import {
   GESTURE_REFRESH_DISTANCE,
   GESTURE_REFRESH_MS,
   GESTURE_SETTLE_MS,
   MIN_GESTURE_SETTLE_MS,
   ViewGestureSignal,
+  captureStale,
   clampSettleMs,
+  gestureContentKey,
   movedFar,
   rasterTransform,
   refreshDue,
@@ -79,6 +82,74 @@ describe("gesture raster transform", () => {
     expect(
       rasterTransform({ zoom: Number.NaN, panX: 5, panY: 5 }, { zoom: 2, panX: 10, panY: 15 }),
     ).toEqual({ scale: 1, offsetX: 5, offsetY: 10 });
+  });
+});
+
+function layersProject(): Project {
+  return {
+    layers: [
+      {
+        id: "root",
+        kind: "measure",
+        name: "Root",
+        visible: true,
+        locked: false,
+        opacity: 1,
+        color: "#ff0000",
+        items: [],
+      },
+      {
+        id: "child",
+        kind: "measure",
+        name: "Child",
+        visible: true,
+        locked: false,
+        opacity: 1,
+        color: "#ff0000",
+        items: [],
+        parentId: "root",
+      },
+    ],
+  } as unknown as Project;
+}
+
+describe("gesture content identity", () => {
+  it("changes only when the page or effective visibility changes", () => {
+    const project = layersProject();
+    const first = gestureContentKey(project, "page-a");
+    expect(gestureContentKey(project, "page-a")).toBe(first);
+    expect(gestureContentKey(project, "page-b")).not.toBe(first);
+  });
+
+  it("changes when a parent hides a child layer on the page", () => {
+    const project = layersProject();
+    const visible = gestureContentKey(project, "page-a");
+    project.layers[0].pageState = { "page-a": { visible: false } };
+    expect(gestureContentKey(project, "page-a")).not.toBe(visible);
+  });
+
+  it("has no key without a project", () => {
+    expect(gestureContentKey(null, "page-a")).toBeNull();
+  });
+});
+
+describe("gesture content key", () => {
+  it("keeps the raster while the page and visibility are unchanged", () => {
+    expect(captureStale("page-a:110", "page-a:110")).toBe(false);
+  });
+
+  it("drops the raster when the page changes", () => {
+    expect(captureStale("page-a:110", "page-b:110")).toBe(true);
+  });
+
+  it("drops the raster when a layer's effective visibility changes", () => {
+    expect(captureStale("page-a:110", "page-a:100")).toBe(true);
+  });
+
+  it("does not invalidate an unkeyed host", () => {
+    expect(captureStale(null, "page-a:110")).toBe(false);
+    expect(captureStale("page-a:110", null)).toBe(false);
+    expect(captureStale(null, null)).toBe(false);
   });
 });
 
