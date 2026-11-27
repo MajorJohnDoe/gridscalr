@@ -79,8 +79,9 @@ name every call site uses (re-exported from `src/ui/dialogs.ts`) and now means
   above the dialog band, applies it as its own `z-index`, and the registry's
   document Escape handler closes only the topmost registered surface. The dialog
   host also attaches its own document Escape handler and asks that registry
-  first; each handler calls `stopImmediatePropagation` after it closes a
-  transient surface, so whichever listener runs first cannot let a dialog close
+  first; each handler calls `stopImmediatePropagation` around the close — the
+  registry before it invokes the surface's `onEscape`, the dialog host after it
+  asks the registry — so whichever listener runs first cannot let a dialog close
   underneath it. No surface is discovered by a CSS class name, and two transient
   surfaces are ordered against each other.
 - Stacking is deterministic. Every open or raised dialog takes the next value of

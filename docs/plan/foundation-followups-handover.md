@@ -93,7 +93,7 @@ on each pull request.
 
 - Issue: [#383](https://github.com/MajorJohnDoe/gridscalr/issues/383)
 - PR: [#387](https://github.com/MajorJohnDoe/gridscalr/pull/387)
-- Commit: `0a1b634` (implementation); this handover is updated in the same PR
+- Commit: `9b9f7d4` (squash merge; implementation `0a1b634` plus the review fix `c5f08e6`)
 - Schema: unchanged (28)
 
 ### Completed
@@ -109,11 +109,13 @@ on each pull request.
   `src/pdf/reportStyle.ts`; the order-quantity accent and clamped warning remain
   report-only semantic colours. The right-dock table deliberately keeps the
   chrome tokens; the accepted difference is recorded in `docs/limitations.md`.
-- **F-126** — `unmatchedTotals()` / `unmatchedTotalText()` display the already
-  computed total text in a foot line (`Value (Sum): 12.5`) in the shared table
-  layout, the builder preview and the dock table. The canvas and drawing-PDF
-  renderers draw `layout.foot`. The builder warning, its problem code and its
-  catalog key are removed.
+- **F-126** — `placeTotals()` assigns each computed total to a renderable
+  column exactly once: a total on the first visible column (the label cell) and
+  a second total on an already-claimed field go to the foot line, as does a
+  hidden field. The foot line (`Value (Sum): 12.5`) is drawn in the shared table
+  layout, the builder preview and the dock table, and the canvas and drawing-PDF
+  renderers draw `layout.foot`. No total is recomputed. The builder warning, its
+  problem code and its catalog key are removed.
 - Removed F-126, F-137 and F-140 from the open findings register.
 
 ### Modules
@@ -161,7 +163,12 @@ on each pull request.
 
 ### Review
 
-- Pending independent review on the PR head.
+- Reviewer: `code-review` skill (independent, fixed point `29ab229`).
+- Reviewed commit: `c5f08e668de9323d3a6d7e23e8659a25349c5aa5`.
+- Verdict: pass-with-findings — one P3 review round (F-126 first-column and
+  duplicate totals, the `topMenu` class-name step-back, the F-140 wording) fixed
+  on the branch; two P4 documentation nits were fixed on `main` after the merge.
+- Findings: none open.
 
 ### Next
 
