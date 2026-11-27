@@ -12,7 +12,7 @@ import {
   type ListSelectMode,
   type MoveOutcome,
 } from "./model";
-import { PointerRowDrag, type PointerDropGuide } from "./pointerDrag";
+import { PointerRowDrag, rowSpans, type PointerDropGuide } from "./pointerDrag";
 import { ListDragFeedback } from "./feedback";
 import { LiveRegion } from "./ui";
 
@@ -119,6 +119,15 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     this.scroll = scroll;
     this.pointer.bind(list);
     this.prune();
+  }
+
+  /** Selects exactly these IDs and repaints the rows after a move reveal. */
+  select(ids: readonly string[]): void {
+    if (!this.options.selectable) return;
+    const live = new Set(this.options.entries().map((entry) => entry.id));
+    this.selection = ids.filter((id) => live.has(id));
+    this.anchor = this.selection[0] ?? null;
+    this.applySelection();
   }
 
   /** Applies selection styling to one row. */
@@ -387,12 +396,4 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     this.list = null;
     this.scroll = null;
   }
-}
-
-/** Row spans for the insertion rule; one helper keeps both paths aligned. */
-function rowSpans(rows: readonly HTMLElement[]): { top: number; bottom: number }[] {
-  return rows.map((row) => {
-    const rect = row.getBoundingClientRect();
-    return { top: rect.top, bottom: rect.bottom };
-  });
 }

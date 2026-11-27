@@ -239,4 +239,72 @@ describe("Pages panel window", () => {
     expect(document.activeElement).toBe(next);
     expect(next.getAttribute("data-page-window-action")).toBe("jump");
   });
+
+  it("hands the pending range focus to the filter when the list empties", () => {
+    const project = projectWithPages(150);
+    project.documents[0].kind = "tiff";
+    store.setProject(project, "/tmp/page-list.gridscalr", false);
+    store.ui.leftTab = "pages";
+    store.ui.page = 1;
+    pageStatus.setFilter("missingOcr");
+    const { refs, actions, render } = mount();
+    render();
+    refs.dockBody.querySelector<HTMLInputElement>(".page-window-input")!.focus();
+
+    // The scans gain a text layer, so the filter matches nothing and the range
+    // bar that owned the focus is removed with the list.
+    project.documents[0].kind = "pdf";
+    refreshPageStatusBadges(refs, actions);
+    expect(refs.dockBody.querySelector(".page-list")).toBeNull();
+    const chip = refs.dockBody.querySelector<HTMLElement>(
+      '.page-status-filter[data-filter="missingOcr"]',
+    )!;
+    expect(document.activeElement).toBe(chip);
+
+    // The cleared request must not pull focus back to a range control on the
+    // next render; focus returns to the page card instead.
+    pageStatus.setFilter("all");
+    render();
+    expect(document.activeElement?.getAttribute("data-page")).toBe("1");
+  });
+
+  it("keeps a moved block selected when a render lands before the reveal", async () => {
+    const project = projectWithPages(300);
+    store.setProject(project, "/tmp/page-list.gridscalr", false);
+    store.ui.leftTab = "pages";
+    store.ui.page = 1;
+    const { refs, actions, render } = mount();
+    render();
+
+    // A block that does not contain the page the editor shows: it is mounted
+    // at the top, then the move sends it past the end of the window.
+    card(refs, 2).dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    card(refs, 3).dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    expect(pageReorder.selectionIds()).toEqual(["page_2", "page_3"]);
+
+    let resolveReorder!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      resolveReorder = resolve;
+    });
+    vi.mocked(actions.reorderPages).mockImplementation((pageIds, insertionIndex) => {
+      // The store applies the move and emits synchronously, so the panel
+      // renders while the checkpoint is still awaiting. That render follows the
+      // current page and prunes the moved block from the selection.
+      store.reorderPages(pageIds, insertionIndex);
+      render();
+      return pending;
+    });
+
+    card(refs, 3).dispatchEvent(
+      new KeyboardEvent("keydown", { key: "End", altKey: true, bubbles: true }),
+    );
+    expect(pageReorder.selectionIds()).toEqual([]);
+
+    resolveReorder();
+    await pending;
+    // The reveal mounts the block again, and the selection comes with it, so a
+    // follow-up bulk command still acts on the moved pages.
+    expect(pageReorder.selectionIds()).toEqual(["page_2", "page_3"]);
+    expect(pageEditTargets(store.project!, "page_1")).toEqual(["page_2", "page_3"]);
+  });
 });

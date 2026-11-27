@@ -57,6 +57,14 @@ export interface PointerRowDragOptions {
   heldRows?: (row: HTMLElement) => readonly HTMLElement[];
 }
 
+/** Row spans for the insertion rule; one helper keeps both paths aligned. */
+export function rowSpans(rows: readonly HTMLElement[]): RowSpan[] {
+  return rows.map((row) => {
+    const rect = row.getBoundingClientRect();
+    return { top: rect.top, bottom: rect.bottom };
+  });
+}
+
 /** Row controls that keep their own click, key and colour-picker behaviour. */
 const DEFAULT_IGNORE =
   "button, input, select, textarea, a, [contenteditable='true'], [role='button']";

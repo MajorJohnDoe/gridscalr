@@ -145,6 +145,7 @@ function renderEmptyPages(refs: ShellRefs, actions: PanelActions): void {
   pageReorder.detach();
   pageWindowState.reset();
   focusedPageId = null;
+  pendingWindowFocus = null;
   const empty = el("div", "page-list page-list-empty");
   empty.append(el("p", "empty-note", t("page.emptyProject")));
   const add = el("button", "btn btn-small", t("page.addPages"));
@@ -222,6 +223,10 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     pageReorder.setVisibleIds([]);
     pageReorder.detach();
     refs.dockBody.append(pageStatusEmptyNote());
+    // The range bar that asked for the focus is gone. Hand the request to the
+    // filter that emptied the list instead of letting it leak into the next
+    // render, where it would focus a range control the user did not reach.
+    handOffWindowFocus(refs, filter);
     return;
   }
   const visibleIds = visible.map((row) => row.pageId);
@@ -445,6 +450,19 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     }
   }
   observeThumbnails(refs, actions, pendingThumbnails);
+}
+
+/**
+ * Moves a pending range-bar focus request to the status filter chip that is
+ * still mounted when the filtered list is empty, then clears it so it cannot
+ * apply to a later render.
+ */
+function handOffWindowFocus(refs: ShellRefs, filter: PageStatusFilter): void {
+  if (!pendingWindowFocus) return;
+  pendingWindowFocus = null;
+  refs.dockBody
+    .querySelector<HTMLElement>(`.page-status-filter[data-filter="${filter}"]`)
+    ?.focus({ preventScroll: true });
 }
 
 /**

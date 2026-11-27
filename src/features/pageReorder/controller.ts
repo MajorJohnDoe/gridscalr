@@ -74,6 +74,13 @@ export class PageReorderController {
         pageWindowState.reveal(revealId);
         pageWindowState.requestFocus(revealId);
         this.actions?.refresh?.();
+        // The render after the store emit follows the current page, which can
+        // leave a moved block that does not contain it off-window; the prune
+        // then drops the block from the selection. Restore it now that the
+        // reveal has mounted it, so a follow-up bulk command still targets it.
+        // A block wider than the window keeps only its mounted pages.
+        const mounted = this.mountedIds;
+        this.drag.select(mounted?.has(revealId) ? ids.filter((id) => mounted.has(id)) : ids);
       };
       if (isPromise(result)) void result.then(reveal);
       else reveal();

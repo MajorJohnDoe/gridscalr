@@ -1867,7 +1867,8 @@ this table was written and are corrected here.
   a jump field. Every page stays reachable without a second page-list widget,
   the window follows the current page whenever it falls outside the slice, and
   a keyboard move or drop reveals the moved block. Internal and external drops
-  translate the rendered position back through the window offset, so a drop at
+  translate the rendered position back through the window offset — external
+  drops use the mounted page numbers instead — so a drop at
   a window edge lands next to the mounted card instead of at the project end.
   A `Shift` range is clamped to the mounted window. The fixed 400-card cap and
   its note are gone; the window rule is `tests/pageWindow.test.ts`,

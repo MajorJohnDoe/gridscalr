@@ -385,7 +385,8 @@ on each pull request.
 
 - Issue: [#234](https://github.com/MajorJohnDoe/gridscalr/issues/234)
 - PR: [#393](https://github.com/MajorJohnDoe/gridscalr/pull/393)
-- Commit: `70c9373` (implementation); this handover is updated in the same PR
+- Commit: `70c9373` (implementation), `a4450a9` and `6bf270f` (review fixes);
+  this handover is updated in the same PR
 - Schema: unchanged (28)
 
 ### Completed
@@ -398,11 +399,11 @@ on each pull request.
   a moved block is revealed. `ListReorderController` gained a `renderedOffset`
   so a drag inside the window is translated to the full project insertion index
   while the drop line stays on the mounted rows, and a `visibleEntries` option
-  clamps a Shift range to the mounted cards. The external drawing drop uses the
-  same window offset, so a drop below the last mounted card lands at the window
-  edge instead of the project end. Filters still narrow first; the range bar and
-  jump field then count matching pages. No second page-list widget and no page
-  identity change.
+  clamps a Shift range to the mounted cards. The external drawing drop maps the
+  rendered position through the mounted page numbers, so a drop below the last
+  mounted card lands after that page instead of at the project end. Filters
+  still narrow first; the range bar and jump field then count matching pages. No
+  second page-list widget and no page identity change.
 - **F-076** — `prepareImportCopy()` writes and verifies a managed copy before the
   drop-import commits, and `applyImportManagedCopy()` applies it inside the same
   `store.mutate` as `commitProjectImport()`. One Undo removes the imported pages
@@ -469,7 +470,10 @@ on each pull request.
   is mapped through the mounted page numbers; the layer treeitem owns its
   group; the roving-claim text matches the real tab stops; focus is restored to
   the focused layer or item row and to the range bar across a filtered status
-  refresh. Covered by `tests/pageList.test.ts`, `tests/pageWindow.test.ts`,
+  refresh. A moved block is selected again once its reveal lands, even when an
+  earlier render pruned it, and a range-bar focus request is handed to the
+  status filter instead of leaking when that filter empties the list. Covered by
+  `tests/pageList.test.ts`, `tests/pageWindow.test.ts`,
   `tests/pageReorder.test.ts`, `tests/listInteraction.test.ts`,
   `tests/droppedDrawingImport.test.ts` and `tests/layerTreeA11y.test.ts`.
 
@@ -481,6 +485,8 @@ on each pull request.
   `check:themes`, `npx tsc --noEmit` — pass.
 - Full `npx vitest run` — 218 files, 2309 tests pass (after the review fixes).
 - `npm run test:robustness` — 5 files, 104 tests pass.
+- Final delta review fixes re-ran the focused `pageReorder`, `pageList`,
+  `pageBulk` and `pageWindow` suites and `npm run test:robustness` — pass.
 - `test:ui`, `test:import`, `test:touch`, `test:a11y` (138 checks) and
   `test:visual` — pass.
 - Existing legacy budgets for `App.ts`, `store.ts` and `panels.css` were raised
