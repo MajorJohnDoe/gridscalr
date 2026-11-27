@@ -230,7 +230,7 @@ Right-click a page card and choose **Duplicate page…**, or press `Alt` + `Shif
 
 The copy is appended at the end with a new stable page ID and references the same source sheet. The original PDF or TIF is never modified. Page-specific layer visibility, lock settings, building and floor labels always follow the copy. Duplicating one page is structural and cannot be undone. It is useful when the same drawing needs a separate takeoff, such as one page for windows and another for doors.
 
-Select several cards with `Ctrl`/`Cmd`-click or `Shift`-click and press `Alt` + `Shift` + `D`, or choose **Duplicate page…** on one selected card, to duplicate the whole selection. The dialog names the new page range, and the copies append in selection order as one undo step. Every existing page keeps its ID and state; each copy gets a fresh ID and copies the scale, name and markups you choose.
+Select several cards with `Ctrl`/`Cmd`-click or `Shift`-click and press `Alt` + `Shift` + `D`, or choose **Duplicate page…** on one selected card, to duplicate the whole selection. The dialog names the new page range, and the copies append in project order as one undo step. Every existing page keeps its ID and state; each copy gets a fresh ID and copies the scale, name and markups you choose.
 
 ### Reorder, insert and delete pages
 
