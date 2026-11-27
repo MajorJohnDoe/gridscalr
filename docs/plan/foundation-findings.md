@@ -27,7 +27,7 @@ and `docs/limitations.md`.
 
 | Finding | Severity | Problem | Issue |
 | --- | --- | --- | --- |
-| F-149 | P2 | The tiled path is verified on Linux WebKitGTK; macOS WKWebView verification is pending. | [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385) |
+| F-150 | P3 | The Windows WebView2 tiled raster differs from the whole-page path by 2.3–4.7 % at rest, with no blank or offset found. | [#389](https://github.com/MajorJohnDoe/gridscalr/issues/389) |
 
 ## History
 

@@ -935,9 +935,10 @@ gesture raster during the pan.
 
 ### F-149 — packaged tile-path probe
 
-Linux WebKitGTK (packaged debug build, 820 × 820 CSS px viewport, DPR 1) reports
-`createImageBitmap` and `OffscreenCanvas` and uses the tiled path at all three
-zooms:
+The packaged probe runs in the smoke test on the `ubuntu-22.04`, `macos-latest`
+and `windows-latest` desktop jobs. Linux WebKitGTK (local packaged debug build,
+820 × 820 CSS px viewport, DPR 1) reports `createImageBitmap` and
+`OffscreenCanvas` and uses the tiled path at all three zooms:
 
 | Zoom | `tilesUsed` | Differing pixels | Max delta | Verdict |
 | --- | --- | --- | --- | --- |
@@ -945,24 +946,40 @@ zooms:
 | 3 | yes | 6 760 / 672 256 (1.006 %) | 156 | antialias |
 | 6 | yes | 0 | 0 | match |
 
-At zoom 3 the difference is page-wide (bounding box 5,0 – 819,805), no coarse
-grid block is blank, and the best 1-pixel shift (dx −1) only moves the ratio
-from 1.006 % to 0.987 %, so it is per-tile antialiasing, not a misplaced or
-blank tile. Tiles stay enabled on WebKitGTK; no platform fallback is added.
-The first-tile cost rule can still abandon tiles on a slow page; when it did on
-one run, the probe recorded `tilesUsed: false` and compared the fallback with
-itself, which is the honest result.
+macOS WKWebView (packaged CI smoke test, 234 016 px viewport) used tiles at
+zoom 3 and 6; zoom 1 abandoned them under the first-tile cost rule:
 
-macOS WKWebView: recorded from the packaged smoke probe on the `macos-latest`
-desktop CI job for this branch (see the pull request run).
+| Zoom | `tilesUsed` | Differing pixels | Max delta | Verdict |
+| --- | --- | --- | --- | --- |
+| 1 | no | 0 | 0 | match (full-page fallback) |
+| 3 | yes | 2 760 / 234 016 (1.179 %) | 119 | antialias |
+| 6 | yes | 257 / 234 016 (0.110 %) | 1 | match |
+
+At zoom 3 on both WebKit runtimes the difference is page-wide (Linux bounding
+box 5,0 – 819,805; macOS 3,16 – 409,567), no coarse grid block is blank, and
+the best 1-pixel shift only moves the Linux ratio from 1.006 % to 0.987 % and
+the macOS ratio from 1.179 % to 1.118 %, so it is per-tile antialiasing, not a
+misplaced or blank tile. Tiles stay enabled on WebKitGTK and WKWebView; no
+platform fallback is added. The first-tile cost rule can still abandon tiles on
+a slow page (the CI Linux runner did, comparing the fallback with itself); the
+probe records `tilesUsed` so that result is not mistaken for tile verification.
+
+The Windows WebView2 CI job used tiles at all three zooms and measured 4.68 %,
+2.50 % and 2.33 % page-wide differences (max delta 132–156), with no blank
+block and no 1-pixel shift that materially explains them. That is larger than
+the ≤ 0.17 % recorded for the phase 4 Chromium probe at 1440 × 900 DPR 1 and is
+tracked as F-150 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)),
+not as a WebKit verification failure. No Windows fallback is added here.
 
 ### What this says
 
 - A split-view pan now costs the reference pane one blit per frame instead of a
   full item draw, with the same settled image and no frame regression.
-- The tiled path is verified on a real WebKitGTK runtime, not only Chromium.
-  There is no blank tile, no offset and no seam; the only difference is
-  per-tile antialiasing at zoom 3, within the 2 % allowance that the shift and
-  blank-block checks justify.
+- The tiled path is verified on real WebKitGTK and WKWebView runtimes, not only
+  Chromium. There is no blank tile, no offset and no seam; the only difference
+  is per-tile antialiasing at zoom 3, within the 2 % allowance that the shift
+  and blank-block checks justify.
+- The Windows WebView2 difference is larger (2.3–4.7 %) and remains open as
+  F-150; the probe records it instead of claiming a clean result.
 - The safe full-page path remains the fallback when either bitmap API is
   missing or a tile render fails.

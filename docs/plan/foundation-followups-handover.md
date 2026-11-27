@@ -173,3 +173,91 @@ on each pull request.
 ### Next
 
 - Phase 3, [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385).
+
+## Phase 3 — renderer follow-ups: reference gesture reuse and WebKit tile verification (F-147/F-149)
+
+- Issue: [#385](https://github.com/MajorJohnDoe/gridscalr/issues/385)
+- PR: [#388](https://github.com/MajorJohnDoe/gridscalr/pull/388)
+- Commit: `c727432` (implementation); this handover is updated in the same PR
+- Schema: unchanged (28)
+
+### Completed
+
+- **F-147** — `src/features/gestureRender/signal.ts` publishes every pan/wheel
+  begin and end from the gesture render controller. The read-only reference pane
+  passes the primary's signal to its own controller and mirrors both edges, so a
+  split-view pan reuses its own raster and settles with the primary. A two-finger
+  pan on the reference surface begins and ends the primary gesture through
+  `beginExternalViewGesture`/`endExternalViewGesture`. The resting image is the
+  unchanged real redraw.
+- **F-149** — `src/features/tileProbe/` compares the tiled and whole-page base
+  raster at zoom 1, 3 and 6. The packaged smoke test runs it on Linux, macOS and
+  Windows and records a report-only `tile path probe` step with the verdict,
+  difference, best 1-px shift and blank-block count. Linux WebKitGTK and macOS
+  WKWebView use tiles and pass with per-tile antialiasing only; no fallback was
+  needed. The larger Windows WebView2 difference is the new open finding F-150
+  ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)).
+- `scripts/perf-probe.mjs` gains a split-view pan phase; `test:canvas` asserts
+  both panes paint from a gesture raster during the pan.
+- Removed F-147 and F-149 from the open register; added F-150 with #389.
+
+### Modules
+
+- New: `src/features/gestureRender/signal.ts`,
+  `src/features/tileProbe/{index,model,controller,access}.ts`,
+  `src/app/tileProbeFlow.ts`, `tests/tileProbe.test.ts`.
+- Changed: `src/features/gestureRender/{controller,index}.ts`,
+  `src/canvas/{CanvasView,raster}.ts`, `src/app/{App,referenceController}.ts`,
+  `scripts/{canvas-regression,perf-probe}.mjs`, `tests/gestureRender.test.ts`,
+  `file-budgets.json`, `AGENTS.md`, `README.md`,
+  `docs/{architecture,testing,limitations,performance/history}.md`,
+  `docs/plan/{foundation-findings,archive/foundation-findings}.md`.
+
+### Decisions
+
+- The signal lives on the gesture controller rather than the store or a global:
+  one responsibility, no UI or Tauri dependency, and the follower reuses the same
+  controller path.
+- The probe disables the display-level underlay and forces each path so it
+  compares raster to raster; otherwise an exact level can serve both paths and
+  mask a tile difference.
+- The 2 % antialias allowance is justified by the 1-px shift and blank-block
+  checks: a misplaced or blank tile fails both. The Windows result is kept as a
+  finding instead of widening the allowance.
+- Existing legacy budgets for `App.ts` (+4) and `CanvasView.ts` (+46) were
+  updated with `check:file-budgets -- --update`; no new file exception.
+- No platform fallback was added: Linux and macOS passed their own probes, and
+  Windows has its own open finding rather than an assumed fallback.
+
+### Findings
+
+- F-147 and F-149 fixed and removed from the open register.
+- New F-150 (P3, [#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)):
+  Windows WebView2 tiled raster differs by 2.3–4.7 % at rest, no blank/offset.
+
+### Open questions
+
+- None for this phase. F-150 owns the Windows decision.
+
+### Checks
+
+- Local gate: `check:versions`, `check:file-budgets`, `check:write-sites`,
+  `check:modules`, `check:cycles`, `check:security`, `check:actions`,
+  `check:dependencies`, `check:docs`, `format:check`, `lint`, `check:i18n`,
+  `check:themes`, `npx tsc --noEmit` — pass.
+- Focused: `gestureRender`, `tileCache`, `rasterController`, `rasterCache`,
+  `referenceSession`, `tileProbe` — 90 tests pass.
+- `test:canvas`, `test:visual` (4 screens, 0 differing pixels),
+  `check:performance` — pass.
+- Packaged Linux WebKitGTK smoke probe — pass; desktop CI matrix — pass
+  (macOS tiles verified, Windows recorded as F-150).
+- Left to CI: the remaining browser suites and the desktop matrix on the final
+  handover commit.
+
+### Review
+
+- Pending the conductor's independent review.
+
+### Next
+
+- Phase 4, [#306](https://github.com/MajorJohnDoe/gridscalr/issues/306).

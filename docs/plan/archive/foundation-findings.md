@@ -3815,14 +3815,17 @@ this table was written and are corrected here.
 - **Next step:** Before 1.0, run the packaged Linux build on WebKitGTK and
   compare the primary canvas at rest with the full-page path. If a tile is blank
   or offset, force the full-page path for that platform and record why.
-- **Outcome (foundation follow-up phase 3, #385):** the packaged debug probe
-  (`src/features/tileProbe/`) now runs in the smoke test on every desktop
+- **Outcome (foundation follow-up phase 3, #385):** fixed. The packaged debug
+  probe (`src/features/tileProbe/`) now runs in the smoke test on every desktop
   platform. On Linux WebKitGTK the tiled path was used at zoom 1, 3 and 6:
   zoom 1 and 6 matched the whole-page raster, and zoom 3 differed on 1.0 % of
   pixels with a page-wide bounding box, no blank grid block and no improving
-  1-pixel shift, so it is per-tile antialiasing. Tiles stay enabled; no
-  platform fallback was needed on Linux. The macOS WKWebView result is recorded
-  from the same packaged probe on the desktop CI matrix.
+  1-pixel shift, so it is per-tile antialiasing. On macOS WKWebView the probe
+  used tiles at zoom 3 and 6: zoom 6 matched (0.11 % differing, max delta 1)
+  and zoom 3 was antialiasing (1.18 %, max delta 119, no improving 1-pixel
+  shift, no blank block). Tiles stay enabled; no platform fallback was needed.
+  The separate Windows WebView2 difference is F-150 (#389), not part of this
+  WebKit verification.
 - **Related:** #351, [`docs/limitations.md`](../../limitations.md),
   `src/features/tileCache/model.ts`.
 

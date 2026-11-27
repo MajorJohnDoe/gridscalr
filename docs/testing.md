@@ -74,7 +74,10 @@ an assumption.
 
 Observed results are recorded in
 [`performance/history.md`](performance/history.md) under the renderer follow-up
-entry.
+entry. The Windows WebView2 run currently records a larger page-wide difference
+(2.3–4.7 %, no blank block and no explaining 1-pixel shift); it is the open
+finding F-150 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)),
+not a verified match.
 
 ## Module boundaries and the Rust command cap
 
