@@ -5,7 +5,7 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.34.0** · Project-file schema: **28, in development**
+Current version: **0.35.0** · Project-file schema: **28, in development**
 
 1.0 is **deferred** and remains a quality gate, not a target date. Work is
 organised by foundation slices so the product can release pre-1.0 minors while
@@ -175,6 +175,20 @@ now survives an I/O rail row ([#377](https://github.com/MajorJohnDoe/gridscalr/i
 line here** appends new segments to the same polyline
 ([#379](https://github.com/MajorJohnDoe/gridscalr/issues/379)). No schema field
 changed; schema 28 stays the current development schema.
+
+**Foundation follow-ups and page workspace** are prepared as **0.35.0**
+([`release-notes/0.35.0.md`](release-notes/0.35.0.md)): one `src/features: 400`
+file budget ([#384](https://github.com/MajorJohnDoe/gridscalr/issues/384)), a
+shared transient-overlay registry and schedule totals in the foot line
+([#383](https://github.com/MajorJohnDoe/gridscalr/issues/383)), reference-pane
+gesture raster reuse and a debug tile probe ([#385](https://github.com/MajorJohnDoe/gridscalr/issues/385)),
+the windowed Pages list with bulk page actions and Layers tree roles
+([#234](https://github.com/MajorJohnDoe/gridscalr/issues/234)), and `trash`
+5.4.0 removing the compiled chrono path
+([#306](https://github.com/MajorJohnDoe/gridscalr/issues/306)). No schema field
+changed; schema 28 stays the current development schema. The tiled-raster
+difference on high-DPR WebView2/WKWebView and at WebKit zoom 3 remains open as
+F-150 ([#389](https://github.com/MajorJohnDoe/gridscalr/issues/389)).
 
 Schema 28 shipped in 0.29.0, not in the released 0.28.0 binary. The quality gate
 for 1.0 is unchanged: Windows, macOS and Linux artifacts, the two interface
