@@ -385,8 +385,8 @@ on each pull request.
 
 - Issue: [#234](https://github.com/MajorJohnDoe/gridscalr/issues/234)
 - PR: [#393](https://github.com/MajorJohnDoe/gridscalr/pull/393)
-- Commit: `70c9373` (implementation), `a4450a9` and `6bf270f` (review fixes);
-  this handover is updated in the same PR
+- Commit: `27a6645` (squash merge; implementation `70c9373`, review fixes
+  `a4450a9`, `6bf270f`, `2836c15`)
 - Schema: unchanged (28)
 
 ### Completed
@@ -491,6 +491,21 @@ on each pull request.
   `test:visual` — pass.
 - Existing legacy budgets for `App.ts`, `store.ts` and `panels.css` were raised
   with `check:file-budgets -- --update`; no new file exception.
+
+### Review
+
+- Reviewer: `code-review` skill (independent, fixed point `ea35865`).
+- Reviewed commit: `2836c15da9db3422d00107c787432efff02f498c`.
+- Verdict: pass-with-findings across three review rounds. Round 1 fixed three
+  P2 windowing defects (selection and focus leaving the mounted window, range
+  selection over unmounted pages, external drop ignoring the window edge) and
+  nine P3/P4s. Round 2 fixed the retained-selection prune, the move-reveal race
+  and four documentation/test gaps. Round 3 fixed the moved block losing its
+  selection and the pending-focus leak. Three P3/P4s remained: an order-dependent
+  focus assertion in `tests/pageList.test.ts`, two untested branches, and the
+  archive sentence. The sentence is fixed here; the test and branch coverage are
+  tracked in #394.
+- Findings: none open on the product; #394 owns the test hardening.
 
 ### Next
 
