@@ -7,14 +7,17 @@ on each pull request.
 
 - Issue: [#384](https://github.com/MajorJohnDoe/gridscalr/issues/384)
 - PR: [#386](https://github.com/MajorJohnDoe/gridscalr/pull/386)
-- Commit: `af8fa63` (phase commit; the handover commit is the PR head)
+- Commit: `af8fa63` (implementation); this handover is updated in the same PR
 - Schema: unchanged (28)
 
 ### Completed
 
 - `file-budgets.json` gained a single `"src/features": 400` directory budget, so
   every file under `src/features/**` — including a directory added later — is
-  capped at 400 through the existing rules. No new gate and no Rust change.
+  capped at 400 through the existing rules, unless `file-budgets.json` carries a
+  reviewed exception that predates the rule
+  (`src/features/schematics/model/sheetTemplate.ts`, 714 lines, remains the only
+  one). No new gate and no Rust change.
 - Split the two offenders and the extra file the new budget revealed:
   - `src/features/projectPackage/model.ts` (619 → a small surface over
     `model/format.ts`, `model/archive.ts`, `model/portable.ts`,

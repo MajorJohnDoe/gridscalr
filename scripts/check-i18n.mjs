@@ -34,15 +34,15 @@ const PLACEHOLDER = /\{\s*([A-Za-z_][\w]*)\s*(?:[,}])/g;
 /** Brand and symbol names that are intentionally not translated. */
 const UI_ALLOWLIST = new Set(["GridScalr", "pt"]);
 /**
- * Technical detail that is deliberately English: diagnostics reports, package
- * manifest validation and failure descriptions, the Markdown renderer, XLSX
- * XML and developer-only geometry errors.
+ * Technical detail that is deliberately English: diagnostics reports, the
+ * performance-monitor span names and unit formatting, package manifest
+ * validation, the Markdown renderer, symbol path data and sign artwork, and
+ * XLSX XML.
  */
 const TEMPLATE_EXCLUDE_FILES = new Set([
   "src/features/diagnostics/model.ts",
   "src/features/perfMonitor/model.ts",
   "src/features/projectPackage/model/manifest.ts",
-  "src/features/projectPackage/model/failure.ts",
   "src/help/markdown.ts",
   "src/model/symbolPaths.ts",
   "src/model/symbols/signCatalog.ts",
