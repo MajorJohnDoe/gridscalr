@@ -111,6 +111,7 @@ export interface PanelActions {
   duplicatePage: (pageId: PageId) => void;
   deletePages: (pageIds: readonly PageId[]) => void;
   duplicatePages: (pageIds: readonly PageId[]) => void;
+  pinPage: (pageId: PageId) => void;
   reorderPage: (pageId: PageId, targetIndex: number) => void;
   reorderPages: (pageIds: readonly PageId[], insertionIndex: number) => void | Promise<void>;
   insertPage: (pageId: PageId, index: number) => void;

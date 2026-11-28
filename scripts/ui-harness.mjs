@@ -165,6 +165,31 @@ export async function openDemoProject(page, { base } = {}) {
   return project;
 }
 
+/**
+ * Gives the open-pages row two tabs: page 1 is pinned with a quick click pair
+ * and page 2 becomes the preview. Used by the accessibility and touch-target
+ * gates so the close controls are part of the measured shell.
+ */
+export async function createTwoOpenPages(page) {
+  if ((await page.locator(".page-card").count()) === 0) {
+    await page.locator('.dock-tab[data-tab="pages"]').click();
+  }
+  await page.locator(".page-card").first().waitFor();
+  await page.evaluate(() => {
+    const clickPage = (pageNumber) => {
+      const card = document.querySelector(`.page-card[data-page="${pageNumber}"]`);
+      if (!card) throw new Error(`missing page card ${pageNumber}`);
+      card.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    };
+    // The first click previews the current page, the second pins it; the third
+    // opens page 2 beside the pinned tab.
+    clickPage(1);
+    clickPage(1);
+    clickPage(2);
+  });
+  await page.waitForFunction(() => document.querySelectorAll(".open-page-tab-cell").length === 2);
+}
+
 export async function openMarkupsItem(page, itemId, kind = "all") {
   const panel = page.locator(".markups-panel");
   if (!(await panel.isVisible())) {

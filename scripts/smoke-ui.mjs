@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PDFDocument } from "pdf-lib";
 import {
+  createTwoOpenPages,
   launchBrowser,
   makeReferenceProject,
   openCompareProject,
@@ -64,6 +65,132 @@ function readDropFeedback(page, rowSelector) {
   }, rowSelector);
 }
 
+/**
+ * The open-pages row is hidden with no project and with a zero-page project.
+ * The shell grid must still give the status bar its normal height and leave the
+ * workspace the free space; otherwise the status bar is squeezed to 1 px.
+ */
+async function assertHiddenRowShell(page, label) {
+  const layout = await page.evaluate(() => {
+    const shell = document.querySelector(".app-shell");
+    const status = document.querySelector(".statusbar");
+    const row = document.querySelector(".open-pages-row");
+    const workspace = document.querySelector(".workspace");
+    const topbar = document.querySelector(".topbar");
+    const statusRect = status?.getBoundingClientRect();
+    const topbarRect = topbar?.getBoundingClientRect();
+    const children = status
+      ? [...status.children].map((child) => {
+          const rect = child.getBoundingClientRect();
+          const style = getComputedStyle(child);
+          return {
+            width: rect.width,
+            height: rect.height,
+            bottom: rect.bottom,
+            display: style.display,
+            visibility: style.visibility,
+          };
+        })
+      : [];
+    return {
+      rows: shell ? getComputedStyle(shell).gridTemplateRows : "",
+      topbarHeight: Math.round(topbarRect?.height ?? 0),
+      statusHeight: Math.round(statusRect?.height ?? 0),
+      statusBottom: Math.round(statusRect?.bottom ?? 0),
+      statusChildren: children.filter(
+        (child) =>
+          child.display !== "none" &&
+          child.visibility !== "hidden" &&
+          child.width > 0 &&
+          child.height > 0 &&
+          child.bottom <= window.innerHeight + 1,
+      ).length,
+      rowHidden: row?.hidden ?? false,
+      rowHeight: Math.round(row?.getBoundingClientRect().height ?? 0),
+      workspaceHeight: Math.round(workspace?.getBoundingClientRect().height ?? 0),
+      viewportHeight: window.innerHeight,
+    };
+  });
+  assert.equal(layout.rowHidden, true, `${label}: the open-pages row should be hidden`);
+  assert.equal(layout.rowHeight, 0, `${label}: the hidden row should have no height`);
+  assert.equal(
+    layout.statusHeight,
+    28,
+    `${label}: the status bar should keep its 28 px height (grid: ${layout.rows})`,
+  );
+  assert.ok(
+    layout.statusBottom <= layout.viewportHeight + 1,
+    `${label}: the status bar should stay inside the viewport`,
+  );
+  assert.ok(
+    layout.statusChildren > 0,
+    `${label}: the status bar children should be visible, not clipped`,
+  );
+  const freeSpace = layout.viewportHeight - layout.topbarHeight - layout.statusHeight;
+  assert.ok(
+    Math.abs(layout.workspaceHeight - freeSpace) <= 1,
+    `${label}: the workspace should keep the free space (${layout.workspaceHeight} vs ${freeSpace})`,
+  );
+}
+
+/**
+ * The two-tab row: a close control per tab sits inside its cell at 24 × 24, the
+ * right-hand hint stays visible at supported widths, and the whole cell (not
+ * only its inner content) navigates.
+ */
+async function assertOpenPagesGeometry(page, label) {
+  const geometry = await page.evaluate(() => {
+    const cells = [...document.querySelectorAll(".open-page-tab-cell")];
+    const close = document.querySelector(".open-page-close");
+    const hint = document.querySelector(".open-pages-hint");
+    const cellRect = cells[0]?.getBoundingClientRect();
+    const closeRect = close?.getBoundingClientRect();
+    const hintRect = hint?.getBoundingClientRect();
+    const hintStyle = hint ? getComputedStyle(hint) : null;
+    return {
+      tabs: cells.length,
+      cell: cellRect
+        ? {
+            left: cellRect.left,
+            right: cellRect.right,
+            top: cellRect.top,
+            bottom: cellRect.bottom,
+          }
+        : null,
+      close: closeRect
+        ? {
+            width: closeRect.width,
+            height: closeRect.height,
+            left: closeRect.left,
+            right: closeRect.right,
+            top: closeRect.top,
+            bottom: closeRect.bottom,
+          }
+        : null,
+      hintVisible: Boolean(
+        hintRect &&
+        hintRect.width > 0 &&
+        hintRect.height > 0 &&
+        hintStyle?.display !== "none" &&
+        hintStyle?.visibility !== "hidden",
+      ),
+    };
+  });
+  assert.equal(geometry.tabs, 2, `${label}: expected two open tabs`);
+  assert.equal(Math.round(geometry.close?.width ?? 0), 24, `${label}: close control width`);
+  assert.equal(Math.round(geometry.close?.height ?? 0), 24, `${label}: close control height`);
+  assert.ok(
+    geometry.cell &&
+      geometry.close &&
+      geometry.close.left >= geometry.cell.left &&
+      geometry.close.right <= geometry.cell.right &&
+      geometry.close.top >= geometry.cell.top &&
+      geometry.close.bottom <= geometry.cell.bottom,
+    `${label}: the close control should sit inside its tab cell`,
+  );
+  assert.equal(geometry.hintVisible, true, `${label}: the open-pages hint should stay visible`);
+}
+
 function readLayerSurfaces(page) {
   return page.evaluate(() => {
     const rows = document.querySelector(".layer-section-rows");
@@ -90,9 +217,41 @@ try {
   });
   page.on("pageerror", (error) => pageErrors.push(error.message));
 
+  // The hidden open-pages row must not move the workspace or squeeze the status
+  // bar, on the welcome screen and with a zero-page project.
+  await page.goto(vite.base, { waitUntil: "domcontentloaded" });
+  await waitForApp(page);
+  await assertHiddenRowShell(page, "welcome 1440x900");
+  await page.setViewportSize({ width: 1024, height: 700 });
+  await assertHiddenRowShell(page, "welcome 1024x700");
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  await page.getByRole("menuitem", { name: "File" }).click();
+  await page.getByRole("menuitem", { name: "New project…" }).click();
+  const newProject = page.getByRole("dialog", { name: "New project" });
+  await newProject.waitFor();
+  await newProject.getByRole("radio", { name: /Blank project/ }).check();
+  await newProject.getByRole("button", { name: "Create project" }).click();
+  await newProject.waitFor({ state: "detached" });
+  await waitForToastsGone(page);
+  await assertHiddenRowShell(page, "zero pages 1440x900");
+  await page.setViewportSize({ width: 1024, height: 700 });
+  await assertHiddenRowShell(page, "zero pages 1024x700");
+  await page.setViewportSize({ width: 1440, height: 900 });
+
   const project = await openDemoProject(page, { base: vite.base });
   assert.equal(project.name, "Northgate Logistics Hub - Takeoff");
   assert.equal(await page.locator(".page-card").count(), 4, "expected four page cards");
+
+  await createTwoOpenPages(page);
+  await assertOpenPagesGeometry(page, "two tabs 1440x900");
+  const firstTabBox = await page.locator(".open-page-tab-cell").first().boundingBox();
+  assert.ok(firstTabBox, "the first open tab should have a bounding box");
+  await page.mouse.click(firstTabBox.x + 4, firstTabBox.y + firstTabBox.height / 2);
+  await page.waitForFunction(() => document.querySelector(".page-input")?.value === "1");
+  await page.setViewportSize({ width: 1024, height: 700 });
+  await assertOpenPagesGeometry(page, "two tabs 1024x700");
+  await page.setViewportSize({ width: 1440, height: 900 });
 
   const autosave = await page.evaluate(async () => {
     const legacy = localStorage.getItem("gridscalr.autosave.v1");
@@ -412,9 +571,13 @@ try {
   await radiatorRow.locator(".markups-item-label").click();
   await page.waitForTimeout(250);
   const zoomAfterFocus = await page.evaluate(() => window.__gridscalr.store.ui.zoom);
+  const zoomRatio = zoomAfterFocus / zoomBeforeFocus;
+  // Measured with the 35 px open-pages row: 0.6113 -> 0.8694, a 1.42× fit.
+  // The old 1.5× bound was tuned to the taller canvas; 1.35× still catches a
+  // failed or barely visible fit without hiding a real regression.
   assert.ok(
-    zoomAfterFocus > zoomBeforeFocus * 1.5,
-    `clicking a small Markups row should zoom in (${zoomBeforeFocus} -> ${zoomAfterFocus})`,
+    zoomRatio > 1.35,
+    `clicking a small Markups row should zoom in (${zoomBeforeFocus} -> ${zoomAfterFocus}, ${zoomRatio.toFixed(2)}×)`,
   );
   assert.equal(
     await page.evaluate(() => window.__gridscalr.store.ui.selection[0]?.itemId),

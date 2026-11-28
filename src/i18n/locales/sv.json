@@ -3671,5 +3671,14 @@
   "shareByEmail.reveal": "Visa filen",
   "shareByEmail.revealFailed": "Det gick inte att visa filen i filhanteraren.",
   "shareByEmail.desktopOnly": "E-postutskick finns bara i skrivbordsappen.",
-  "shareByEmail.invalidOutcome": "E-postklienten returnerade ett oväntat resultat."
+  "shareByEmail.invalidOutcome": "E-postklienten returnerade ett oväntat resultat.",
+  "openPages.label": "Öppna",
+  "openPages.rowAria": "Flikar för öppna sidor",
+  "openPages.hint": "Klicka = förhandsgranska · dubbelklick = fäst",
+  "openPages.tablistAria": "Öppna sidor",
+  "openPages.overflow": "Alla öppna sidor",
+  "openPages.overflowHint": "Visa öppna sidor",
+  "openPages.overflowItem": "{page} · {name}",
+  "openPages.closeTab": "Stäng flik: {name}",
+  "openPages.previewPin": "Förhandsgranskningsflik"
 }

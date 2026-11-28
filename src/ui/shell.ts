@@ -29,6 +29,7 @@ import { t } from "../i18n";
 export interface ShellRefs {
   root: HTMLElement;
   topbar: HTMLElement;
+  openPages: HTMLElement;
   menuBar: HTMLElement;
   projectName: HTMLElement;
   docName: HTMLElement;
@@ -135,6 +136,11 @@ export function createShell(root: HTMLElement): ShellRefs {
   const spacer = el("div", "topbar-spacer");
   const spacerEnd = el("div", "topbar-spacer");
   topbar.append(brand, menuBar, history, spacer, identity, spacerEnd);
+
+  // The open-pages row is its own grid row. The controller owns everything
+  // inside it; the shell only creates the mount point.
+  const openPages = el("div", "open-pages-row");
+  openPages.hidden = true;
 
   const workspace = el("div", "workspace");
   const toolRail = el("aside", "tool-rail");
@@ -346,7 +352,7 @@ export function createShell(root: HTMLElement): ShellRefs {
     statusLayer,
   );
 
-  shell.append(topbar, workspace, statusbar);
+  shell.append(topbar, openPages, workspace, statusbar);
   root.append(shell);
 
   initPanelLayout({
@@ -382,6 +388,7 @@ export function createShell(root: HTMLElement): ShellRefs {
   return {
     root,
     topbar,
+    openPages,
     menuBar,
     projectName,
     docName,

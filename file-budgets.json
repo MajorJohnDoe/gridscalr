@@ -25,11 +25,11 @@
     "src/features/tileCache": 400
   },
   "files": {
-    "src/app/App.ts": 1111,
+    "src/app/App.ts": 1121,
     "src/canvas/CanvasView.ts": 1638,
     "src/features/schematics/model/sheetTemplate.ts": 714,
     "src/model/labelLayout.ts": 812,
-    "src/state/store.ts": 410,
+    "src/state/store.ts": 413,
     "src/styles/dialogs.css": 1665,
     "src/styles/markups.css": 1051,
     "src/styles/panels.css": 1110,

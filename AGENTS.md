@@ -518,6 +518,7 @@ src/features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners and s
 src/features/pageStatus/ pure page badges and status filters derived from project and source state
 src/features/pageWindow/ pure Pages-panel window rule, session scroll position and range/jump controls
 src/features/pageMenu/ page card menu, insert and move targets, page keyboard commands
+src/features/openPages/ session-only open-page tab strip: pure open-set rules, store wiring and the N4 row
 src/features/listInteraction/ shared list selection, drag controller, drop line and held state, keyboard move, filter and collapse rules
 src/features/importProvenance/ read-only provenance summary, Properties block and conditional Markups column
 src/features/measurementFlyout/ model, controller and UI for the one New measurement settings panel and its page-scoped layer list

@@ -3673,6 +3673,15 @@ export type MessageKey =
   | "shareByEmail.reveal"
   | "shareByEmail.revealFailed"
   | "shareByEmail.desktopOnly"
-  | "shareByEmail.invalidOutcome";
+  | "shareByEmail.invalidOutcome"
+  | "openPages.label"
+  | "openPages.rowAria"
+  | "openPages.hint"
+  | "openPages.tablistAria"
+  | "openPages.overflow"
+  | "openPages.overflowHint"
+  | "openPages.overflowItem"
+  | "openPages.closeTab"
+  | "openPages.previewPin";
 
 export type MessageCatalog = Record<MessageKey, string>;

@@ -27,6 +27,7 @@ const FOUNDATION_FEATURES = [
   "src/features/pageFileDrop",
   "src/features/pageStatus",
   "src/features/pageMenu",
+  "src/features/openPages",
   "src/features/listInteraction",
   "src/features/importProvenance",
   "src/features/layerTree",

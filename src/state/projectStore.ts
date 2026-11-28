@@ -38,6 +38,13 @@ export class ProjectStore {
   autosaveError: AutosaveFailure | null = null;
   /** Increments whenever project data changes, including undo and redo. */
   revision = 0;
+  /**
+   * Monotonic project-session identity. It changes only when a project is
+   * installed or unloaded, never on an edit, gesture cancel, undo or redo, so
+   * session UI (the open-pages tabs) can tell a real open from a replaced
+   * project object.
+   */
+  private loadId = 0;
   private listeners = new Set<Listener>();
   private history = new SnapshotHistory();
   /** Project revision captured when the open gesture started. */
@@ -67,11 +74,17 @@ export class ProjectStore {
     return this.history.canRedo;
   }
 
+  /** Stable identity of the installed project session; see `loadId`. */
+  get projectLoadId(): number {
+    return this.loadId;
+  }
+
   /**
    * Installs a project and starts a new history timeline. The caller owns the
    * session reset and the single notification, so opening stays one render.
    */
   loadProject(project: Project, projectPath: string | null, dirty = false): void {
+    this.loadId += 1;
     this.project = project;
     this.projectPath = projectPath;
     this.fileStamp = null;
@@ -85,6 +98,7 @@ export class ProjectStore {
 
   /** Clears project data and history. The caller resets the session and emits. */
   unloadProject(): void {
+    this.loadId += 1;
     this.project = null;
     this.projectPath = null;
     this.fileStamp = null;

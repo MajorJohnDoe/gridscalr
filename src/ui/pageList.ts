@@ -18,6 +18,7 @@ import {
   PAGE_MENU_HINT_ID,
   PAGE_MENU_KEYSHORTCUTS,
 } from "../features/pageMenu";
+import { pageCardPin } from "../features/openPages";
 import {
   PAGE_STATUS_FILTERS,
   pageStatus,
@@ -395,7 +396,21 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     pendingThumbnails.set(card, { page, image });
     refreshPageCardName(card);
     card.addEventListener("click", (event) => {
+      const project = store.project;
+      const onTitle = Boolean((event.target as HTMLElement | null)?.closest(".page-title"));
+      const plain = !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey;
+      if (project && pageCardPin.shouldPin({ project, pageId, title: onTitle, plain })) {
+        actions.pinPage?.(pageId);
+        return;
+      }
       if (pageReorder.handleClick(event, pageId)) actions.goToPage(page, true);
+    });
+    card.addEventListener("dblclick", (event) => {
+      // A native double-click still pins when the card survived both clicks,
+      // for example on the already active page. The page name renames instead.
+      if ((event.target as HTMLElement | null)?.closest(".page-title")) return;
+      if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
+      actions.pinPage?.(pageId);
     });
     if (reorderEnabled) {
       card.addEventListener("keydown", (event) => pageReorder.handleKeyDown(event, pageId));

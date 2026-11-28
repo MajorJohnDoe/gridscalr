@@ -101,6 +101,7 @@ import { isEditableTarget } from "../ui/dom";
 import { TOOL_KEYS } from "../ui/shortcuts";
 import { isEditingTool } from "../features/viewOnly";
 import { pageMenu } from "../features/pageMenu";
+import { OpenPagesController } from "../features/openPages";
 import { renderChrome, renderTopbar, requestMarkupRename, type PanelActions } from "../ui/panels";
 import { showCanvasSelectionMenu } from "../ui/selectionMenu";
 import { updateStatus, resetStatusBar } from "../ui/statusBar";
@@ -149,6 +150,7 @@ export class App {
   private recovery: SessionRecoveryController;
   private sourceStorage: SourceStorageController;
   private actions: PanelActions;
+  private openPages: OpenPagesController;
   private renderer: PdfRenderer | null = null;
   private thumbnails: PageThumbnailService | null = null;
   private readonly rendererSync = new RendererStoreSync({
@@ -291,6 +293,7 @@ export class App {
       duplicatePage: (pageId) => void duplicatePageFlow(this.pageFlowHost(), pageId),
       deletePages: (pageIds) => void deletePagesFlow(this.pageFlowHost(), pageIds),
       duplicatePages: (pageIds) => void duplicatePagesFlow(this.pageFlowHost(), pageIds),
+      pinPage: (pageId) => this.openPages.pinPage(pageId),
       reorderPage: (pageId, targetIndex) =>
         void reorderProjectPage(this.pageActionHost(), pageId, targetIndex),
       reorderPages: (pageIds, insertionIndex) =>
@@ -374,6 +377,11 @@ export class App {
       requestRender: () => this.renderAll(),
     });
 
+    this.openPages = new OpenPagesController({
+      mount: this.refs.openPages,
+      goToPage: (page) => void goToPageFlow(this.pageFlowHost(), page, true),
+    });
+
     this.unsubscribe = store.subscribe((reason) => {
       if (this.disposed) return;
       if (reason === "cursor") {
@@ -402,6 +410,7 @@ export class App {
     });
 
     this.bind();
+    this.openPages.start();
     this.renderAll();
     this.recovery.start();
     this.sourceStorage.start();
@@ -1083,6 +1092,7 @@ export class App {
   dispose(): void {
     this.disposed = true;
     disposeShellRender(this.refs.root);
+    this.openPages.stop();
     this.sourceStorage.dispose();
     this.recovery.dispose();
     this.unsubscribe();
