@@ -2,7 +2,7 @@
 
 **Epic:** [#398](https://github.com/MajorJohnDoe/gridscalr/issues/398)
 **Milestone:** none (backlog; no release committed)
-**State:** phase 1 implemented in PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402). The first review returned fail (fixed in `dea29ed`); the second returned fail at `87e4f37` (fixed in `f25847d`); the final review returned **pass-with-findings**, fixed in the commit containing this handover. Targeted re-review pending.
+**State:** phase 1 is merged in PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402) as `b8d48c7`, after a final delta review returned **pass** at `aa8d35a`. Phase 2 has not started.
 
 ## Locked design
 
@@ -15,7 +15,7 @@ white text and a jade numeral. Session-only, schema stays 28.
 
 | Phase | Issue | Branch | Status |
 | --- | --- | --- | --- |
-| 1 — model, controller and the N4 row | [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399) | `feat/open-pages-row` | PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402) — pass-with-findings, targeted fixes committed, targeted re-review pending |
+| 1 — model, controller and the N4 row | [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399) | `feat/open-pages-row` | merged in [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402) as `b8d48c7` |
 | 2 — menus and keyboard | [#400](https://github.com/MajorJohnDoe/gridscalr/issues/400) | `feat/open-pages-menus` | not started |
 | 3 — lifecycle, Playwright flow and docs | [#401](https://github.com/MajorJohnDoe/gridscalr/issues/401) | `feat/open-pages-lifecycle` | not started |
 
@@ -35,7 +35,8 @@ white text and a jade numeral. Session-only, schema stays 28.
 
 **Issue:** [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399)
 **PR:** [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402)
-**Commits:** `873189d` (feature), `67c61d4` (first smoke-bound fix), `dea29ed` (first review fixes), `87e4f37` (handover record), `f25847d` (hidden-row and follow-up fixes), targeted fixes — the commit that contains this handover (PR #402 head)
+**Merged:** `b8d48c7` (squash)
+**Commits:** `873189d` (feature), `67c61d4` (first smoke-bound fix), `dea29ed` (first review fixes), `87e4f37` (handover record), `f25847d` (hidden-row and follow-up fixes), `aa8d35a` (final P2/P3 fixes). Squash-merged as `b8d48c7`.
 
 Completed:
 
@@ -62,8 +63,9 @@ Modules: `src/features/openPages/{index,model,controller,ui,pageCardPin}.ts`,
 
 Decisions: the row is a navigation landmark so it is axe-clean; the active tab
 uses `--text` rather than a literal white so Light Green stays readable; the
-page-card pin gesture is a 400 ms same-page click pair because the page change
-rebuilds the Pages panel between the two clicks of a native double-click.
+page-card pin gesture is a 600 ms same-page click pair because the page change
+rebuilds the Pages panel between the two clicks of a native double-click; a
+native card-body double-click also pins when the card survives both clicks.
 
 Review fix cycle (`dea29ed`):
 
@@ -87,7 +89,7 @@ Review fix cycle (`dea29ed`):
 
 Findings: none new. The first-review P1/P2/P3 findings are fixed in `dea29ed`.
 
-Second review fix cycle (this commit):
+Second review fix cycle (`f25847d`):
 
 - Explicit `grid-row` placement for topbar, open-pages row, workspace and
   status bar in `src/styles/base.css`. A hidden row now leaves a 0-height auto
@@ -107,7 +109,7 @@ Second review fix cycle (this commit):
   the ARIA/keyboard model. Verified with a real click 4 px inside the cell's
   left edge (page 2 → page 1).
 
-Final targeted fix cycle (this commit):
+Final targeted fix cycle (`aa8d35a`):
 
 - The hidden-row smoke gate now asserts the actual workspace relationship
   `viewport − topbar − status bar` within 1 px, at 1440 × 900 and 1024 × 700 on
@@ -151,9 +153,10 @@ real `node_modules`.
 - Second review at `87e4f37`: **fail** on the hidden-row shell grid (status bar
   squeezed to 1 px) plus hover persistence, observer disposal, the dead tab-cell
   padding and the stale commit history. Fixed in `f25847d`.
-- Final review: **pass-with-findings** (no P1; two P2 and the listed P3s).
-  Fixed in the commit containing this handover. Targeted re-review pending; the
-  phase is not merged until it passes.
+- Final review at `f25847d`: **pass-with-findings** (no P1; the hidden-row gate
+  did not prove the workspace free space, and the 400 ms pin window was narrower
+  than a real double-click, plus four P3s). Fixed in `aa8d35a`.
+- Delta review at `aa8d35a`: **pass**, no findings. Merged as `b8d48c7`.
 
 Next: phase 2 — [#400](https://github.com/MajorJohnDoe/gridscalr/issues/400),
 tab context menu, page-list menu entries and keyboard navigation.
