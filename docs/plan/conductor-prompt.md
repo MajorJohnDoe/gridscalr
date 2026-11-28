@@ -69,9 +69,14 @@ If a phase is already complete, verify it and continue.
 How to run one phase:
 1. Check `gh issue view <N>`. If closed, skip it.
 2. Confirm the working tree is clean and `main` is green.
-3. Spawn one fresh `worker` subagent for the phase, in the background. Only one
-   phase may be in flight. Never reuse a child session for a different issue.
-4. Give the child the worker prompt below with {PHASE}, {ISSUE} and {BRANCH}.
+3. Create the phase worktree from `origin/main` (the harness worktree tool, or
+   `git worktree add ../gridscalr-<slug> -b <branch> origin/main`) and spawn one
+   fresh `worker` subagent for the phase there, in the background. Only one
+   phase may be in flight. Never check out a phase branch in the primary
+   checkout: the user and other sessions share it. Never reuse a child session
+   for a different issue.
+4. Give the child the worker prompt below with {PHASE}, {ISSUE}, {BRANCH} and
+   the worktree path.
 5. Post one status line to the user (phase, issue, branch) and return to the
    conversation. Answer questions and prepare the next phase while the worker
    runs. A running worker cannot be cancelled, and a scope change applies after
@@ -80,7 +85,8 @@ How to run one phase:
    checklist. Do not read the full diff or full test log into your own context.
 7. Run the independent review (see below) on the PR head. Do not merge until it
    returns a verdict and the verdict is recorded.
-8. Merge with squash and delete the branch only when the phase is sound.
+8. Merge with squash, delete the branch and remove the phase worktree
+   (`git worktree remove <path>`) only when the phase is sound.
 9. Update the handover on `main` and the epic checklist. A single-issue run has
    no handover file: the PR verdict is the record, so write one only when the
    effort already has one.
@@ -159,7 +165,10 @@ Read before touching code:
 
 Work only on this phase. Do not start another phase.
 
-Create branch {BRANCH} from current main.
+Work in the worktree the conductor created for {BRANCH}. Run every command there,
+including the commit and the push, and read AGENTS.md from that worktree. Never
+switch or commit on the primary checkout; symlink node_modules from it when the
+gate needs it.
 Follow ADR 0013:
 - new foundation features live in src/features/<area>/ with index.ts;
 - separate pure model, controller, UI and IO;

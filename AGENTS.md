@@ -348,6 +348,11 @@ The reusable prompts live in
   conversation; only one phase may be running. A running worker cannot be
   cancelled, so a scope change applies after the phase or by restarting it
   deliberately.
+- **One worktree per phase.** The conductor creates a worktree from `origin/main`
+  and runs the phase there. It never checks out a phase branch in the primary
+  checkout, and never switches that checkout's branch, because the user and
+  other sessions share it. `AGENTS.md` and the plan are read from the phase
+  worktree: instruction files are per branch.
 - **One PR per phase.** The worker reads `AGENTS.md`, the plan and ADRs, the
   phase issue and the relevant docs; creates a branch; implements; adds tests
   and documentation; runs the full check list; pushes; opens a PR linked to the

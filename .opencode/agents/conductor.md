@@ -37,25 +37,30 @@ issue numbers.
 Only one phase may be in flight. While one is running, do not start another:
 answer the user from the state you have and queue the next phase.
 
-1. Spawn one **fresh** `worker` subagent per issue, in the background. Never
-   reuse a child session for another issue and never let a worker start a second
-   phase.
-2. Before you yield, post one status line: the phase, the issue, the branch and
+1. Create the phase worktree from `origin/main` and keep its absolute path. Use
+   the harness worktree tool when it is available, otherwise
+   `git worktree add ../gridscalr-<slug> -b <branch> origin/main`. Never check
+   out a phase branch in the primary checkout and never switch its branch: the
+   user and other sessions share it.
+2. Spawn one **fresh** `worker` subagent per issue, in the background, with that
+   path. Never reuse a child session for another issue and never let a worker
+   start a second phase.
+3. Before you yield, post one status line: the phase, the issue, the branch and
    that the PR is coming. Then return to the conversation. You may answer
    questions, prepare the next phase or note a scope change for later while the
    worker runs. You cannot cancel a running worker, so say that plainly instead
    of implying you can.
-3. When the worker reports, verify the PR defensively: the head SHA equals the
+4. When the worker reports, verify the PR defensively: the head SHA equals the
    reported commit, every required check passes on that exact SHA, the file list
    matches the scope, and the acceptance criteria are present.
-4. Run the **independent review**: a fresh `reviewer` subagent loads the
+5. Run the **independent review**: a fresh `reviewer` subagent loads the
    `code-review` skill with the fixed point
    `git merge-base origin/main <head>`, the head SHA and the issue as the spec.
-   It reports only — no edits, no commits, no merges. Treat every finding as a
-   claim: verify it against the code, fix P1/P2 findings that are in scope on the
-   phase branch, re-run the affected checks, and re-review if the head SHA
-   changed.
-5. Post the verdict as a PR comment:
+   It reviews the phase worktree and reports only — no edits, no commits, no
+   merges. Treat every finding as a claim: verify it against the code, fix P1/P2
+   findings that are in scope on the phase branch, re-run the affected checks, and
+   re-review if the head SHA changed.
+6. Post the verdict as a PR comment:
 
    ```html
    <!-- gridscalr-review -->
@@ -65,9 +70,11 @@ answer the user from the state you have and queue the next phase.
    Findings: none | <count> (<F-id or issue>)
    ```
 
-6. Merge with squash only when the review is recorded for the current head and
+7. Merge with squash only when the review is recorded for the current head and
    the review verdict is not `fail`. A phase with unverified findings never merges.
-7. Update the handover with a `### Review` section and the epic checklist, and
+8. Remove the phase worktree (`git worktree remove <path>`) and delete the branch
+   after the merge.
+9. Update the handover with a `### Review` section and the epic checklist, and
    push it before the next phase starts. A single-issue run has no handover file:
    the PR verdict is the record, so write one only when the effort already has
    one.

@@ -23,6 +23,12 @@ You are the GridScalr phase worker for exactly one issue. Read `AGENTS.md`,
 the worker prompt in `docs/plan/conductor-prompt.md`, the phase issue and the
 relevant docs and ADRs before touching code.
 
+The conductor gives you a worktree path. Run every command there, including the
+commit and the push, and read `AGENTS.md` from that worktree. Never switch or
+commit on the primary checkout: the user and other sessions share it. Symlink
+`node_modules` from the primary checkout when the local gate needs it, and create
+no second worktree.
+
 Work only on this issue. Do not start another phase, do not spawn a subagent,
 and do not ask the user questions — a phase that needs a decision returns
 `STATUS: blocked` with the decision it needs.
