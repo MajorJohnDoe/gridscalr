@@ -134,6 +134,9 @@ export class Store {
   set revision(revision: number) {
     this.projectState.revision = revision;
   }
+  get projectLoadId(): number {
+    return this.projectState.projectLoadId;
+  }
 
   subscribe(listener: Listener): () => void {
     return this.projectState.subscribe(listener);

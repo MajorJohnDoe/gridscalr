@@ -10,6 +10,7 @@ import {
 } from "./accessibility-rules.mjs";
 import {
   closeReopenedSettings,
+  createTwoOpenPages,
   launchBrowser,
   openCustomFieldsDialog,
   openDemoProject,
@@ -127,6 +128,7 @@ try {
   await seedCustomField(page);
   await seedSpaces(page);
   await seedSchedules(page);
+  await createTwoOpenPages(page);
 
   for (const theme of A11Y_THEMES) {
     // Preferences is also where the palette is chosen, so it is the first

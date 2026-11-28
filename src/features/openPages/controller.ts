@@ -1,5 +1,5 @@
 import { currentPageId, pageDisplayName, pageNumber } from "../../model/pages";
-import type { PageId, Project } from "../../model/types";
+import type { PageId } from "../../model/types";
 import { store, type ChangeReason } from "../../state/store";
 import { LANGUAGE_CHANGED_EVENT, t } from "../../i18n";
 import { showPopover } from "../../ui/popover";
@@ -37,7 +37,8 @@ const PAGE_REASONS: ReadonlySet<ChangeReason> = new Set<ChangeReason>([
  */
 export class OpenPagesController {
   private state: OpenPagesState = emptyOpenPages();
-  private project: Project | null = null;
+  /** Last project-session load id the tabs were seeded for. */
+  private loadId = -1;
   private unsubscribe: (() => void) | null = null;
   private languageListener: (() => void) | null = null;
   private readonly row: OpenPagesRow;
@@ -53,11 +54,11 @@ export class OpenPagesController {
   start(): void {
     if (this.unsubscribe) return;
     this.unsubscribe = store.subscribe((reason) => {
-      if (PAGE_REASONS.has(reason)) this.sync(reason);
+      if (PAGE_REASONS.has(reason)) this.sync();
     });
-    this.languageListener = () => this.render();
+    this.languageListener = () => this.render(true);
     window.addEventListener(LANGUAGE_CHANGED_EVENT, this.languageListener);
-    this.sync("project");
+    this.sync();
   }
 
   stop(): void {
@@ -123,28 +124,27 @@ export class OpenPagesController {
   }
 
   /**
-   * One rule for every page change, from any path: keep the tabs, prune pages
-   * that no longer exist, then make the current page the single preview tab
-   * unless it is already a pinned tab.
+   * One rule for every page change, from any path: seed a fresh open set only
+   * when the project session changes, otherwise keep the tabs, prune pages that
+   * no longer exist, then make the current page the single preview tab unless
+   * it is already a pinned tab.
    */
-  private sync(reason: ChangeReason): void {
+  private sync(): void {
     const project = store.project;
+    const loadId = store.projectLoadId;
     if (!project) {
-      this.project = null;
+      this.loadId = loadId;
       this.state = emptyOpenPages();
       this.render();
       return;
     }
     const current = currentPageId(project, store.ui.page);
-    // A new project object on "project" is an open or a switch; undo and redo
-    // also replace the object but must keep the surviving tabs.
-    if (project !== this.project && reason !== "undo") {
-      this.project = project;
+    if (loadId !== this.loadId) {
+      this.loadId = loadId;
       this.state = seedOpenPages(current);
       this.render();
       return;
     }
-    this.project = project;
     const live = new Set(project.pages.map((page) => page.id));
     const pruned = prunePageTabs(this.state, live, current);
     this.state = pruned.state;
@@ -152,7 +152,7 @@ export class OpenPagesController {
       const page = pageNumber(project, pruned.activatePageId);
       if (page) {
         queueMicrotask(() => {
-          if (store.project !== project) return;
+          if (store.projectLoadId !== loadId) return;
           this.host.goToPage(page);
         });
       }
@@ -163,7 +163,7 @@ export class OpenPagesController {
     this.render();
   }
 
-  private render(): void {
+  private render(force = false): void {
     const project = store.project;
     const tabs: OpenPagesTabView[] = [];
     if (project) {
@@ -179,6 +179,6 @@ export class OpenPagesController {
         });
       }
     }
-    this.row.render(tabs);
+    this.row.render(tabs, force);
   }
 }

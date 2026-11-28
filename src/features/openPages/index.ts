@@ -12,3 +12,5 @@ export {
   seedOpenPages,
 } from "./model";
 export type { ClosePageTabResult, OpenPageTab, OpenPagesState, PrunePageTabsResult } from "./model";
+export { PAGE_CARD_PIN_MS, PageCardPinGesture, pageCardPin } from "./pageCardPin";
+export type { PageCardClickInput } from "./pageCardPin";

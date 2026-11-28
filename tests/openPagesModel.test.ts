@@ -5,6 +5,8 @@ import {
   emptyOpenPages,
   hasSinglePreview,
   openPageTab,
+  PAGE_CARD_PIN_MS,
+  PageCardPinGesture,
   pinPageTab,
   previewPageTab,
   prunePageTabs,
@@ -271,5 +273,45 @@ describe("open-pages model", () => {
     value = prunePageTabs(value, new Set([A, B, D]), D).state;
     expect(hasSinglePreview(value)).toBe(true);
     expect(value.tabs.filter((tab) => !tab.pinned).length).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("page-card pin gesture", () => {
+  const project = {};
+
+  it("pins on a quick second unmodified click on the same page", () => {
+    const gesture = new PageCardPinGesture();
+    expect(gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 1000)).toBe(false);
+    expect(
+      gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 1000 + PAGE_CARD_PIN_MS),
+    ).toBe(true);
+  });
+
+  it("does not pin a slow second click, a different page or a modified click", () => {
+    const gesture = new PageCardPinGesture();
+    gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 1000);
+    expect(
+      gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 1001 + PAGE_CARD_PIN_MS),
+    ).toBe(false);
+    gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 2000);
+    expect(gesture.shouldPin({ project, pageId: B, title: false, plain: true }, 2001)).toBe(false);
+    gesture.shouldPin({ project, pageId: A, title: false, plain: false }, 3000);
+    expect(gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 3001)).toBe(false);
+  });
+
+  it("keeps a double-click on the page name for rename", () => {
+    const gesture = new PageCardPinGesture();
+    gesture.shouldPin({ project, pageId: A, title: true, plain: true }, 1000);
+    expect(gesture.shouldPin({ project, pageId: A, title: true, plain: true }, 1001)).toBe(false);
+  });
+
+  it("starts over after a pin and across project sessions", () => {
+    const gesture = new PageCardPinGesture();
+    gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 1000);
+    expect(gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 1001)).toBe(true);
+    expect(gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 1002)).toBe(false);
+    expect(gesture.shouldPin({ project: {}, pageId: A, title: false, plain: true }, 1003)).toBe(
+      false,
+    );
   });
 });

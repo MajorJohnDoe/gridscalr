@@ -22,11 +22,10 @@
   white-space: nowrap;
 }
 
-.open-pages-tabs {
+.open-pages-scroll {
   display: flex;
   flex: 1 1 auto;
   align-items: center;
-  gap: 4px;
   height: 100%;
   min-width: 0;
   overflow-x: auto;
@@ -35,18 +34,35 @@
   scrollbar-width: thin;
 }
 
-.open-pages-tabs::-webkit-scrollbar {
+.open-pages-scroll::-webkit-scrollbar {
   height: 4px;
 }
 
-.open-pages-tabs::-webkit-scrollbar-thumb {
+.open-pages-scroll::-webkit-scrollbar-thumb {
   border: 0;
   border-radius: 4px;
   background: var(--scrollbar);
   background-clip: content-box;
 }
 
-.open-page-tab-wrap {
+/* The scroll content: the tablist plus the close overlay share one track. */
+.open-pages-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: max-content;
+  min-width: 100%;
+  height: 100%;
+}
+
+.open-pages-tablist {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.open-page-tab-cell {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -59,12 +75,17 @@
     color 0.12s;
 }
 
-.open-page-tab-wrap:hover {
+/* Reserve room for the overlaid close control so the name never slides. */
+.open-page-tab-cell.is-closable {
+  padding-right: 32px;
+}
+
+.open-page-tab-cell:hover {
   background: var(--hover-soft);
   color: var(--text);
 }
 
-.open-page-tab-wrap.is-active {
+.open-page-tab-cell.is-active {
   /* N4: neutral slate from the tab surface over the row, with a light top edge. */
   background: color-mix(in srgb, var(--surface-tab) 70%, var(--bg-deep));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
@@ -78,7 +99,7 @@
   height: 26px;
   padding: 0;
   border: 0;
-  border-radius: 6px 0 0 6px;
+  border-radius: 6px;
   background: transparent;
   color: inherit;
   font: inherit;
@@ -102,7 +123,8 @@
   line-height: 1;
 }
 
-.open-page-tab-wrap.is-active .open-page-numeral {
+.open-page-tab-cell.is-active .open-page-numeral {
+  border-color: var(--accent);
   color: var(--accent);
 }
 
@@ -113,6 +135,11 @@
   white-space: nowrap;
 }
 
+/* The preview tab is the unpinned one: italic name plus the pin glyph. */
+.open-page-tab-cell.is-preview .open-page-name {
+  font-style: italic;
+}
+
 .open-page-pin {
   display: inline-flex;
   flex: 0 0 auto;
@@ -120,16 +147,27 @@
   color: var(--text-subtle);
 }
 
-.open-page-tab-wrap.is-active .open-page-pin {
+.open-page-tab-cell.is-active .open-page-pin {
   color: var(--muted);
 }
 
+/*
+ * Close controls are siblings of the tablist, not its children, so `tablist`
+ * owns only tabs. The layer is pointer-transparent; the controls become
+ * clickable when active, hovered, focused or rendered for a coarse pointer.
+ */
+.open-page-close-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 .open-page-close {
+  position: absolute;
   display: inline-flex;
-  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 0;
+  width: 24px;
   height: 24px;
   padding: 0;
   border: 0;
@@ -137,17 +175,18 @@
   background: transparent;
   color: var(--muted);
   opacity: 0;
-  overflow: hidden;
+  pointer-events: none;
   transition:
-    width 0.12s,
+    background 0.12s,
+    color 0.12s,
     opacity 0.12s;
 }
 
-.open-page-tab-wrap:hover .open-page-close,
-.open-page-tab-wrap.is-active .open-page-close,
+.open-page-close.is-active,
+.open-page-close.is-hover,
 .open-page-close:focus-visible {
-  width: 24px;
   opacity: 1;
+  pointer-events: auto;
 }
 
 .open-page-close:hover {
@@ -184,8 +223,8 @@
 /* Coarse pointers cannot rely on hover: every close control stays reachable. */
 @media (pointer: coarse) {
   .open-page-close {
-    width: 24px;
     opacity: 1;
+    pointer-events: auto;
   }
 }
 

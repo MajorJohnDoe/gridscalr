@@ -7,6 +7,7 @@ import {
 } from "./accessibility-rules.mjs";
 import {
   closeReopenedSettings,
+  createTwoOpenPages,
   launchBrowser,
   openCustomFieldsDialog,
   openDemoProject,
@@ -102,6 +103,7 @@ try {
   await seedCustomField(page);
   await seedSpaces(page);
   await seedSchedules(page);
+  await createTwoOpenPages(page);
 
   const coarse = await page.evaluate(() => ({
     pointer: matchMedia("(pointer: coarse)").matches,

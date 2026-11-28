@@ -412,12 +412,13 @@ try {
   await radiatorRow.locator(".markups-item-label").click();
   await page.waitForTimeout(250);
   const zoomAfterFocus = await page.evaluate(() => window.__gridscalr.store.ui.zoom);
-  // The 35 px open-pages row takes height from the canvas, so the fit-to-item
-  // zoom is lower than the old 1.5× tuned to the taller viewport. A small
-  // markup must still zoom in clearly.
+  const zoomRatio = zoomAfterFocus / zoomBeforeFocus;
+  // Measured with the 35 px open-pages row: 0.6113 -> 0.8694, a 1.42× fit.
+  // The old 1.5× bound was tuned to the taller canvas; 1.35× still catches a
+  // failed or barely visible fit without hiding a real regression.
   assert.ok(
-    zoomAfterFocus > zoomBeforeFocus * 1.25,
-    `clicking a small Markups row should zoom in (${zoomBeforeFocus} -> ${zoomAfterFocus})`,
+    zoomRatio > 1.35,
+    `clicking a small Markups row should zoom in (${zoomBeforeFocus} -> ${zoomAfterFocus}, ${zoomRatio.toFixed(2)}×)`,
   );
   assert.equal(
     await page.evaluate(() => window.__gridscalr.store.ui.selection[0]?.itemId),

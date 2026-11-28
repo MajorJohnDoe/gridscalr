@@ -65,9 +65,14 @@ describe("open-pages row", () => {
 
     const list = mount.querySelector<HTMLElement>('[role="tablist"]');
     expect(list?.getAttribute("aria-label")).toBe("Open pages");
+    expect(list?.querySelectorAll("button:not([role='tab'])")).toHaveLength(0);
     expect(tabs(mount)).toHaveLength(1);
     expect(activeTab(mount)?.querySelector(".open-page-numeral")?.textContent).toBe("1");
     expect(mount.querySelector(".open-page-pin")).not.toBeNull();
+    expect(mount.querySelector(".open-page-tab-cell.is-preview .open-page-name")).not.toBeNull();
+    expect(mount.querySelector<HTMLButtonElement>(".open-pages-overflow")?.dataset.kind).toBe(
+      "overflow",
+    );
     // The last tab cannot close, so it carries no close control.
     expect(mount.querySelector(".open-page-close")).toBeNull();
   });
@@ -79,9 +84,11 @@ describe("open-pages row", () => {
     store.setPage(2);
     expect(tabs(mount)).toHaveLength(1);
     expect(activeTab(mount)?.querySelector(".open-page-numeral")?.textContent).toBe("2");
+    expect(mount.querySelector(".open-page-tab-cell.is-preview")).not.toBeNull();
 
     controller.pinPage(pageIdFor(2));
     expect(mount.querySelector(".open-page-pin")).toBeNull();
+    expect(mount.querySelector(".open-page-tab-cell.is-preview")).toBeNull();
     expect(mount.querySelector(".open-page-close")).toBeNull();
   });
 
@@ -101,7 +108,20 @@ describe("open-pages row", () => {
     expect(all[1].getAttribute("aria-selected")).toBe("true");
     expect(all[1].querySelector(".open-page-pin")).not.toBeNull();
     expect(all[1].querySelector(".open-page-numeral")?.textContent).toBe("3");
+    expect(
+      mount
+        .querySelector(`.open-page-tab-cell[data-page-id="${pageIdFor(3)}"]`)
+        ?.classList.contains("is-preview"),
+    ).toBe(true);
+    expect(
+      mount
+        .querySelector(`.open-page-tab-cell[data-page-id="${pageIdFor(2)}"]`)
+        ?.classList.contains("is-preview"),
+    ).toBe(false);
 
+    // Close controls are siblings of the tablist, never its children.
+    expect(mount.querySelector('[role="tablist"] .open-page-close')).toBeNull();
+    expect(mount.querySelectorAll(".open-page-close-layer .open-page-close")).toHaveLength(2);
     const close = mount.querySelector<HTMLElement>(".open-page-close");
     expect(close?.getAttribute("aria-label")).toBe("Close tab: Page 2");
   });
