@@ -43,6 +43,7 @@ function mount(): Mounted {
     deletePage: vi.fn(),
     deletePages: vi.fn(),
     insertPage: vi.fn(),
+    pinPage: vi.fn(),
   } as unknown as PanelActions;
   const render = () => renderPages(refs, actions);
   renderRef.current = render;
@@ -131,6 +132,26 @@ describe("Pages panel window", () => {
     expect(pageWindowState.startIndex).toBe(0);
     expect(card(refs, 2)).not.toBeNull();
     expect(pageReorder.selectionIds()).toEqual([]);
+  });
+
+  it("pins a page card on a quick second click and ignores a double-click on its name", () => {
+    store.setProject(projectWithPages(3), "/tmp/page-list.gridscalr", false);
+    store.ui.leftTab = "pages";
+    store.ui.page = 1;
+    const { refs, actions, render } = mount();
+    render();
+
+    // Double-clicking the page name keeps rename; the card pin gesture skips it.
+    const title = card(refs, 1).querySelector<HTMLElement>(".page-title")!;
+    click(title);
+    click(title);
+    expect(actions.pinPage).not.toHaveBeenCalled();
+
+    // The first click previews page 2, the quick second click pins that tab.
+    click(card(refs, 2));
+    expect(store.ui.page).toBe(2);
+    click(card(refs, 2));
+    expect(actions.pinPage).toHaveBeenCalledWith("page_2");
   });
 
   it("counts matching pages when a status filter narrows the list", () => {

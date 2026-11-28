@@ -1,5 +1,5 @@
 import { currentPageId, pageDisplayName, pageLocationLabel } from "../model/pages";
-import type { PageId, PageSize } from "../model/types";
+import type { PageId, PageSize, Project } from "../model/types";
 import { store } from "../state/store";
 import {
   documentRunHeader,
@@ -51,6 +51,23 @@ let pendingWindowFocus: PageWindowAction | null = null;
 
 /** Page card that last held focus; restored when a render replaces the list. */
 let focusedPageId: string | null = null;
+
+/**
+ * Page cards can be replaced between the two clicks of a double-click: the
+ * first click changes the page and rebuilds the panel, so a native `dblclick`
+ * never fires on a non-active card. One quick second click on the same page is
+ * therefore the pin gesture; a double-click on the page name still renames.
+ */
+interface PageCardClick {
+  project: Project;
+  pageId: PageId;
+  title: boolean;
+  plain: boolean;
+  time: number;
+}
+
+let lastCardClick: PageCardClick | null = null;
+const CARD_DOUBLE_CLICK_MS = 400;
 
 /** Stops observing page cards when the Pages tab is no longer mounted. */
 export function disconnectPageThumbnails(): void {
@@ -395,6 +412,27 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     pendingThumbnails.set(card, { page, image });
     refreshPageCardName(card);
     card.addEventListener("click", (event) => {
+      const project = store.project;
+      const onTitle = Boolean((event.target as HTMLElement | null)?.closest(".page-title"));
+      const plain = !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey;
+      const previous = lastCardClick;
+      const now = Date.now();
+      lastCardClick = project ? { project, pageId, title: onTitle, plain, time: now } : null;
+      if (
+        project &&
+        previous &&
+        previous.project === project &&
+        previous.pageId === pageId &&
+        previous.plain &&
+        !previous.title &&
+        plain &&
+        !onTitle &&
+        now - previous.time <= CARD_DOUBLE_CLICK_MS
+      ) {
+        lastCardClick = null;
+        actions.pinPage?.(pageId);
+        return;
+      }
       if (pageReorder.handleClick(event, pageId)) actions.goToPage(page, true);
     });
     if (reorderEnabled) {

@@ -73,7 +73,7 @@ textarea:disabled {
 
 .app-shell {
   display: grid;
-  grid-template-rows: var(--topbar-h) 1fr var(--status-h);
+  grid-template-rows: var(--topbar-h) auto 1fr var(--status-h);
   height: 100%;
   min-height: 0;
 }

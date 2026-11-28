@@ -1,0 +1,146 @@
+import { t } from "../../i18n";
+import type { PageId } from "../../model/types";
+import { el } from "../../ui/dom";
+import { icon } from "../../ui/icons";
+
+/** One rendered tab: display data only, resolved from the project by the controller. */
+export interface OpenPagesTabView {
+  pageId: PageId;
+  /** 1-based display number, never an identity. */
+  page: number;
+  name: string;
+  pinned: boolean;
+  active: boolean;
+}
+
+export interface OpenPagesRowHandlers {
+  activate: (pageId: PageId) => void;
+  close: (pageId: PageId) => void;
+  overflow: (anchor: HTMLElement) => void;
+}
+
+interface FocusKey {
+  pageId?: string;
+  kind: string;
+}
+
+/**
+ * The N4 open-pages row. It owns the DOM below its mount and re-renders only
+ * itself when a tab changes, so the shell, the Pages panel and the canvas are
+ * never rebuilt for a tab. Focus and the list scroll position survive a render.
+ */
+export class OpenPagesRow {
+  private readonly label: HTMLElement;
+  private readonly list: HTMLElement;
+  private readonly hint: HTMLElement;
+  private readonly overflow: HTMLButtonElement;
+
+  constructor(
+    private readonly mount: HTMLElement,
+    private readonly handlers: OpenPagesRowHandlers,
+  ) {
+    this.mount.classList.add("open-pages-row");
+    this.mount.setAttribute("role", "navigation");
+    this.mount.hidden = true;
+    this.label = el("span", "open-pages-label");
+    this.list = el("div", "open-pages-tabs");
+    this.list.setAttribute("role", "tablist");
+    this.list.setAttribute("aria-orientation", "horizontal");
+    this.hint = el("span", "open-pages-hint");
+    this.overflow = el("button", "open-pages-overflow");
+    this.overflow.type = "button";
+    this.overflow.innerHTML = icon("chevronsRight", 14);
+    this.overflow.addEventListener("click", () => this.handlers.overflow(this.overflow));
+    this.mount.append(this.label, this.list, this.hint, this.overflow);
+    this.relabel();
+  }
+
+  /** Re-applies the active language without rebuilding the rest of the shell. */
+  relabel(): void {
+    this.label.textContent = t("openPages.label");
+    this.mount.setAttribute("aria-label", t("openPages.rowAria"));
+    this.list.setAttribute("aria-label", t("openPages.tablistAria"));
+    this.hint.textContent = t("openPages.hint");
+    this.overflow.title = t("openPages.overflowHint");
+    this.overflow.setAttribute("aria-label", t("openPages.overflow"));
+  }
+
+  render(tabs: readonly OpenPagesTabView[]): void {
+    this.relabel();
+    this.mount.hidden = tabs.length === 0;
+    const scrollLeft = this.list.scrollLeft;
+    const focus = this.captureFocus();
+    this.list.replaceChildren();
+    for (const tab of tabs) this.list.append(this.tabNode(tab, tabs.length > 1));
+    this.list.scrollLeft = scrollLeft;
+    this.restoreFocus(focus);
+    const active = this.list.querySelector<HTMLElement>(".open-page-tab-wrap.is-active");
+    if (active && typeof active.scrollIntoView === "function") {
+      active.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
+  }
+
+  private tabNode(tab: OpenPagesTabView, closable: boolean): HTMLElement {
+    const wrap = el("div", tab.active ? "open-page-tab-wrap is-active" : "open-page-tab-wrap");
+    wrap.dataset.pageId = tab.pageId;
+    wrap.setAttribute("role", "presentation");
+
+    const button = el("button", "open-page-tab");
+    button.type = "button";
+    button.setAttribute("role", "tab");
+    button.setAttribute("aria-selected", String(tab.active));
+    button.tabIndex = 0;
+    button.dataset.pageId = tab.pageId;
+    button.dataset.kind = "tab";
+    button.title = tab.name;
+    button.addEventListener("click", () => this.handlers.activate(tab.pageId));
+
+    const numeral = el("span", "open-page-numeral", String(tab.page));
+    const name = el("span", "open-page-name", tab.name);
+    button.append(numeral, name);
+    if (!tab.pinned) {
+      const pin = el("span", "open-page-pin");
+      pin.innerHTML = icon("pin", 12);
+      pin.setAttribute("aria-hidden", "true");
+      pin.title = t("openPages.previewPin");
+      button.append(pin);
+    }
+    wrap.append(button);
+
+    if (closable) {
+      const close = el("button", "open-page-close");
+      close.type = "button";
+      close.dataset.pageId = tab.pageId;
+      close.dataset.kind = "close";
+      close.setAttribute("aria-label", t("openPages.closeTab", { name: tab.name }));
+      close.title = t("openPages.closeTab", { name: tab.name });
+      close.innerHTML = icon("close", 12);
+      close.addEventListener("click", (event) => {
+        event.stopPropagation();
+        this.handlers.close(tab.pageId);
+      });
+      wrap.append(close);
+    }
+    return wrap;
+  }
+
+  private captureFocus(): FocusKey | null {
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement) || !this.mount.contains(active)) return null;
+    if (active.dataset.kind === "overflow") return { kind: "overflow" };
+    return { pageId: active.dataset.pageId, kind: active.dataset.kind ?? "" };
+  }
+
+  private restoreFocus(focus: FocusKey | null): void {
+    if (!focus) return;
+    let target: HTMLElement | null = null;
+    if (focus.kind === "overflow") target = this.overflow;
+    else if (focus.pageId) {
+      target = this.list.querySelector<HTMLElement>(
+        `[data-page-id="${focus.pageId}"][data-kind="${focus.kind}"]`,
+      );
+    }
+    if (!target) target = this.list.querySelector<HTMLElement>(".open-page-tab.is-active");
+    target?.focus({ preventScroll: true });
+  }
+}

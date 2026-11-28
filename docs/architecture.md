@@ -57,6 +57,7 @@ src/
   features/pageStatus/ pure page badges and status filters derived from project and source state
   features/pageWindow/ pure window rule, session scroll position and page range/jump controls
   features/pageMenu/ page card menu, insert/move targets and page keyboard commands
+  features/openPages/ session-only open-page tab strip: pure open-set rules, store wiring and the N4 row
   features/gestureRender/index.ts public surface for gesture-time content raster reuse
   features/gestureRender/model.ts pure settle rule: the idle window before the real redraw
   features/gestureRender/controller.ts gesture state, raster transform and content capture/paint

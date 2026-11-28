@@ -25,7 +25,7 @@
     "src/features/tileCache": 400
   },
   "files": {
-    "src/app/App.ts": 1111,
+    "src/app/App.ts": 1121,
     "src/canvas/CanvasView.ts": 1638,
     "src/features/schematics/model/sheetTemplate.ts": 714,
     "src/model/labelLayout.ts": 812,

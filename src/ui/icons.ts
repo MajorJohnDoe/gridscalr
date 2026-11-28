@@ -46,6 +46,7 @@ const paths: Record<string, string> = {
   star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>',
   starFilled:
     '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z" fill="currentColor" stroke="none"/>',
+  pin: '<path d="M8.5 3h7l-.7 5.2 3.7 3.8H5.5l3.7-3.8L8.5 3Z"/><path d="M12 12v9"/>',
   chevronsRight: '<path d="m6 6 6 6-6 6M13 6l6 6-6 6"/>',
   chevronsLeft: '<path d="m18 6-6 6 6 6M11 6 5 12l6 6"/>',
   layers: '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/>',

@@ -1,0 +1,196 @@
+/* Open-pages tab strip: the N4 row between the title row and the workspace. */
+
+.open-pages-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 35px;
+  min-width: 0;
+  padding: 0 10px;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border);
+}
+
+.open-pages-label {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.open-pages-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-color: var(--scrollbar) transparent;
+  scrollbar-width: thin;
+}
+
+.open-pages-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.open-pages-tabs::-webkit-scrollbar-thumb {
+  border: 0;
+  border-radius: 4px;
+  background: var(--scrollbar);
+  background-clip: content-box;
+}
+
+.open-page-tab-wrap {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  height: 26px;
+  padding: 0 2px 0 8px;
+  border-radius: 6px;
+  color: var(--muted);
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.open-page-tab-wrap:hover {
+  background: var(--hover-soft);
+  color: var(--text);
+}
+
+.open-page-tab-wrap.is-active {
+  /* N4: neutral slate from the tab surface over the row, with a light top edge. */
+  background: color-mix(in srgb, var(--surface-tab) 70%, var(--bg-deep));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  color: var(--text);
+}
+
+.open-page-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px 0 0 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+}
+
+.open-page-numeral {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-subtle);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.open-page-tab-wrap.is-active .open-page-numeral {
+  color: var(--accent);
+}
+
+.open-page-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.open-page-pin {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  color: var(--text-subtle);
+}
+
+.open-page-tab-wrap.is-active .open-page-pin {
+  color: var(--muted);
+}
+
+.open-page-close {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 0;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    width 0.12s,
+    opacity 0.12s;
+}
+
+.open-page-tab-wrap:hover .open-page-close,
+.open-page-tab-wrap.is-active .open-page-close,
+.open-page-close:focus-visible {
+  width: 24px;
+  opacity: 1;
+}
+
+.open-page-close:hover {
+  background: var(--hover-soft);
+  color: var(--text);
+}
+
+.open-pages-hint {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.open-pages-overflow {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.open-pages-overflow:hover {
+  background: var(--hover-soft);
+  color: var(--text);
+}
+
+/* Coarse pointers cannot rely on hover: every close control stays reachable. */
+@media (pointer: coarse) {
+  .open-page-close {
+    width: 24px;
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1100px) {
+  .open-pages-hint {
+    display: none;
+  }
+}
