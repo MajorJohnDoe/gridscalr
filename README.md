@@ -474,8 +474,9 @@ undo step. `src/app/exportFlows.ts` writes the schedule CSV;
 `src/app/summaryFlow.ts` opens the import dialog.
 `src/features/openPages/` owns the session-only open-page tab strip: the single
 preview tab, pinning, the ordered open set with its prune and neighbour rules,
-and the 35 px row between the title row and the workspace. Tabs are never
-written to the project file.
+the tab and page-card menu entries, roving keyboard focus, and the 35 px row
+between the title row and the workspace. Tabs are never written to the project
+file.
 `src/features/shareByEmail/` reuses `src/pdf/drawingExport.ts`, the one shared
 drawing-PDF builder behind File → Export → Drawing PDF, so both paths apply the
 same visibility, locking, crop, label and legend rules. `src-tauri/src/mail_send.rs`

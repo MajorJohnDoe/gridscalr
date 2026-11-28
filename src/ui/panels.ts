@@ -10,6 +10,7 @@ import type {
   RecentEntry,
 } from "../model/types";
 import { store, type ChangeReason, type ToolId } from "../state/store";
+import type { OpenPageTabInfo } from "../features/openPages";
 import type { RecoverySummary } from "../features/sessionRecovery";
 import type { ShellRefs } from "./shell";
 import { renderSidebar, setInspectorCollapsed } from "./sidebar";
@@ -112,6 +113,9 @@ export interface PanelActions {
   deletePages: (pageIds: readonly PageId[]) => void;
   duplicatePages: (pageIds: readonly PageId[]) => void;
   pinPage: (pageId: PageId) => void;
+  /** Session-only tab actions for the page card menu. */
+  previewPage?: (pageId: PageId) => void;
+  openPageTabInfo?: (pageId: PageId) => OpenPageTabInfo;
   reorderPage: (pageId: PageId, targetIndex: number) => void;
   reorderPages: (pageIds: readonly PageId[], insertionIndex: number) => void | Promise<void>;
   insertPage: (pageId: PageId, index: number) => void;

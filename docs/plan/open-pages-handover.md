@@ -2,7 +2,7 @@
 
 **Epic:** [#398](https://github.com/MajorJohnDoe/gridscalr/issues/398)
 **Milestone:** none (backlog; no release committed)
-**State:** phase 1 is merged in PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402) as `b8d48c7`, after a final delta review returned **pass** at `aa8d35a`. Phase 2 has not started.
+**State:** phase 1 is merged in PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402) as `b8d48c7`, after a final delta review returned **pass** at `aa8d35a`. Phase 2 is implemented in PR [#403](https://github.com/MajorJohnDoe/gridscalr/pull/403) at `8e6d15f`, awaiting review.
 
 ## Locked design
 
@@ -16,7 +16,7 @@ white text and a jade numeral. Session-only, schema stays 28.
 | Phase | Issue | Branch | Status |
 | --- | --- | --- | --- |
 | 1 — model, controller and the N4 row | [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399) | `feat/open-pages-row` | merged in [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402) as `b8d48c7` |
-| 2 — menus and keyboard | [#400](https://github.com/MajorJohnDoe/gridscalr/issues/400) | `feat/open-pages-menus` | not started |
+| 2 — menus and keyboard | [#400](https://github.com/MajorJohnDoe/gridscalr/issues/400) | `feat/open-pages-menus` | PR [#403](https://github.com/MajorJohnDoe/gridscalr/pull/403), awaiting review |
 | 3 — lifecycle, Playwright flow and docs | [#401](https://github.com/MajorJohnDoe/gridscalr/issues/401) | `feat/open-pages-lifecycle` | not started |
 
 ## Decisions
@@ -163,7 +163,59 @@ tab context menu, page-list menu entries and keyboard navigation.
 
 ## Phase 2 — menus and keyboard
 
-Not started.
+**Issue:** [#400](https://github.com/MajorJohnDoe/gridscalr/issues/400)
+**PR:** [#403](https://github.com/MajorJohnDoe/gridscalr/pull/403)
+**Commit:** `8e6d15f` (feature and tests; the handover update follows in the same PR)
+
+Completed:
+
+- Tab context menu from right-click, Shift+F10 and the ContextMenu key. Items
+  are rebuilt from state on every open: Pin tab (preview only), Preview (pinned
+  only), Close tab and Close other tabs, both disabled for a single tab. Labels
+  and app icons; the shared `showPopover` / `showPopoverAt` component is reused.
+- Preview converts a pinned tab to the single preview and removes the previous
+  preview. Close others keeps only the target tab and activates it. Tab commands
+  never change the project's pages.
+- Page card menu gains Preview and Pin as tab directly after Go to page, with
+  only true no-ops disabled. Existing entries keep their relative order and
+  behaviour, including read-only navigation.
+- Roving tabindex with exactly one tab in the tab order; left/right arrows move
+  focus with wrap, Enter/Space activate, Delete/Backspace close when closable,
+  and focus returns to the active tab after a close or a menu command.
+- The close controls keep their `aria-label` and 24 × 24 target; the tab menu
+  disables rather than hides an unavailable action.
+
+Modules: `src/features/openPages/menu.ts` (pure menu models and disabled rules),
+`model.ts` (preview conversion, promote, close others, tab info, keyboard map),
+`controller.ts` (commands and menu opening), `ui.ts` (pointer/keyboard wiring and
+roving focus), `index.ts` (public surface). `src/features/pageMenu/menu.ts`
+merges the two page-card entries through the openPages surface;
+`src/ui/panels.ts` and `src/app/App.ts` gained two one-line delegations.
+
+Decisions: left/right arrows wrap at both ends (documented in a test), and a
+pinned tab converted to preview keeps its position while the old preview tab is
+removed. The page card menu keeps its read-only navigation and adds the
+session-only tab entries there too, because they never write the project.
+`App.ts` rises by two wiring lines (existing legacy budget 1121 → 1123; no new
+file or directory exception).
+
+Findings: none new. The phase 1 focus fallback used a selector that matched no
+element after a close; fixed in scope as part of "focus stays visible after
+close".
+
+Checks: local gate green (`check:versions`, `check:file-budgets`,
+`check:write-sites`, `check:modules`, `check:cycles`, `check:security`,
+`check:actions`, `check:dependencies`, `check:docs`, `format:check`, `lint`,
+`check:i18n`, `check:themes`, `npx tsc --noEmit`); focused Vitest
+`openPagesModel`, `openPagesMenu`, `openPagesKeyboard`, `openPagesController`,
+`openPagesUi`, `pageMenu`, `pageList` (104 tests); `test:a11y`,
+`test:touch-targets`, `test:ui-scale` and `test:ui`. `test:visual` not needed:
+no captured screen changed. The pageMenu suite needs the temporary Vite config
+with `server.fs.allow` while `node_modules` is a symlink; CI uses a real
+`node_modules`.
+
+Next: phase 3 — [#401](https://github.com/MajorJohnDoe/gridscalr/issues/401),
+lifecycle proof, the focused Playwright flow, user-guide prose and screenshots.
 
 ## Phase 3 — lifecycle, Playwright flow and documentation
 
@@ -179,3 +231,7 @@ Phase 1: see the phase entry above. All local-gate, focused-test, visual,
 accessibility (two-tab row), touch-target (two-tab row), UI-scale and
 browser-flow checks, including the hidden-row shell gate, are green on the final
 fixes. CI reruns on the pushed head.
+
+Phase 2: local gate and focused Vitest green; `test:a11y`, `test:touch-targets`,
+`test:ui-scale` and `test:ui` green. No visual baseline change. CI is
+authoritative on the PR head.

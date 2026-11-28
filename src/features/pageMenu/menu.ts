@@ -5,6 +5,7 @@ import { store } from "../../state/store";
 import { textDialog } from "../../ui/dialogs";
 import type { PanelActions } from "../../ui/panels";
 import type { PopoverItem } from "../../ui/popover";
+import { pageCardTabMenuItems } from "../openPages";
 import { isBlankSheet, templateDocumentForPage } from "../schematics";
 import { pageInsertTarget, pageMovePositions } from "./model";
 import { moveTargets } from "./targets";
@@ -27,9 +28,19 @@ export function pageMenuItems(
     icon: "pages",
     action: () => actions.goToPage(page, true),
   };
+  // Session-only tab entries: they act on the page the menu was opened on and
+  // disable only the action that would change nothing.
+  const tabInfo = actions.openPageTabInfo?.(pageId);
+  const tabItems =
+    tabInfo && actions.previewPage
+      ? pageCardTabMenuItems(tabInfo, {
+          preview: () => actions.previewPage?.(pageId),
+          pin: () => actions.pinPage(pageId),
+        })
+      : [];
   const record = project.pages[page - 1];
-  if (!record) return [goTo];
-  if (store.readOnly) return [goTo];
+  if (!record) return [goTo, ...tabItems];
+  if (store.readOnly) return [goTo, ...tabItems];
   const targets = moveTargets(project, pageId);
 
   const sheetDocument = templateDocumentForPage(project, page);
@@ -48,6 +59,7 @@ export function pageMenuItems(
 
   return [
     goTo,
+    ...tabItems,
     {
       label: t("page.renameEllipsis"),
       icon: "text",

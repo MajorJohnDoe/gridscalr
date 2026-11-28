@@ -294,6 +294,8 @@ export class App {
       deletePages: (pageIds) => void deletePagesFlow(this.pageFlowHost(), pageIds),
       duplicatePages: (pageIds) => void duplicatePagesFlow(this.pageFlowHost(), pageIds),
       pinPage: (pageId) => this.openPages.pinPage(pageId),
+      previewPage: (pageId) => this.openPages.previewPage(pageId),
+      openPageTabInfo: (pageId) => this.openPages.tabInfo(pageId),
       reorderPage: (pageId, targetIndex) =>
         void reorderProjectPage(this.pageActionHost(), pageId, targetIndex),
       reorderPages: (pageIds, insertionIndex) =>

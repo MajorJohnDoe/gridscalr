@@ -3680,5 +3680,11 @@
   "openPages.overflowHint": "Visa öppna sidor",
   "openPages.overflowItem": "{page} · {name}",
   "openPages.closeTab": "Stäng flik: {name}",
-  "openPages.previewPin": "Förhandsgranskningsflik"
+  "openPages.previewPin": "Förhandsgranskningsflik",
+  "openPages.menuPin": "Fäst flik",
+  "openPages.menuPreview": "Förhandsgranska",
+  "openPages.menuClose": "Stäng flik",
+  "openPages.menuCloseOthers": "Stäng övriga flikar",
+  "openPages.pageMenuPreview": "Förhandsgranska",
+  "openPages.pageMenuPin": "Fäst som flik"
 }

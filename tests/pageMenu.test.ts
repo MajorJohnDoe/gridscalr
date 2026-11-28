@@ -342,6 +342,52 @@ describe("page card menu", () => {
     const items = pageMenuItems(store.project!, "page_3", fakeActions());
     expect(items.map((item) => item.label)).toEqual(["Go to page 3"]);
   });
+
+  it("adds Preview and Pin as tab after Go to page without moving the existing entries", () => {
+    store.setProject(baseProject(), PATH, false);
+    const actions = fakeActions({
+      previewPage: vi.fn(),
+      pinPage: vi.fn(),
+      openPageTabInfo: () => ({ open: true, pinned: false, preview: true }),
+    });
+    const items = pageMenuItems(store.project!, "page_3", actions);
+    const labels = items.map((item) => item.label).filter(Boolean) as string[];
+    expect(labels.slice(0, 3)).toEqual(["Go to page 3", "Preview", "Pin as tab"]);
+    expect(labels).toContain("Rename page…");
+    expect(labels).toContain("Move page to position…");
+    expect(labels).toContain("Duplicate page…");
+    expect(labels).toContain("Delete page…");
+
+    const preview = items.find((item) => item.label === "Preview");
+    const pin = items.find((item) => item.label === "Pin as tab");
+    expect(preview?.disabled).toBe(true);
+    expect(pin?.disabled).toBe(false);
+    pin?.action?.();
+    expect(actions.pinPage).toHaveBeenCalledWith("page_3");
+    expect(actions.previewPage).not.toHaveBeenCalled();
+  });
+
+  it("opens the page-list tab entries from the card context menu", () => {
+    store.setProject(baseProject(), PATH, false);
+    const actions = fakeActions({
+      previewPage: vi.fn(),
+      pinPage: vi.fn(),
+      openPageTabInfo: () => ({ open: false, pinned: false, preview: false }),
+    });
+    const card = document.createElement("button");
+    document.body.append(card);
+    pageMenu.bindCard(card, "page_3", actions);
+
+    card.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+    const entries = [...document.querySelectorAll<HTMLButtonElement>(".popover .popover-item")];
+    const byName = (name: string) =>
+      entries.find((entry) => entry.querySelector("span")?.textContent === name);
+    expect(byName("Preview")?.disabled).toBe(false);
+    expect(byName("Pin as tab")?.disabled).toBe(false);
+
+    byName("Preview")?.click();
+    expect(actions.previewPage).toHaveBeenCalledWith("page_3");
+  });
 });
 
 describe("multi-page move targets", () => {

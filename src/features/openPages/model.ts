@@ -32,6 +32,33 @@ export interface PrunePageTabsResult {
   activatePageId: PageId | null;
 }
 
+export interface CloseOtherPageTabsResult {
+  state: OpenPagesState;
+  /** False when the target is unknown or is the only tab. */
+  closed: boolean;
+  /** The surviving tab, which becomes the active page. */
+  activatePageId: PageId | null;
+}
+
+/** Where one page stands in the session-only open set. */
+export interface OpenPageTabInfo {
+  open: boolean;
+  pinned: boolean;
+  preview: boolean;
+}
+
+/** Keyboard commands the tablist understands, mapped from one key event. */
+export type TabKeyboardCommand =
+  "activate" | "close" | "menu" | "focusNext" | "focusPrevious" | null;
+
+export interface TabKeyEvent {
+  key: string;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  altKey?: boolean;
+  shiftKey?: boolean;
+}
+
 export function emptyOpenPages(): OpenPagesState {
   return { tabs: [], activePageId: null };
 }
@@ -90,6 +117,51 @@ export function pinPageTab(state: OpenPagesState, pageId: PageId): OpenPagesStat
 }
 
 /**
+ * Opens or promotes a page as a pinned tab and activates it. A preview tab is
+ * pinned in place; a page without a tab replaces the preview (or appends after
+ * every pinned tab) and is then pinned. Selecting an already pinned page only
+ * activates it.
+ */
+export function promotePageTab(state: OpenPagesState, pageId: PageId): OpenPagesState {
+  const tab = openPageTab(state, pageId);
+  if (tab?.pinned) {
+    return state.activePageId === pageId ? state : { tabs: state.tabs, activePageId: pageId };
+  }
+  const base = tab ? state : activatePage(state, pageId);
+  return {
+    tabs: base.tabs.map((entry) => (entry.pageId === pageId ? { ...entry, pinned: true } : entry)),
+    activePageId: pageId,
+  };
+}
+
+/**
+ * Makes a page the single preview tab and activates it. A pinned tab keeps its
+ * position and the previous preview tab is removed, so at most one preview
+ * remains; a page without a tab replaces the current preview in place.
+ */
+export function makePreviewTab(state: OpenPagesState, pageId: PageId): OpenPagesState {
+  const tab = openPageTab(state, pageId);
+  if (!tab) return activatePage(state, pageId);
+  if (!tab.pinned) {
+    return state.activePageId === pageId ? state : { tabs: state.tabs, activePageId: pageId };
+  }
+  const tabs = state.tabs
+    .filter((entry) => entry.pinned || entry.pageId === pageId)
+    .map((entry) => (entry.pageId === pageId ? { ...entry, pinned: false } : entry));
+  return { tabs, activePageId: pageId };
+}
+
+/** Session state for one page, used by the page card menu's disabled rules. */
+export function pageTabInfo(state: OpenPagesState, pageId: PageId): OpenPageTabInfo {
+  const tab = openPageTab(state, pageId);
+  return {
+    open: Boolean(tab),
+    pinned: tab?.pinned ?? false,
+    preview: Boolean(tab && !tab.pinned),
+  };
+}
+
+/**
  * Removes one tab without touching the project. The last tab cannot close.
  * Closing the active tab activates the tab now at the same index, else the one
  * before; closing any other tab leaves the active page alone.
@@ -103,6 +175,51 @@ export function closePageTab(state: OpenPagesState, pageId: PageId): ClosePageTa
   }
   const next = tabs[Math.min(index, tabs.length - 1)];
   return { state: { tabs, activePageId: next.pageId }, closed: true };
+}
+
+/**
+ * Keeps only the target tab and activates it. The project's pages are never
+ * touched. A single tab has nothing to close, and an unknown page is a no-op.
+ */
+export function closeOtherPageTabs(
+  state: OpenPagesState,
+  pageId: PageId,
+): CloseOtherPageTabsResult {
+  const target = openPageTab(state, pageId);
+  if (!target || state.tabs.length <= 1) {
+    return { state, closed: false, activatePageId: null };
+  }
+  return { state: { tabs: [target], activePageId: pageId }, closed: true, activatePageId: pageId };
+}
+
+/** Wraps the focused tab index, so the first and last tab stay reachable. */
+export function tabFocusIndex(index: number, count: number, direction: -1 | 1): number {
+  if (count <= 0) return -1;
+  return (index + direction + count) % count;
+}
+
+/**
+ * Maps one key event to a tablist command. Enter and Space activate, Delete and
+ * Backspace close, Shift+F10 and the ContextMenu key open the tab menu, and the
+ * left/right arrows move focus. Modified keys belong to the application.
+ */
+export function tabKeyboardCommand(event: TabKeyEvent): TabKeyboardCommand {
+  if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) return "menu";
+  if (event.ctrlKey || event.metaKey || event.altKey) return null;
+  switch (event.key) {
+    case "ArrowRight":
+      return "focusNext";
+    case "ArrowLeft":
+      return "focusPrevious";
+    case "Enter":
+    case " ":
+      return "activate";
+    case "Delete":
+    case "Backspace":
+      return "close";
+    default:
+      return null;
+  }
 }
 
 /**

@@ -3680,5 +3680,11 @@
   "openPages.overflowHint": "Show open pages",
   "openPages.overflowItem": "{page} \u00b7 {name}",
   "openPages.closeTab": "Close tab: {name}",
-  "openPages.previewPin": "Preview tab"
+  "openPages.previewPin": "Preview tab",
+  "openPages.menuPin": "Pin tab",
+  "openPages.menuPreview": "Preview",
+  "openPages.menuClose": "Close tab",
+  "openPages.menuCloseOthers": "Close other tabs",
+  "openPages.pageMenuPreview": "Preview",
+  "openPages.pageMenuPin": "Pin as tab"
 }
