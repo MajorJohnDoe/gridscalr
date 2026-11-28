@@ -72,8 +72,12 @@ Checks: local gate green (`check:versions`, `check:file-budgets`,
 `check:actions`, `check:dependencies`, `check:docs`, `format:check`, `lint`,
 `check:i18n`, `check:themes`, `npx tsc --noEmit`); focused Vitest
 `openPagesModel`, `openPagesUi`, `pageList`; `test:visual` (four baselines
-regenerated), `test:a11y`, `test:touch-targets`, `test:ui-scale`. The symlinked
-`node_modules` outside the worktree prevents `tests/appFlows.test.ts` and
+regenerated), `test:a11y`, `test:touch-targets`, `test:ui-scale`, `test:ui`,
+`test:import`, `test:canvas`, `test:count`, `test:touch` and `test:csp`. The
+Markups fit-to-item zoom assertion in `scripts/smoke-ui.mjs` now requires 1.25×
+rather than 1.5×: the 35 px row reduces the canvas height, so a small markup
+still zooms in clearly but below the old threshold. The symlinked `node_modules`
+outside the worktree prevents `tests/appFlows.test.ts` and
 `tests/pageMenu.test.ts` from resolving the PDF.js worker locally; CI uses a
 real `node_modules`.
 
@@ -98,5 +102,6 @@ None.
 
 ## Checks
 
-Phase 1: see the phase entry above. All local-gate, focused-test and visual /
-accessibility / touch-target / UI-scale checks are green on `873189d`.
+Phase 1: see the phase entry above. All local-gate, focused-test, visual,
+accessibility, touch-target, UI-scale and browser-flow checks are green on the
+PR head.
