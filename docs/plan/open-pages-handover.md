@@ -2,7 +2,7 @@
 
 **Epic:** [#398](https://github.com/MajorJohnDoe/gridscalr/issues/398)
 **Milestone:** none (backlog; no release committed)
-**State:** phase 1 implemented in PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402). The first review returned fail (fixed in `dea29ed`); the second review returned fail at `87e4f37` and the final fixes are in the commit containing this handover. Final review pending.
+**State:** phase 1 implemented in PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402). The first review returned fail (fixed in `dea29ed`); the second returned fail at `87e4f37` (fixed in `f25847d`); the final review returned **pass-with-findings**, fixed in the commit containing this handover. Targeted re-review pending.
 
 ## Locked design
 
@@ -15,7 +15,7 @@ white text and a jade numeral. Session-only, schema stays 28.
 
 | Phase | Issue | Branch | Status |
 | --- | --- | --- | --- |
-| 1 — model, controller and the N4 row | [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399) | `feat/open-pages-row` | PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402) — final fixes committed, final review pending |
+| 1 — model, controller and the N4 row | [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399) | `feat/open-pages-row` | PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402) — pass-with-findings, targeted fixes committed, targeted re-review pending |
 | 2 — menus and keyboard | [#400](https://github.com/MajorJohnDoe/gridscalr/issues/400) | `feat/open-pages-menus` | not started |
 | 3 — lifecycle, Playwright flow and docs | [#401](https://github.com/MajorJohnDoe/gridscalr/issues/401) | `feat/open-pages-lifecycle` | not started |
 
@@ -35,7 +35,7 @@ white text and a jade numeral. Session-only, schema stays 28.
 
 **Issue:** [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399)
 **PR:** [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402)
-**Commits:** `873189d` (feature), `67c61d4` (first smoke-bound fix), `dea29ed` (first review fixes), `87e4f37` (handover record), final fixes — the commit that contains this handover (PR #402 head)
+**Commits:** `873189d` (feature), `67c61d4` (first smoke-bound fix), `dea29ed` (first review fixes), `87e4f37` (handover record), `f25847d` (hidden-row and follow-up fixes), targeted fixes — the commit that contains this handover (PR #402 head)
 
 Completed:
 
@@ -107,6 +107,23 @@ Second review fix cycle (this commit):
   the ARIA/keyboard model. Verified with a real click 4 px inside the cell's
   left edge (page 2 → page 1).
 
+Final targeted fix cycle (this commit):
+
+- The hidden-row smoke gate now asserts the actual workspace relationship
+  `viewport − topbar − status bar` within 1 px, at 1440 × 900 and 1024 × 700 on
+  both the welcome screen and a zero-page project.
+- The page-card pin fallback window is 600 ms (the platform interval is not
+  exposed to the web layer; 600 ms covers the 500 ms Windows default), and a
+  native `dblclick` on the card body also pins when the DOM survives. A native
+  double-click on the name still renames; modified clicks never pin.
+- `test:ui` now checks the two-tab geometry at 1440 × 900 and 1024 × 700: each
+  close control is 24 × 24 and inside its tab cell, the right-hand hint stays
+  visible, and a click 4 px inside the first cell's left edge navigates.
+- The preview tab carries a visually hidden "Preview tab" label in addition to
+  the italic name and pin icon, so the state is exposed to screen readers.
+- The ≤1100 px rule that hid the right-hand hint was removed; the hint stays
+  visible at 1024 px and the 200 % UI-scale width still fits.
+
 Budgets: the new module files are 16–210 lines. `App.ts` is +10 wiring lines
 (existing budget 1111 → 1121) and `src/state/store.ts` is +3 for the read-only
 getter (410 → 413). No new file or directory exception was added.
@@ -116,11 +133,11 @@ Checks: local gate green (`check:versions`, `check:file-budgets`,
 `check:write-sites`, `check:modules`, `check:cycles`, `check:security`,
 `check:actions`, `check:dependencies`, `check:docs`, `format:check`, `lint`,
 `check:i18n`, `check:themes`, `npx tsc --noEmit`); focused Vitest
-`openPagesModel`, `openPagesUi`, `openPagesController`, `pageList` (53 tests);
-`test:visual`, `test:a11y` and `test:touch-targets` with a two-tab row,
-`test:ui-scale`, `test:ui` including the hidden-row shell gate for the welcome
-screen and a zero-page project at both viewport sizes, `test:import`,
-`test:canvas`, `test:count`, `test:touch` and `test:csp`. The
+`openPagesModel`, `openPagesUi`, `openPagesController`, `pageList` (57 tests);
+`test:visual` (no baseline change), `test:a11y` and `test:touch-targets` with a
+two-tab row, `test:ui-scale`, `test:ui` including the hidden-row shell gate at
+both viewport sizes and both states and the two-tab geometry/left-edge click,
+`test:import`, `test:canvas`, `test:count`, `test:touch` and `test:csp`. The
 Markups fit-to-item zoom assertion in `scripts/smoke-ui.mjs` uses a 1.35× bound
 measured from 0.6113 → 0.8694 (1.42×) with the 35 px row. The symlinked
 `node_modules` outside the worktree prevents `tests/appFlows.test.ts` and
@@ -133,9 +150,10 @@ real `node_modules`.
   styling. Fixed in `dea29ed`.
 - Second review at `87e4f37`: **fail** on the hidden-row shell grid (status bar
   squeezed to 1 px) plus hover persistence, observer disposal, the dead tab-cell
-  padding and the stale commit history. Fixed in the commit containing this
-  handover.
-- Final independent review pending. The phase is not merged until it passes.
+  padding and the stale commit history. Fixed in `f25847d`.
+- Final review: **pass-with-findings** (no P1; two P2 and the listed P3s).
+  Fixed in the commit containing this handover. Targeted re-review pending; the
+  phase is not merged until it passes.
 
 Next: phase 2 — [#400](https://github.com/MajorJohnDoe/gridscalr/issues/400),
 tab context menu, page-list menu entries and keyboard navigation.

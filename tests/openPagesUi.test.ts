@@ -109,6 +109,8 @@ describe("open-pages row", () => {
     expect(all[1].getAttribute("aria-selected")).toBe("true");
     expect(all[1].querySelector(".open-page-pin")).not.toBeNull();
     expect(all[1].querySelector(".open-page-numeral")?.textContent).toBe("3");
+    expect(all[1].querySelector(".open-pages-sr-only")?.textContent).toBe("Preview tab");
+    expect(all[0].querySelector(".open-pages-sr-only")).toBeNull();
     expect(
       mount
         .querySelector(`.open-page-tab-cell[data-page-id="${pageIdFor(3)}"]`)

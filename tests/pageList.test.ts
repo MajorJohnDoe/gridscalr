@@ -58,6 +58,10 @@ function click(target: HTMLElement, shiftKey = false): void {
   target.dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey }));
 }
 
+function dblclick(target: HTMLElement, init: MouseEventInit = {}): void {
+  target.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, ...init }));
+}
+
 beforeEach(() => {
   store.project = null;
   store.readOnly = false;
@@ -152,6 +156,41 @@ describe("Pages panel window", () => {
     expect(store.ui.page).toBe(2);
     click(card(refs, 2));
     expect(actions.pinPage).toHaveBeenCalledWith("page_2");
+  });
+
+  it("pins on a native double-click on the card body", () => {
+    store.setProject(projectWithPages(3), "/tmp/page-list.gridscalr", false);
+    store.ui.leftTab = "pages";
+    store.ui.page = 1;
+    const { refs, actions, render } = mount();
+    render();
+
+    dblclick(card(refs, 2).querySelector<HTMLElement>(".page-thumb")!);
+    expect(actions.pinPage).toHaveBeenCalledWith("page_2");
+  });
+
+  it("ignores a modified native double-click", () => {
+    store.setProject(projectWithPages(3), "/tmp/page-list.gridscalr", false);
+    store.ui.leftTab = "pages";
+    store.ui.page = 1;
+    const { refs, actions, render } = mount();
+    render();
+
+    dblclick(card(refs, 2).querySelector<HTMLElement>(".page-thumb")!, { ctrlKey: true });
+    expect(actions.pinPage).not.toHaveBeenCalled();
+  });
+
+  it("keeps a native double-click on the page name for rename", () => {
+    store.setProject(projectWithPages(3), "/tmp/page-list.gridscalr", false);
+    store.ui.leftTab = "pages";
+    store.ui.page = 1;
+    const { refs, actions, render } = mount();
+    render();
+
+    const pageCard = card(refs, 1);
+    dblclick(pageCard.querySelector<HTMLElement>(".page-title")!);
+    expect(actions.pinPage).not.toHaveBeenCalled();
+    expect(pageCard.querySelector(".page-name-input")).not.toBeNull();
   });
 
   it("counts matching pages when a status filter narrows the list", () => {

@@ -1,7 +1,11 @@
 import type { PageId } from "../../model/types";
 
-/** A second unmodified click within this window is the page-card pin gesture. */
-export const PAGE_CARD_PIN_MS = 400;
+/**
+ * A second unmodified click within this window is the page-card pin gesture.
+ * The platform double-click interval is not exposed to the web layer; 600 ms
+ * covers the 500 ms Windows default and common slower user settings.
+ */
+export const PAGE_CARD_PIN_MS = 600;
 
 export interface PageCardClickInput {
   /** Identity of the open project; a new open resets the gesture. */

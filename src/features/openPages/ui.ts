@@ -155,7 +155,7 @@ export class OpenPagesRow {
       pin.innerHTML = icon("pin", 12);
       pin.setAttribute("aria-hidden", "true");
       pin.title = t("openPages.previewPin");
-      button.append(pin);
+      button.append(pin, el("span", "open-pages-sr-only", t("openPages.previewPin")));
     }
     cell.append(button);
     return cell;

@@ -299,6 +299,14 @@ describe("page-card pin gesture", () => {
     expect(gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 3001)).toBe(false);
   });
 
+  it("accepts a 450 ms pair and rejects a 700 ms pair", () => {
+    const gesture = new PageCardPinGesture();
+    gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 1000);
+    expect(gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 1450)).toBe(true);
+    gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 2000);
+    expect(gesture.shouldPin({ project, pageId: A, title: false, plain: true }, 2700)).toBe(false);
+  });
+
   it("keeps a double-click on the page name for rename", () => {
     const gesture = new PageCardPinGesture();
     gesture.shouldPin({ project, pageId: A, title: true, plain: true }, 1000);

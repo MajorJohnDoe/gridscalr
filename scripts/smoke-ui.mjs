@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PDFDocument } from "pdf-lib";
 import {
+  createTwoOpenPages,
   launchBrowser,
   makeReferenceProject,
   openCompareProject,
@@ -75,7 +76,9 @@ async function assertHiddenRowShell(page, label) {
     const status = document.querySelector(".statusbar");
     const row = document.querySelector(".open-pages-row");
     const workspace = document.querySelector(".workspace");
+    const topbar = document.querySelector(".topbar");
     const statusRect = status?.getBoundingClientRect();
+    const topbarRect = topbar?.getBoundingClientRect();
     const children = status
       ? [...status.children].map((child) => {
           const rect = child.getBoundingClientRect();
@@ -91,6 +94,7 @@ async function assertHiddenRowShell(page, label) {
       : [];
     return {
       rows: shell ? getComputedStyle(shell).gridTemplateRows : "",
+      topbarHeight: Math.round(topbarRect?.height ?? 0),
       statusHeight: Math.round(statusRect?.height ?? 0),
       statusBottom: Math.round(statusRect?.bottom ?? 0),
       statusChildren: children.filter(
@@ -122,7 +126,69 @@ async function assertHiddenRowShell(page, label) {
     layout.statusChildren > 0,
     `${label}: the status bar children should be visible, not clipped`,
   );
-  assert.ok(layout.workspaceHeight > 0, `${label}: the workspace should keep the free space`);
+  const freeSpace = layout.viewportHeight - layout.topbarHeight - layout.statusHeight;
+  assert.ok(
+    Math.abs(layout.workspaceHeight - freeSpace) <= 1,
+    `${label}: the workspace should keep the free space (${layout.workspaceHeight} vs ${freeSpace})`,
+  );
+}
+
+/**
+ * The two-tab row: a close control per tab sits inside its cell at 24 × 24, the
+ * right-hand hint stays visible at supported widths, and the whole cell (not
+ * only its inner content) navigates.
+ */
+async function assertOpenPagesGeometry(page, label) {
+  const geometry = await page.evaluate(() => {
+    const cells = [...document.querySelectorAll(".open-page-tab-cell")];
+    const close = document.querySelector(".open-page-close");
+    const hint = document.querySelector(".open-pages-hint");
+    const cellRect = cells[0]?.getBoundingClientRect();
+    const closeRect = close?.getBoundingClientRect();
+    const hintRect = hint?.getBoundingClientRect();
+    const hintStyle = hint ? getComputedStyle(hint) : null;
+    return {
+      tabs: cells.length,
+      cell: cellRect
+        ? {
+            left: cellRect.left,
+            right: cellRect.right,
+            top: cellRect.top,
+            bottom: cellRect.bottom,
+          }
+        : null,
+      close: closeRect
+        ? {
+            width: closeRect.width,
+            height: closeRect.height,
+            left: closeRect.left,
+            right: closeRect.right,
+            top: closeRect.top,
+            bottom: closeRect.bottom,
+          }
+        : null,
+      hintVisible: Boolean(
+        hintRect &&
+        hintRect.width > 0 &&
+        hintRect.height > 0 &&
+        hintStyle?.display !== "none" &&
+        hintStyle?.visibility !== "hidden",
+      ),
+    };
+  });
+  assert.equal(geometry.tabs, 2, `${label}: expected two open tabs`);
+  assert.equal(Math.round(geometry.close?.width ?? 0), 24, `${label}: close control width`);
+  assert.equal(Math.round(geometry.close?.height ?? 0), 24, `${label}: close control height`);
+  assert.ok(
+    geometry.cell &&
+      geometry.close &&
+      geometry.close.left >= geometry.cell.left &&
+      geometry.close.right <= geometry.cell.right &&
+      geometry.close.top >= geometry.cell.top &&
+      geometry.close.bottom <= geometry.cell.bottom,
+    `${label}: the close control should sit inside its tab cell`,
+  );
+  assert.equal(geometry.hintVisible, true, `${label}: the open-pages hint should stay visible`);
 }
 
 function readLayerSurfaces(page) {
@@ -176,6 +242,16 @@ try {
   const project = await openDemoProject(page, { base: vite.base });
   assert.equal(project.name, "Northgate Logistics Hub - Takeoff");
   assert.equal(await page.locator(".page-card").count(), 4, "expected four page cards");
+
+  await createTwoOpenPages(page);
+  await assertOpenPagesGeometry(page, "two tabs 1440x900");
+  const firstTabBox = await page.locator(".open-page-tab-cell").first().boundingBox();
+  assert.ok(firstTabBox, "the first open tab should have a bounding box");
+  await page.mouse.click(firstTabBox.x + 4, firstTabBox.y + firstTabBox.height / 2);
+  await page.waitForFunction(() => document.querySelector(".page-input")?.value === "1");
+  await page.setViewportSize({ width: 1024, height: 700 });
+  await assertOpenPagesGeometry(page, "two tabs 1024x700");
+  await page.setViewportSize({ width: 1440, height: 900 });
 
   const autosave = await page.evaluate(async () => {
     const legacy = localStorage.getItem("gridscalr.autosave.v1");

@@ -405,6 +405,13 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
       }
       if (pageReorder.handleClick(event, pageId)) actions.goToPage(page, true);
     });
+    card.addEventListener("dblclick", (event) => {
+      // A native double-click still pins when the card survived both clicks,
+      // for example on the already active page. The page name renames instead.
+      if ((event.target as HTMLElement | null)?.closest(".page-title")) return;
+      if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
+      actions.pinPage?.(pageId);
+    });
     if (reorderEnabled) {
       card.addEventListener("keydown", (event) => pageReorder.handleKeyDown(event, pageId));
     }
