@@ -2,17 +2,22 @@ import { currentPageId, pageDisplayName, pageNumber } from "../../model/pages";
 import type { PageId } from "../../model/types";
 import { store, type ChangeReason } from "../../state/store";
 import { LANGUAGE_CHANGED_EVENT, t } from "../../i18n";
-import { showPopover } from "../../ui/popover";
+import { showPopover, showPopoverAt } from "../../ui/popover";
 import {
   activatePage,
+  closeOtherPageTabs,
   closePageTab,
   emptyOpenPages,
-  pinPageTab,
+  makePreviewTab,
+  pageTabInfo,
+  promotePageTab,
   prunePageTabs,
   seedOpenPages,
+  type OpenPageTabInfo,
   type OpenPagesState,
 } from "./model";
-import { OpenPagesRow, type OpenPagesTabView } from "./ui";
+import { tabMenuItems } from "./menu";
+import { OpenPagesRow, type OpenPagesTabMenuPoint, type OpenPagesTabView } from "./ui";
 
 /** What the controller needs from its host: one mount point and page navigation. */
 export interface OpenPagesHost {
@@ -47,6 +52,7 @@ export class OpenPagesController {
     this.row = new OpenPagesRow(host.mount, {
       activate: (pageId) => this.activate(pageId),
       close: (pageId) => this.close(pageId),
+      menu: (pageId, anchor, at) => this.openTabMenu(pageId, anchor, at),
       overflow: (anchor) => this.openOverflow(anchor),
     });
   }
@@ -78,35 +84,90 @@ export class OpenPagesController {
 
   /** Activates a tab or a page: a new page replaces the single preview tab. */
   activate(pageId: PageId): void {
-    const project = store.project;
-    if (!project || !project.pages.some((page) => page.id === pageId)) return;
+    if (!this.pageExists(pageId)) return;
     this.state = activatePage(this.state, pageId);
-    const page = pageNumber(project, pageId);
-    if (page && page !== store.ui.page) this.host.goToPage(page);
+    this.navigateTo(pageId);
     this.render();
   }
 
-  /** Pins the preview tab after a double-click on the card body. */
-  pinPage(pageId: PageId): void {
-    const next = pinPageTab(this.state, pageId);
+  /**
+   * Pins the preview tab after a double-click on the card body, or opens and
+   * promotes a page from the page card's Pin as tab entry.
+   */
+  pinPage(pageId: PageId, focusTab = false): void {
+    if (!this.pageExists(pageId)) return;
+    const next = promotePageTab(this.state, pageId);
     if (next === this.state) return;
     this.state = next;
+    this.navigateTo(pageId);
     this.render();
+    if (focusTab) this.row.focusActive();
+  }
+
+  /** Converts a pinned tab to the single preview tab, or previews a new page. */
+  previewPage(pageId: PageId, focusTab = false): void {
+    if (!this.pageExists(pageId)) return;
+    const next = makePreviewTab(this.state, pageId);
+    if (next === this.state) return;
+    this.state = next;
+    this.navigateTo(pageId);
+    this.render();
+    if (focusTab) this.row.focusActive();
   }
 
   /** Closes a tab only; the active page follows the nearest neighbour. */
-  close(pageId: PageId): void {
-    const project = store.project;
-    if (!project) return;
+  close(pageId: PageId, focusTab = false): void {
     const result = closePageTab(this.state, pageId);
     if (!result.closed) return;
     this.state = result.state;
     const next = result.state.activePageId;
-    if (next && next !== currentPageId(project, store.ui.page)) {
-      const page = pageNumber(project, next);
-      if (page) this.host.goToPage(page);
-    }
+    if (next) this.navigateTo(next);
     this.render();
+    if (focusTab) this.row.focusActive();
+  }
+
+  /** Keeps only one tab and activates it; the project's pages are untouched. */
+  closeOthers(pageId: PageId, focusTab = false): void {
+    const result = closeOtherPageTabs(this.state, pageId);
+    if (!result.closed) return;
+    this.state = result.state;
+    if (result.activatePageId) this.navigateTo(result.activatePageId);
+    this.render();
+    if (focusTab) this.row.focusActive();
+  }
+
+  /** Current session state for one page, read by the page card menu. */
+  tabInfo(pageId: PageId): OpenPageTabInfo {
+    return pageTabInfo(this.state, pageId);
+  }
+
+  /**
+   * Opens the tab menu from the current state. A pointer opens it at the
+   * pointer, the keyboard at the focused tab. Every handler re-renders and then
+   * puts focus back on the active tab.
+   */
+  private openTabMenu(pageId: PageId, anchor: HTMLElement, at?: OpenPagesTabMenuPoint): void {
+    const items = tabMenuItems(this.state, pageId, {
+      pin: () => this.pinPage(pageId, true),
+      preview: () => this.previewPage(pageId, true),
+      close: () => this.close(pageId, true),
+      closeOthers: () => this.closeOthers(pageId, true),
+    });
+    if (!items.length) return;
+    if (at) showPopoverAt(at.x, at.y, items);
+    else showPopover(anchor, items);
+  }
+
+  private pageExists(pageId: PageId): boolean {
+    const project = store.project;
+    return Boolean(project?.pages.some((page) => page.id === pageId));
+  }
+
+  private navigateTo(pageId: PageId): void {
+    const project = store.project;
+    if (!project) return;
+    const page = pageNumber(project, pageId);
+    if (page && page !== store.ui.page) this.host.goToPage(page);
   }
 
   private openOverflow(anchor: HTMLElement): void {

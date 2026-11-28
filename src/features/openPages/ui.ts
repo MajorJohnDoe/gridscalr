@@ -2,6 +2,7 @@ import { t } from "../../i18n";
 import type { PageId } from "../../model/types";
 import { el } from "../../ui/dom";
 import { icon } from "../../ui/icons";
+import { tabFocusIndex, tabKeyboardCommand } from "./model";
 
 /** One rendered tab: display data only, resolved from the project by the controller. */
 export interface OpenPagesTabView {
@@ -13,9 +14,16 @@ export interface OpenPagesTabView {
   active: boolean;
 }
 
+/** Where a pointer opened the tab menu. */
+export interface OpenPagesTabMenuPoint {
+  x: number;
+  y: number;
+}
+
 export interface OpenPagesRowHandlers {
   activate: (pageId: PageId) => void;
   close: (pageId: PageId) => void;
+  menu: (pageId: PageId, anchor: HTMLElement, at?: OpenPagesTabMenuPoint) => void;
   overflow: (anchor: HTMLElement) => void;
 }
 
@@ -45,6 +53,8 @@ export class OpenPagesRow {
   private signature = "";
   private lastActivePageId: string | null = null;
   private hoveredPageId: string | null = null;
+  /** The one tab that carries `tabindex=0` in the roving tablist. */
+  private rovingPageId: string | null = null;
   private readonly onPointerOver = (event: PointerEvent) => this.pointerOver(event);
   private readonly onPointerLeave = () => this.setHover(null);
   private readonly resizeObserver: ResizeObserver | null = null;
@@ -106,6 +116,10 @@ export class OpenPagesRow {
     this.signature = signature;
     const scrollLeft = this.scroll.scrollLeft;
     const focus = this.captureFocus();
+    if (!focus && !this.mount.contains(document.activeElement)) this.rovingPageId = null;
+    this.rovingPageId = tabs.some((tab) => tab.pageId === this.rovingPageId)
+      ? this.rovingPageId
+      : (tabs.find((tab) => tab.active)?.pageId ?? tabs[0]?.pageId ?? null);
     if (this.hoveredPageId && !tabs.some((tab) => tab.pageId === this.hoveredPageId)) {
       this.hoveredPageId = null;
     }
@@ -141,11 +155,17 @@ export class OpenPagesRow {
     button.type = "button";
     button.setAttribute("role", "tab");
     button.setAttribute("aria-selected", String(tab.active));
-    button.tabIndex = 0;
+    button.tabIndex = tab.pageId === this.rovingPageId ? 0 : -1;
     button.dataset.pageId = tab.pageId;
     button.dataset.kind = "tab";
     button.title = tab.name;
     button.addEventListener("click", () => this.handlers.activate(tab.pageId));
+    button.addEventListener("focus", () => this.setRoving(tab.pageId));
+    button.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      this.handlers.menu(tab.pageId, button, { x: event.clientX, y: event.clientY });
+    });
+    button.addEventListener("keydown", (event) => this.handleTabKey(event, tab, closable));
 
     const numeral = el("span", "open-page-numeral", String(tab.page));
     const name = el("span", "open-page-name", tab.name);
@@ -206,6 +226,64 @@ export class OpenPagesRow {
     }
   }
 
+  /** Puts focus back on the active tab after a menu command re-renders. */
+  focusActive(): void {
+    const active = this.list.querySelector<HTMLButtonElement>(
+      '.open-page-tab-cell.is-active [role="tab"]',
+    );
+    const target = active ?? this.list.querySelector<HTMLButtonElement>('[role="tab"]');
+    if (!target) return;
+    target.focus({ preventScroll: false });
+    if (target.dataset.pageId) this.setRoving(target.dataset.pageId);
+  }
+
+  /**
+   * Keyboard model for one tab. The tablist is roving: arrows move focus and
+   * the tabindex, Enter/Space activate, Delete/Backspace close when possible,
+   * and Shift+F10 or the ContextMenu key open the tab menu.
+   */
+  private handleTabKey(event: KeyboardEvent, tab: OpenPagesTabView, closable: boolean): void {
+    const command = tabKeyboardCommand(event);
+    if (!command) return;
+    if (command === "close" && !closable) return;
+    event.preventDefault();
+    switch (command) {
+      case "activate":
+        this.handlers.activate(tab.pageId);
+        return;
+      case "close":
+        this.handlers.close(tab.pageId);
+        return;
+      case "menu":
+        this.handlers.menu(tab.pageId, event.currentTarget as HTMLElement);
+        return;
+      case "focusNext":
+      case "focusPrevious":
+        this.moveFocus(tab.pageId, command === "focusNext" ? 1 : -1);
+        return;
+    }
+  }
+
+  /** Moves focus and the roving tabindex, wrapping at both ends of the list. */
+  private moveFocus(pageId: string, direction: -1 | 1): void {
+    const tabs = [...this.list.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const index = tabs.findIndex((tab) => tab.dataset.pageId === pageId);
+    if (index < 0) return;
+    const target = tabs[tabFocusIndex(index, tabs.length, direction)];
+    if (!target) return;
+    if (target.dataset.pageId) this.setRoving(target.dataset.pageId);
+    target.focus({ preventScroll: true });
+  }
+
+  /** Exactly one tab carries `tabindex=0`; the focused tab owns it. */
+  private setRoving(pageId: string): void {
+    if (this.rovingPageId === pageId) return;
+    this.rovingPageId = pageId;
+    for (const tab of this.list.querySelectorAll<HTMLButtonElement>('[role="tab"]')) {
+      tab.tabIndex = tab.dataset.pageId === pageId ? 0 : -1;
+    }
+  }
+
   private captureFocus(): FocusKey | null {
     const active = document.activeElement;
     if (!(active instanceof HTMLElement) || !this.mount.contains(active)) return null;
@@ -222,7 +300,9 @@ export class OpenPagesRow {
         `[data-page-id="${focus.pageId}"][data-kind="${focus.kind}"]`,
       );
     }
-    if (!target) target = this.list.querySelector<HTMLElement>(".open-page-tab.is-active");
+    if (!target) {
+      target = this.list.querySelector<HTMLElement>('.open-page-tab-cell.is-active [role="tab"]');
+    }
     target?.focus({ preventScroll: true });
   }
 }

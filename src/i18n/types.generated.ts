@@ -3682,6 +3682,12 @@ export type MessageKey =
   | "openPages.overflowHint"
   | "openPages.overflowItem"
   | "openPages.closeTab"
-  | "openPages.previewPin";
+  | "openPages.previewPin"
+  | "openPages.menuPin"
+  | "openPages.menuPreview"
+  | "openPages.menuClose"
+  | "openPages.menuCloseOthers"
+  | "openPages.pageMenuPreview"
+  | "openPages.pageMenuPin";
 
 export type MessageCatalog = Record<MessageKey, string>;
