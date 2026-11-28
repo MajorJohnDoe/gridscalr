@@ -2,7 +2,7 @@
 
 **Epic:** [#398](https://github.com/MajorJohnDoe/gridscalr/issues/398)
 **Milestone:** none (backlog; no release committed)
-**State:** phase 1 not started. Waiting for the user's go-ahead.
+**State:** phase 1 implemented in PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402); awaiting conductor review.
 
 ## Locked design
 
@@ -15,7 +15,7 @@ white text and a jade numeral. Session-only, schema stays 28.
 
 | Phase | Issue | Branch | Status |
 | --- | --- | --- | --- |
-| 1 — model, controller and the N4 row | [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399) | `feat/open-pages-row` | not started |
+| 1 — model, controller and the N4 row | [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399) | `feat/open-pages-row` | PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402) — awaiting review |
 | 2 — menus and keyboard | [#400](https://github.com/MajorJohnDoe/gridscalr/issues/400) | `feat/open-pages-menus` | not started |
 | 3 — lifecycle, Playwright flow and docs | [#401](https://github.com/MajorJohnDoe/gridscalr/issues/401) | `feat/open-pages-lifecycle` | not started |
 
@@ -33,7 +33,52 @@ white text and a jade numeral. Session-only, schema stays 28.
 
 ## Phase 1 — model, controller and the N4 row
 
-Not started.
+**Issue:** [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399)
+**PR:** [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402)
+**Commit:** `873189d`
+
+Completed:
+
+- `src/features/openPages/` with `index.ts` as the only public surface:
+  `model.ts` (pure open set, preview, pin, close, neighbour and prune rules),
+  `controller.ts` (store subscription, session lifecycle and tab commands) and
+  `ui.ts` (the row, tabs, overflow list and focus/scroll preservation).
+- A 35 px full-width row as its own `auto` grid row between the title row and
+  the workspace. It collapses and is `hidden` with no project or zero pages.
+- One preview tab per project, seeded on open and cleared on close. Every
+  existing page-change path updates it through the same store notification.
+- Pinning, close, prune and neighbour activation; page reorder never reorders
+  tabs. Tabs are never serialized and `schemaVersion` remains 28.
+- Page card click previews, a quick second click pins, double-click on the page
+  name keeps rename.
+- `role=tablist`/`role=tab`, `aria-selected`, a navigation landmark, a focus
+  ring, `aria-label` on close and 24 × 24 close/overflow controls that stay
+  visible with a coarse pointer.
+
+Modules: `src/features/openPages/{index,model,controller,ui}.ts`,
+`src/styles/openPages.css`, `src/ui/shell.ts` (mount and refs only),
+`src/app/App.ts` (construct, start, stop and the pin action only),
+`src/ui/pageList.ts` (the card click/pin gesture).
+
+Decisions: the row is a navigation landmark so it is axe-clean; the active tab
+uses `--text` rather than a literal white so Light Green stays readable; the
+page-card pin gesture is a 400 ms same-page click pair because the page change
+rebuilds the Pages panel between the two clicks of a native double-click.
+
+Findings: none new.
+
+Checks: local gate green (`check:versions`, `check:file-budgets`,
+`check:write-sites`, `check:modules`, `check:cycles`, `check:security`,
+`check:actions`, `check:dependencies`, `check:docs`, `format:check`, `lint`,
+`check:i18n`, `check:themes`, `npx tsc --noEmit`); focused Vitest
+`openPagesModel`, `openPagesUi`, `pageList`; `test:visual` (four baselines
+regenerated), `test:a11y`, `test:touch-targets`, `test:ui-scale`. The symlinked
+`node_modules` outside the worktree prevents `tests/appFlows.test.ts` and
+`tests/pageMenu.test.ts` from resolving the PDF.js worker locally; CI uses a
+real `node_modules`.
+
+Next: phase 2 — [#400](https://github.com/MajorJohnDoe/gridscalr/issues/400),
+tab context menu, page-list menu entries and keyboard navigation.
 
 ## Phase 2 — menus and keyboard
 
@@ -53,4 +98,5 @@ None.
 
 ## Checks
 
-None yet.
+Phase 1: see the phase entry above. All local-gate, focused-test and visual /
+accessibility / touch-target / UI-scale checks are green on `873189d`.
