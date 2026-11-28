@@ -67,17 +67,12 @@
   flex: 0 0 auto;
   align-items: center;
   height: 26px;
-  padding: 0 2px 0 8px;
+  padding: 0;
   border-radius: 6px;
   color: var(--muted);
   transition:
     background 0.12s,
     color 0.12s;
-}
-
-/* Reserve room for the overlaid close control so the name never slides. */
-.open-page-tab-cell.is-closable {
-  padding-right: 32px;
 }
 
 .open-page-tab-cell:hover {
@@ -96,14 +91,19 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 26px;
-  padding: 0;
+  height: 100%;
+  padding: 0 2px 0 8px;
   border: 0;
   border-radius: 6px;
   background: transparent;
   color: inherit;
   font: inherit;
   font-size: 12px;
+}
+
+/* The whole cell is the tab button; reserve the close area inside it. */
+.open-page-tab-cell.is-closable .open-page-tab {
+  padding-right: 32px;
 }
 
 .open-page-numeral {

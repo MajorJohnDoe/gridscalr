@@ -68,6 +68,12 @@ export class OpenPagesController {
       window.removeEventListener(LANGUAGE_CHANGED_EVENT, this.languageListener);
       this.languageListener = null;
     }
+    this.row.dispose();
+  }
+
+  /** One-way teardown for the app and the controller tests. */
+  dispose(): void {
+    this.stop();
   }
 
   /** Activates a tab or a page: a new page replaces the single preview tab. */

@@ -64,6 +64,67 @@ function readDropFeedback(page, rowSelector) {
   }, rowSelector);
 }
 
+/**
+ * The open-pages row is hidden with no project and with a zero-page project.
+ * The shell grid must still give the status bar its normal height and leave the
+ * workspace the free space; otherwise the status bar is squeezed to 1 px.
+ */
+async function assertHiddenRowShell(page, label) {
+  const layout = await page.evaluate(() => {
+    const shell = document.querySelector(".app-shell");
+    const status = document.querySelector(".statusbar");
+    const row = document.querySelector(".open-pages-row");
+    const workspace = document.querySelector(".workspace");
+    const statusRect = status?.getBoundingClientRect();
+    const children = status
+      ? [...status.children].map((child) => {
+          const rect = child.getBoundingClientRect();
+          const style = getComputedStyle(child);
+          return {
+            width: rect.width,
+            height: rect.height,
+            bottom: rect.bottom,
+            display: style.display,
+            visibility: style.visibility,
+          };
+        })
+      : [];
+    return {
+      rows: shell ? getComputedStyle(shell).gridTemplateRows : "",
+      statusHeight: Math.round(statusRect?.height ?? 0),
+      statusBottom: Math.round(statusRect?.bottom ?? 0),
+      statusChildren: children.filter(
+        (child) =>
+          child.display !== "none" &&
+          child.visibility !== "hidden" &&
+          child.width > 0 &&
+          child.height > 0 &&
+          child.bottom <= window.innerHeight + 1,
+      ).length,
+      rowHidden: row?.hidden ?? false,
+      rowHeight: Math.round(row?.getBoundingClientRect().height ?? 0),
+      workspaceHeight: Math.round(workspace?.getBoundingClientRect().height ?? 0),
+      viewportHeight: window.innerHeight,
+    };
+  });
+  assert.equal(layout.rowHidden, true, `${label}: the open-pages row should be hidden`);
+  assert.equal(layout.rowHeight, 0, `${label}: the hidden row should have no height`);
+  assert.equal(
+    layout.statusHeight,
+    28,
+    `${label}: the status bar should keep its 28 px height (grid: ${layout.rows})`,
+  );
+  assert.ok(
+    layout.statusBottom <= layout.viewportHeight + 1,
+    `${label}: the status bar should stay inside the viewport`,
+  );
+  assert.ok(
+    layout.statusChildren > 0,
+    `${label}: the status bar children should be visible, not clipped`,
+  );
+  assert.ok(layout.workspaceHeight > 0, `${label}: the workspace should keep the free space`);
+}
+
 function readLayerSurfaces(page) {
   return page.evaluate(() => {
     const rows = document.querySelector(".layer-section-rows");
@@ -89,6 +150,28 @@ try {
     colorScheme: "dark",
   });
   page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  // The hidden open-pages row must not move the workspace or squeeze the status
+  // bar, on the welcome screen and with a zero-page project.
+  await page.goto(vite.base, { waitUntil: "domcontentloaded" });
+  await waitForApp(page);
+  await assertHiddenRowShell(page, "welcome 1440x900");
+  await page.setViewportSize({ width: 1024, height: 700 });
+  await assertHiddenRowShell(page, "welcome 1024x700");
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  await page.getByRole("menuitem", { name: "File" }).click();
+  await page.getByRole("menuitem", { name: "New project…" }).click();
+  const newProject = page.getByRole("dialog", { name: "New project" });
+  await newProject.waitFor();
+  await newProject.getByRole("radio", { name: /Blank project/ }).check();
+  await newProject.getByRole("button", { name: "Create project" }).click();
+  await newProject.waitFor({ state: "detached" });
+  await waitForToastsGone(page);
+  await assertHiddenRowShell(page, "zero pages 1440x900");
+  await page.setViewportSize({ width: 1024, height: 700 });
+  await assertHiddenRowShell(page, "zero pages 1024x700");
+  await page.setViewportSize({ width: 1440, height: 900 });
 
   const project = await openDemoProject(page, { base: vite.base });
   assert.equal(project.name, "Northgate Logistics Hub - Takeoff");

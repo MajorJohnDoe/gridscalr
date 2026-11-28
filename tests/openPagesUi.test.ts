@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { OpenPagesController } from "../src/features/openPages";
+import { LANGUAGE_CHANGED_EVENT } from "../src/i18n";
 import { createProject, defaultDocument } from "../src/model/layers";
 import { store } from "../src/state/store";
 import { pageIdFor, withTestPageIds } from "./helpers/pages";
@@ -42,7 +43,7 @@ function activeTab(mount: HTMLElement): HTMLElement | undefined {
 }
 
 afterEach(() => {
-  current?.stop();
+  current?.dispose();
   current = null;
   document.querySelectorAll(".popover").forEach((node) => node.remove());
   store.closeProject();
@@ -124,6 +125,28 @@ describe("open-pages row", () => {
     expect(mount.querySelectorAll(".open-page-close-layer .open-page-close")).toHaveLength(2);
     const close = mount.querySelector<HTMLElement>(".open-page-close");
     expect(close?.getAttribute("aria-label")).toBe("Close tab: Page 2");
+  });
+
+  it("keeps a hovered close visible across a row re-render", () => {
+    const { mount, controller } = mountController();
+    store.setProject(projectWithPages(3), null);
+    store.setPage(2);
+    controller.pinPage(pageIdFor(2));
+    store.setPage(3);
+
+    const firstTab = tabs(mount)[0];
+    firstTab.dispatchEvent(new Event("pointerover", { bubbles: true }));
+    const close = mount.querySelector<HTMLElement>(
+      `.open-page-close[data-page-id="${pageIdFor(2)}"]`,
+    );
+    expect(close?.classList.contains("is-hover")).toBe(true);
+
+    window.dispatchEvent(new CustomEvent(LANGUAGE_CHANGED_EVENT));
+    const rerendered = mount.querySelector<HTMLElement>(
+      `.open-page-close[data-page-id="${pageIdFor(2)}"]`,
+    );
+    expect(rerendered).not.toBe(close);
+    expect(rerendered?.classList.contains("is-hover")).toBe(true);
   });
 
   it("opens the overflow list from the shared popover and activates an entry", () => {

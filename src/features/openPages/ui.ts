@@ -45,6 +45,9 @@ export class OpenPagesRow {
   private signature = "";
   private lastActivePageId: string | null = null;
   private hoveredPageId: string | null = null;
+  private readonly onPointerOver = (event: PointerEvent) => this.pointerOver(event);
+  private readonly onPointerLeave = () => this.setHover(null);
+  private readonly resizeObserver: ResizeObserver | null = null;
 
   constructor(
     private readonly mount: HTMLElement,
@@ -68,13 +71,21 @@ export class OpenPagesRow {
     this.overflow.dataset.kind = "overflow";
     this.overflow.innerHTML = icon("chevronsRight", 14);
     this.overflow.addEventListener("click", () => this.handlers.overflow(this.overflow));
-    this.scroll.addEventListener("pointerover", (event) => this.pointerOver(event));
-    this.scroll.addEventListener("pointerleave", () => this.setHover(null));
+    this.scroll.addEventListener("pointerover", this.onPointerOver);
+    this.scroll.addEventListener("pointerleave", this.onPointerLeave);
     this.mount.append(this.label, this.scroll, this.hint, this.overflow);
     if (typeof ResizeObserver !== "undefined") {
-      new ResizeObserver(() => this.positionCloses()).observe(this.list);
+      this.resizeObserver = new ResizeObserver(() => this.positionCloses());
+      this.resizeObserver.observe(this.list);
     }
     this.relabel();
+  }
+
+  /** Drops listeners and the size observer when the controller stops. */
+  dispose(): void {
+    this.resizeObserver?.disconnect();
+    this.scroll.removeEventListener("pointerover", this.onPointerOver);
+    this.scroll.removeEventListener("pointerleave", this.onPointerLeave);
   }
 
   /** Re-applies the active language without rebuilding the rest of the shell. */
@@ -95,6 +106,9 @@ export class OpenPagesRow {
     this.signature = signature;
     const scrollLeft = this.scroll.scrollLeft;
     const focus = this.captureFocus();
+    if (this.hoveredPageId && !tabs.some((tab) => tab.pageId === this.hoveredPageId)) {
+      this.hoveredPageId = null;
+    }
     this.list.replaceChildren();
     this.closeLayer.replaceChildren();
     const closable = tabs.length > 1;
@@ -148,7 +162,11 @@ export class OpenPagesRow {
   }
 
   private closeNode(tab: OpenPagesTabView): HTMLButtonElement {
-    const close = el("button", tab.active ? "open-page-close is-active" : "open-page-close");
+    const close = el(
+      "button",
+      tab.pageId === this.hoveredPageId ? "open-page-close is-hover" : "open-page-close",
+    );
+    if (tab.active) close.classList.add("is-active");
     close.type = "button";
     close.dataset.pageId = tab.pageId;
     close.dataset.kind = "close";

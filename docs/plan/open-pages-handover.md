@@ -2,7 +2,7 @@
 
 **Epic:** [#398](https://github.com/MajorJohnDoe/gridscalr/issues/398)
 **Milestone:** none (backlog; no release committed)
-**State:** phase 1 implemented in PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402); the first independent review returned fail, the fix cycle is `dea29ed`, and an independent re-review is pending.
+**State:** phase 1 implemented in PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402). The first review returned fail (fixed in `dea29ed`); the second review returned fail at `87e4f37` and the final fixes are in the commit containing this handover. Final review pending.
 
 ## Locked design
 
@@ -15,7 +15,7 @@ white text and a jade numeral. Session-only, schema stays 28.
 
 | Phase | Issue | Branch | Status |
 | --- | --- | --- | --- |
-| 1 — model, controller and the N4 row | [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399) | `feat/open-pages-row` | PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402) — fix cycle `dea29ed`, re-review pending |
+| 1 — model, controller and the N4 row | [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399) | `feat/open-pages-row` | PR [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402) — final fixes committed, final review pending |
 | 2 — menus and keyboard | [#400](https://github.com/MajorJohnDoe/gridscalr/issues/400) | `feat/open-pages-menus` | not started |
 | 3 — lifecycle, Playwright flow and docs | [#401](https://github.com/MajorJohnDoe/gridscalr/issues/401) | `feat/open-pages-lifecycle` | not started |
 
@@ -35,7 +35,7 @@ white text and a jade numeral. Session-only, schema stays 28.
 
 **Issue:** [#399](https://github.com/MajorJohnDoe/gridscalr/issues/399)
 **PR:** [#402](https://github.com/MajorJohnDoe/gridscalr/pull/402)
-**Commits:** `873189d` (feature), `dea29ed` (review fixes)
+**Commits:** `873189d` (feature), `67c61d4` (first smoke-bound fix), `dea29ed` (first review fixes), `87e4f37` (handover record), final fixes — the commit that contains this handover (PR #402 head)
 
 Completed:
 
@@ -85,7 +85,27 @@ Review fix cycle (`dea29ed`):
 - `scripts/smoke-ui.mjs` now uses a measured 1.35× bound for the Markups
   fit-to-item zoom. Measured with the 35 px row: 0.6113 → 0.8694, 1.42×.
 
-Findings: none new. The P1/P2/P3 review findings are fixed in `dea29ed`.
+Findings: none new. The first-review P1/P2/P3 findings are fixed in `dea29ed`.
+
+Second review fix cycle (this commit):
+
+- Explicit `grid-row` placement for topbar, open-pages row, workspace and
+  status bar in `src/styles/base.css`. A hidden row now leaves a 0-height auto
+  track; the status bar keeps `--status-h` (28 px) and the workspace keeps the
+  free space. The old implicit placement put the workspace in the `auto` track
+  and squeezed the status bar to 1 px when the row was hidden.
+- `scripts/smoke-ui.mjs` now asserts the hidden-row shell on the welcome screen
+  and a zero-page project at 1440 × 900 and 1024 × 700: row hidden and 0 height,
+  status bar 28 px with visible children, workspace non-zero. This state had no
+  gate before.
+- Hover state is re-applied after a row render, so a hovered close control keeps
+  `is-hover` across the rebuild. `OpenPagesRow.dispose()` disconnects the
+  `ResizeObserver` and removes the pointer listeners; `OpenPagesController`
+  exposes `dispose()` and its tests use it.
+- The tab button now fills the whole tab cell, so the 8 px left padding and
+  32 px close reserve are clickable for navigation while the inner button keeps
+  the ARIA/keyboard model. Verified with a real click 4 px inside the cell's
+  left edge (page 2 → page 1).
 
 Budgets: the new module files are 16–210 lines. `App.ts` is +10 wiring lines
 (existing budget 1111 → 1121) and `src/state/store.ts` is +3 for the read-only
@@ -96,15 +116,26 @@ Checks: local gate green (`check:versions`, `check:file-budgets`,
 `check:write-sites`, `check:modules`, `check:cycles`, `check:security`,
 `check:actions`, `check:dependencies`, `check:docs`, `format:check`, `lint`,
 `check:i18n`, `check:themes`, `npx tsc --noEmit`); focused Vitest
-`openPagesModel`, `openPagesUi`, `openPagesController`, `pageList` (52 tests);
-`test:visual` (four baselines regenerated), `test:a11y` and
-`test:touch-targets` with a two-tab row, `test:ui-scale`, `test:ui`,
-`test:import`, `test:canvas`, `test:count`, `test:touch` and `test:csp`. The
+`openPagesModel`, `openPagesUi`, `openPagesController`, `pageList` (53 tests);
+`test:visual`, `test:a11y` and `test:touch-targets` with a two-tab row,
+`test:ui-scale`, `test:ui` including the hidden-row shell gate for the welcome
+screen and a zero-page project at both viewport sizes, `test:import`,
+`test:canvas`, `test:count`, `test:touch` and `test:csp`. The
 Markups fit-to-item zoom assertion in `scripts/smoke-ui.mjs` uses a 1.35× bound
 measured from 0.6113 → 0.8694 (1.42×) with the 35 px row. The symlinked
 `node_modules` outside the worktree prevents `tests/appFlows.test.ts` and
 `tests/pageMenu.test.ts` from resolving the PDF.js worker locally; CI uses a
 real `node_modules`.
+
+### Review
+
+- First review: **fail** on project-open detection, tablist close markup and N4
+  styling. Fixed in `dea29ed`.
+- Second review at `87e4f37`: **fail** on the hidden-row shell grid (status bar
+  squeezed to 1 px) plus hover persistence, observer disposal, the dead tab-cell
+  padding and the stale commit history. Fixed in the commit containing this
+  handover.
+- Final independent review pending. The phase is not merged until it passes.
 
 Next: phase 2 — [#400](https://github.com/MajorJohnDoe/gridscalr/issues/400),
 tab context menu, page-list menu entries and keyboard navigation.
@@ -117,12 +148,6 @@ Not started.
 
 Not started.
 
-## Review
-
-The first independent review returned **fail** on project-open detection, the
-tablist close markup and N4 styling. The fixes are in `dea29ed`; independent
-re-review is pending.
-
 ## Findings
 
 None.
@@ -131,4 +156,5 @@ None.
 
 Phase 1: see the phase entry above. All local-gate, focused-test, visual,
 accessibility (two-tab row), touch-target (two-tab row), UI-scale and
-browser-flow checks are green on `dea29ed`. CI reruns on the pushed head.
+browser-flow checks, including the hidden-row shell gate, are green on the final
+fixes. CI reruns on the pushed head.

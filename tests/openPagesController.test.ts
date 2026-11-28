@@ -62,7 +62,7 @@ function threePinnedTabs(): Mounted {
 }
 
 afterEach(() => {
-  current?.stop();
+  current?.dispose();
   current = null;
   store.closeProject();
   document.body.replaceChildren();
